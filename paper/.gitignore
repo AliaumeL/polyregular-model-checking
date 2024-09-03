@@ -1,0 +1,12 @@
+*.diagnose
+*.fdb_latexmk
+*.fls
+*.dvi
+*.pdf
+*.aux
+*.log
+*.kaux
+*.out
+*.toc
+*.bbl
+*.blg

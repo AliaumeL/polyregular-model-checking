@@ -1,0 +1,13 @@
+title: Polyregular Model Checking
+author:
+  - name: Aliaume Lopez
+    email: ad.lopez@uw.edu.pl
+    affiliation: University of Warsaw, Poland
+  - name: Rafał Stefański
+    email: rafal.stefanski@mimuw.edu.pl
+    affiliation: University of Warsaw, Poland
+abstract: >
+  In this paper, we demonstrate how the theory of polyregular functions
+  can be leveraged to verify simple string-to-string
+  for-loop programs defined in a subset of Python in an efficient
+  way.
