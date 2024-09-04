@@ -49,6 +49,21 @@ def forward(w,slice=(None,None)):
     for i in range(start,end):
         yield i
 
+def equals(w, slice=(None,None), s=""):
+    """ Returns True if the word w in the specified range is equal to s.
+        Out of bound values are rounded to the bounds of the word.
+    """
+    start = max(0, slice[0] if slice[0] != None else 0)
+    end = min(len(w), slice[1] if slice[1] != None else len(w))
+    return w[start:end] == s
+
+def letter(w, i, l):
+    """ Returns True if the character at index i in the word w is l.
+        Out of bound values are rounded to the bounds of the word.
+    """
+    pos = max(0, min(len(w)-1, i))
+    return w[pos] == l
+
 def bibauthors(w, slice=(None,None)):
     """ Transforms a list of authors in a BibTeX file into a
         list of authors that distinguishes the last name from the other name(s).
@@ -58,24 +73,32 @@ def bibauthors(w, slice=(None,None)):
     foundSomeAnd = False
     for i in forward(w, slice):
         # if we see an "and"
-        if w[i:i+3] == 'and':
+        if equals(w, (i,i+5), " and "):
             foundSomeAnd = True
             # we search for the last "and" before the current one
             # (or the beginning of the word)
             foundLastAnd = False
-            for j in backwards(w, (0,i)):
-                if foundLastAnd == False:
-                    if w[j:j+3] == 'and':
-                        reverse_name(w, (j+3,i))
+            for j in backwards(w, (0,i-1)):
+                if not foundLastAnd:
+                    if equals(w, (j,j+5), " and "):
+                        reverse_name(w, (j+5,i))
                         foundLastAnd = True
                     elif j == 0:
                         reverse_name(w, (j,i))
                         foundLastAnd = True
-    # there was no "and" in the whole slice, so we consider it
-    # as a single word
-    if foundSomeAnd == False:
-        reverse_name(w, slice)
-
+            output_string(" and ")
+    # we are lacking the last part of the list that does not end with "and"
+    foundLastAnd = False
+    for i in backwards(w, slice):
+        # find the first "and" before the current position or
+        # the beginning of the word
+        if not foundLastAnd:
+            if equals(w, (i,i+5), " and "):
+                reverse_name(w, (i+5,slice[1]))
+                foundLastAnd = True
+            elif i == 0:
+                reverse_name(w, slice)
+                foundLastAnd = True
 
 def reverse_name(w, slice=(None,None)):
     """ Reverses the name in the specified range
@@ -84,7 +107,7 @@ def reverse_name(w, slice=(None,None)):
     # first we find the last space in the slice
     b = False
     for i in backwards(w, slice):
-        if b is False and w[i] == ' ':
+        if b is False and letter(w, i, ' '):
             b = True
             # then we print the slice from the space to the end
             output_slice(w, (i+1, slice[1]))
@@ -109,10 +132,12 @@ def test_reverse_name(capsys):
         ("John Doe and Jane", "Doe, John and Jane"),
         ("John H. Doe", "Doe, John H."),
     ]
+    expected_out = ""
     for (input, expected) in test_cases:
         reverse_name(input)
-        out, err = capsys.readouterr()
-        assert out == expected
+        expected_out += expected
+    out, err = capsys.readouterr()
+    assert out == expected_out
 
 
 if __name__ == '__main__':
