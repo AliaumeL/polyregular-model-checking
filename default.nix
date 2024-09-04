@@ -18,6 +18,8 @@ pkgs.buildEnv {
     pkgs.pandoc
     # python
     pkgs.python3
+    # pytest
+    pkgs.python3Packages.pytest
     # MONA
     (pkgs.callPackage ./mona.nix {})
     # tygiel
