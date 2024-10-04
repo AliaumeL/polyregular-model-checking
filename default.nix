@@ -2,9 +2,11 @@
 pkgs.buildEnv {
   name = "polyregular-model-checking";
   paths = [
-    # rust packages
-    pkgs.rustc
-    pkgs.cargo
+    # haskell setup
+    pkgs.ghc
+    pkgs.haskellPackages.stack
+    pkgs.haskellPackages.haskell-language-server
+    pkgs.gmp
     # alt-ergo prover
     pkgs.alt-ergo
     # cvc5 prover
