@@ -25,6 +25,8 @@ source-repository head
 
 library
   exposed-modules:
+      FoInterpretations
+      ForProgram
       Lib
   other-modules:
       Paths_polyreg
