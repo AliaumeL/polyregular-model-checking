@@ -2,8 +2,6 @@ module Main (main) where
 
 import SimpleForPrograms
 
-import Lib
-
 data VarP = VarP String deriving(Eq, Show)
 data VarB = VarB String deriving(Eq, Show)
 

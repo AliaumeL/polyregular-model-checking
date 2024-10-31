@@ -36,7 +36,6 @@ data Statement a =
     | Let VarName (VExpression a) (Statement a)
     | SetTrue VarName
 
-
 -- Expressions of type VType
 data VExpression alphabet = 
             ListLiteral [VExpression alphabet]
