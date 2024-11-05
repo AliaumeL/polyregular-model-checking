@@ -46,7 +46,7 @@ def concat(a : List[Σ], b : List[Σ]) -> List[Σ]:
 
 ```haskell
 data BaseType a = List Int | Pos a | Bool
-data Type a = Dyn (BaseType a) | ConsExpr (BaseType a)
+data ArgType a = Dyn (BaseType a) | ConsExpr (BaseType a)
 
 
 data StringExpr a = 

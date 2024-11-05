@@ -1,5 +1,2 @@
-import HighLevelForPrograms 
-import SimpleForPrograms
-
-main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+-- Hspec test discovery
+{-# OPTIONS_GHC -F -pgmF hspec-discover #-}

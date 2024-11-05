@@ -30,10 +30,11 @@ ghc-options:
 - -Widentities
 - -Wincomplete-record-updates
 - -Wincomplete-uni-patterns
-- -Wmissing-export-lists
+#- -Wmissing-export-lists
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
+- -Wno-name-shadowing
 
 library:
   source-dirs: src
@@ -59,3 +60,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - polyreg
+    - hspec
