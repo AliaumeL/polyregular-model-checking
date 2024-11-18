@@ -25,9 +25,12 @@ source-repository head
 
 library
   exposed-modules:
+      FOInterpretation
       HighLevelForPrograms
       HighLevelForProgramsInterpreter
       SimpleForPrograms
+      SmtSolver
+      TwoSortedFormulas
   other-modules:
       Paths_polyreg
   autogen-modules:
@@ -38,6 +41,7 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , extra
     , mtl
   default-language: Haskell2010
 
@@ -53,6 +57,7 @@ executable polyreg-exe
   build-depends:
       base >=4.7 && <5
     , containers
+    , extra
     , mtl
     , polyreg
   default-language: Haskell2010
@@ -71,6 +76,7 @@ test-suite polyreg-test
   build-depends:
       base >=4.7 && <5
     , containers
+    , extra
     , hspec
     , mtl
     , polyreg
