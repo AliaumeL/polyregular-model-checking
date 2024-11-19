@@ -137,7 +137,8 @@ evalInterpretation interp word = map (\(_,_,c) -> c) $ positionsFilteredSortedWi
                 shouldCopy :: [(Char, Bool)]
                 shouldCopy = do 
                     i <- [0..length pos - 1]
-                    return $ (word !! i, evalFormulaInContext state $ copyFormula interp tag i vars)
+                    let c = word !! (pos !! i)
+                    return $ (c, evalFormulaInContext state $ copyFormula interp tag i vars)
 
                 letters :: [(Char, Bool)]
                 letters    = do 

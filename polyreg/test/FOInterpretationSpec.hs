@@ -92,9 +92,10 @@ squaringFOI = Interpretation tags outputLetters domainFormula orderFormula label
         domainFormula _ _ = FOTrue
         orderFormula _ _ xs ys = lexFormula xs ys
         labelFormula _ _ _ = FOFalse
-        copyFormula  _ _ _ = FOTrue
-        arity _ = 1
-        maxArity = 1
+        copyFormula  _ 0 _ = FOFalse
+        copyFormula  _ 1 _ = FOTrue
+        arity _ = 2
+        maxArity = 2
 
 squaring :: String -> String
 squaring w = concat . map (\_ -> w) $ w
@@ -122,4 +123,4 @@ spec = do
         it "Correctly computes the duplicate function" $ property $
             \x -> (evalInterpretation duplicateFOI x) `shouldBe` (x ++ x)
         it "Correctly computes the squaring function" $ property $
-            \x -> (evalInterpretation squaringFOI x) `shouldBe` (x ++ x)
+            \x -> (evalInterpretation squaringFOI x) `shouldBe` (squaring x)
