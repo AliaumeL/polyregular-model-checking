@@ -102,9 +102,8 @@ evalFormulaM (FOQuant Forall name f) = foAll name $ evalFormulaM f
 evalFormulaInContext :: FormulaState -> Formula VarName Char -> Bool
 evalFormulaInContext s f = runReader (evalFormulaM f) s
 
-evalFormula :: Formula VarName Char -> Bool
-evalFormula f = evalFormulaInContext (FormulaState Map.empty []) f
-
+evalFormula :: Formula VarName Char -> String -> Bool
+evalFormula f word = evalFormulaInContext (FormulaState Map.empty word) f
 
 
 evalInterpretation :: FOInterpretation VarName Char TagName -> String -> String
@@ -117,8 +116,8 @@ evalInterpretation interp word = map (\(_,_,c) -> c) $ positionsFilteredSortedWi
                                             True -> LT
                                             False -> GT
             where
-                vars1 = map (\i -> "x" ++ show i) [1..length p1]
-                vars2 = map (\i -> "y" ++ show i) [1..length p2]
+                vars1 = map (\i -> "x" ++ show i) [0..length p1 -1]
+                vars2 = map (\i -> "y" ++ show i) [0..length p2 -1]
                 vars  = vars1 ++ vars2
                 state = FormulaState (Map.fromList $ zip vars (p1 ++ p2)) word
                 cmp = evalFormulaInContext state $ orderFormula interp t1 t2 vars1 vars2
@@ -126,13 +125,13 @@ evalInterpretation interp word = map (\(_,_,c) -> c) $ positionsFilteredSortedWi
         computePresence :: (TagName, [Int]) -> Bool
         computePresence (tag, pos) = evalFormulaInContext state $ domainFormula interp tag vars
             where
-                vars = map (\i -> "x" ++ show i) [1..length pos]
+                vars = map (\i -> "x" ++ show i) [0..length pos - 1]
                 state = FormulaState (Map.fromList $ zip vars pos) word
 
         computeChar :: (TagName, [Int]) -> Char
         computeChar (tag, pos) = fst . head . filter snd $ shouldCopy ++ letters
             where
-                vars = map (\i -> "x" ++ show i) [1..length pos]
+                vars = map (\i -> "x" ++ show i) [0..length pos - 1]
                 state = FormulaState (Map.fromList $ zip vars pos) word
 
                 shouldCopy :: [(Char, Bool)]

@@ -76,7 +76,7 @@ spec = do
             runProgram exampleProgram "a" `shouldBe` exampleProgramHandCrafted "a"
             runProgram exampleProgram "b" `shouldBe` exampleProgramHandCrafted "b"
             runProgram exampleProgram "naruiste nbélopedt bnrest n" `shouldBe` exampleProgramHandCrafted "naruiste nbélopedt bnrest n"
-        it " runs correctly a program with boolean variables" $ do
+        it "runs correctly a program with boolean variables" $ do
             runProgram exampleProgramWithBoolans "ruiste nrest n" `shouldBe` exampleProgramWithBoolansHandCrafted "ruiste nrest n"
             runProgram exampleProgramWithBoolans "naiste  bnrest n" `shouldBe` exampleProgramWithBoolansHandCrafted "naiste  bnrest n"
             runProgram exampleProgramWithBoolans "nuiste rest n" `shouldBe` exampleProgramWithBoolansHandCrafted "nuiste rest n"

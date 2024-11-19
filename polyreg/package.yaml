@@ -25,6 +25,7 @@ dependencies:
 - process
 - extra
 - mtl
+- QuickCheck
 
 ghc-options:
 - -Wall
