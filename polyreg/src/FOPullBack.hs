@@ -153,7 +153,7 @@ pullBack i (FOI.FOCharAt x a) = do
                         -- assert that the tags match
                         let xt = TSF.FTag t tx
                         let phi = copyFormula i tx nbr (take (arity i tx) xs)
-                        return . TSF.andList $ [xt, inject phi]
+                        return . TSF.andList $ [xt, inject phi, TSF.FLetter (xs !! nbr) a]
 
     return . TSF.orList $ disjChars ++ disjCopy
 -- negation
