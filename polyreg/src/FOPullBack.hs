@@ -139,13 +139,23 @@ pullBack i (FOI.FOCharAt x a) = do
     -- get variable names
     (t, xs) <- getPos x
     -- guess a tag name
-    let disjuncts = do
+    let disjChars = do
                         tx <- tags i
                         -- assert that the tags match
                         let xt = TSF.FTag t tx
                         let phi = labelFormula i tx a (take (arity i tx) xs)
                         return . TSF.andList $ [xt, inject phi]
-    return . TSF.orList $ disjuncts
+    let disjCopy = do 
+                        -- guess a tag
+                        tx  <- tags i
+                        -- guess a position
+                        nbr <- [1..arity i tx]
+                        -- assert that the tags match
+                        let xt = TSF.FTag t tx
+                        let phi = copyFormula i tx nbr (take (arity i tx) xs)
+                        return . TSF.andList $ [xt, inject phi]
+
+    return . TSF.orList $ disjChars ++ disjCopy
 -- negation
 pullBack i (FOI.FONot f) = TSF.FNot <$> (pullBack i f)
 -- binary operators
