@@ -1,6 +1,6 @@
 module SmtSolver where
 
-import TwoSortedFormulas
+import TwoSortedFormulas (Formula)
 
 data SmtResult = Sat | Unsat | Unknown
   deriving (Show, Eq)

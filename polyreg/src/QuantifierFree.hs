@@ -1,0 +1,20 @@
+module QuantifierFree where
+
+
+data BinOp  = Conj | Disj | Impl | Equiv deriving (Show, Eq)
+
+binOpSemantics :: BinOp -> Bool -> Bool -> Bool
+binOpSemantics Conj  = (&&)
+binOpSemantics Disj  = (||)
+binOpSemantics Impl  = \x y -> not x || y
+binOpSemantics Equiv = (==)
+
+data TestOp = Eq | Neq | Lt | Le | Gt | Ge deriving (Show, Eq)
+
+testOpSemantics :: TestOp -> Int -> Int -> Bool
+testOpSemantics Eq  = (==)
+testOpSemantics Neq = (/=)
+testOpSemantics Lt  = (<)
+testOpSemantics Le  = (<=)
+testOpSemantics Gt  = (>)
+testOpSemantics Ge  = (>=)

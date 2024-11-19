@@ -12,29 +12,10 @@ import Data.Map (Map)
 import Data.List (sortBy)
 import qualified Data.Map as Map
 
+import QuantifierFree
+
 type VarName = String
 type TagName = String
-
-data BinOp  = Conj | Disj | Impl | Equiv deriving (Show, Eq)
-
-binOpSemantics :: BinOp -> Bool -> Bool -> Bool
-binOpSemantics Conj  = (&&)
-binOpSemantics Disj  = (||)
-binOpSemantics Impl  = \x y -> not x || y
-binOpSemantics Equiv = (==)
-    
-
-
-data TestOp = Eq | Neq | Lt | Le | Gt | Ge deriving (Show, Eq)
-
-testOpSemantics :: TestOp -> Int -> Int -> Bool
-testOpSemantics Eq  = (==)
-testOpSemantics Neq = (/=)
-testOpSemantics Lt  = (<)
-testOpSemantics Le  = (<=)
-testOpSemantics Gt  = (>)
-testOpSemantics Ge  = (>=)
-
 
 
 data Quant  = Exists | Forall deriving (Show, Eq)
