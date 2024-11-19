@@ -1,13 +1,22 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 module FOPullBack where
 
 -- This module pulls back a first-order formula 
 -- through an FO interpretation.
 
 import TwoSortedFormulas (Formula)
+import qualified Data.Map as M
+import Data.Map (Map)
 import QuantifierFree
 import qualified TwoSortedFormulas as TSF
 import qualified FOInterpretation as FOI
 import FOInterpretation (FOInterpretation(..))
+import Control.Monad.State
 
 type PosVarName = String
 type TagVarName = String
@@ -34,8 +43,44 @@ inject (FOI.FOQuant FOI.Forall x f) = TSF.FQuant TSF.Forall x TSF.Pos (inject f)
 -- [ x = y  ]  = xT = yT /\ x1 = y1 /\ ... /\ xn = yn
 
 class (Monad m) => MonadPullBack m where
-    freshVar :: FOI.VarName -> m (TagVarName, [PosVarName])
+    freshVar :: FOI.VarName -> Int -> m (TagVarName, [PosVarName])
     getPos   :: FOI.VarName -> m (TagVarName, [PosVarName])
+    withFreshVar :: FOI.VarName -> Int -> (TagVarName -> [PosVarName] -> m a) -> m a
+
+
+data PullBackState = PullBackState {
+    varMap  :: Map FOI.VarName (TagVarName, [PosVarName]),
+    counter :: Int
+} deriving (Eq, Show)
+
+instance MonadPullBack (State PullBackState) where
+    withFreshVar x count f = do
+        -- save state
+        PullBackState m _ <- get
+        -- compute
+        (t, xs) <- freshVar x count
+        res <- f t xs
+        PullBackState _ cp <- get
+        -- restore state
+        put $ PullBackState m cp
+        return $ res
+
+    freshVar x count = do
+        PullBackState m c <- get
+        case M.lookup x m of
+            Just v -> return v
+            Nothing -> do
+                let v = ("t" ++ show c, ["x" ++ show c ++ "n" ++ show i | i <- [1..count]])
+                put $ PullBackState (M.insert x v m) (c + 1)
+                return v
+
+    getPos x = do
+        PullBackState m _ <- get
+        case M.lookup x m of
+            Just v -> return v
+            Nothing -> error "Variable not found in state."
+
+
 
 
 pullBack :: (MonadPullBack m) => 
@@ -84,6 +129,11 @@ pullBack i (FOI.FOTestPos Lt x y) = do
     return $ TSF.FBin Conj phi (TSF.FNot psi)
 pullBack i (FOI.FOTestPos Gt x y) = pullBack i (FOI.FOTestPos Lt y x)
 pullBack i (FOI.FOTestPos Ge x y) = pullBack i (FOI.FOTestPos Le y x)
+pullBack i (FOI.FOTestPos Neq x y) = do
+    -- get formula for equality
+    phi <- pullBack i (FOI.FOTestPos Eq x y)
+    -- return not phi
+    return $ TSF.FNot phi
 -- character comparison
 pullBack i (FOI.FOCharAt x a) = do
     -- get variable names
@@ -101,9 +151,7 @@ pullBack i (FOI.FONot f) = TSF.FNot <$> (pullBack i f)
 -- binary operators
 pullBack i (FOI.FOBin op f g) = TSF.FBin op <$> (pullBack i f) <*> (pullBack i g)
 -- quantifiers
-pullBack i (FOI.FOQuant FOI.Exists x f) = do
-    -- get variable names
-    (t, xs) <- freshVar x
+pullBack i (FOI.FOQuant FOI.Exists x f) = withFreshVar x (maxArity i) $ \t xs -> do
     -- guess a tag name
     let disjuncts = do
                         tx <- tags i
@@ -118,9 +166,7 @@ pullBack i (FOI.FOQuant FOI.Exists x f) = do
         quants = [(t, TSF.Tag, TSF.Exists)] ++ [(x, TSF.Pos, TSF.Exists) | x <- xs]
     phi <- pullBack i f
     return . TSF.quantifyList quants $ TSF.FBin Conj (TSF.orList disjuncts) phi
-pullBack i (FOI.FOQuant FOI.Forall x f) = do 
-    -- get variable names
-    (t, xs) <- freshVar x
+pullBack i (FOI.FOQuant FOI.Forall x f) = withFreshVar x (maxArity i) $ \t xs -> do
     -- guess a tag name
     let disjuncts = do
                         tx <- tags i

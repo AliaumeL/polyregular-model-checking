@@ -37,7 +37,8 @@ data FOInterpretation var alphabet tag = Interpretation {
     orderFormula   :: tag -> tag -> [var] -> [var] -> Formula var alphabet,
     labelFormula   :: tag -> alphabet -> [var] -> Formula var alphabet,
     copyFormula    :: tag -> Int -> [var] -> Formula var alphabet,
-    arity          :: tag -> Int
+    arity          :: tag -> Int,
+    maxArity       :: Int
 }
 
 
