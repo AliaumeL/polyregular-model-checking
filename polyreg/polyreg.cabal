@@ -26,8 +26,10 @@ source-repository head
 library
   exposed-modules:
       FOInterpretation
+      FOPullBack
       HighLevelForPrograms
       HighLevelForProgramsInterpreter
+      QuantifierFree
       SimpleForPrograms
       SmtSolver
       TwoSortedFormulas
