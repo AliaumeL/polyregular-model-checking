@@ -42,8 +42,6 @@ spec = do
         it "Works for the duplicate function" $ property $
             \x -> evalPullBack FOISpec.duplicateFOI FOISpec.formulaAstarBstar x `shouldBe` FOISpec.aStarBStar (x ++ x)
         it "Works for the duplicate function (specific examples)" $ do
-            evalPullBack FOISpec.duplicateFOI FOISpec.formulaAstarBstar "ab" `shouldBe` (FOISpec.aStarBStar "abab")
-        it "Works for the duplicate function (specific examples)" $ do
             evalPullBack FOISpec.duplicateFOI FOISpec.formulaAstarBstar "aaa" `shouldBe` True
             evalPullBack FOISpec.duplicateFOI FOISpec.formulaAstarBstar "bbb" `shouldBe` True
             evalPullBack FOISpec.duplicateFOI FOISpec.formulaAstarBstar "ba" `shouldBe` False

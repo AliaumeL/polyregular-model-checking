@@ -11,6 +11,6 @@ spec :: Spec
 spec = do
     describe "The evaluator for FO Formulas (TwoSortedFormulas.evalFormula)" $ do
         it "Correctly implements true" $ property $
-            \x -> (evalFormula x [] FTrue == True)
+            \x -> (evalFormula x [] FTrue `shouldBe` True)
         it "Correctly implements false" $ property $
-            \x -> (evalFormula x [] FFalse == False)
+            \x -> (evalFormula x [] FFalse `shouldBe` False)

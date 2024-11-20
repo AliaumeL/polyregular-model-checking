@@ -113,7 +113,7 @@ spec = do
         it "Correctly implements `all are a’s`" $ property $
             \x -> (evalFormula (FOQuant Forall "x" (FOCharAt "x" 'a')) x) `shouldBe` (all (== 'a') x)
         it "Correctly recognizes a^* b^*" $ property $
-            \x -> (evalFormula formulaAstarBstar x) == aStarBStar x
+            \x -> (evalFormula formulaAstarBstar x) `shouldBe` aStarBStar x
 
     describe "The interpreter for simple for FOInterpretations (FOInterpretation.evalInterpretation)" $ do
         it "Correctly computes the identity function" $ property $

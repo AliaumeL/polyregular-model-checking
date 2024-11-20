@@ -192,6 +192,6 @@ pullBack i (FOI.FOQuant FOI.Forall x f) = withFreshVar x (maxArity i) $ \t xs ->
     -- Quantify existentially over the tag t
     -- and all positions
     let quants :: [(String, TSF.Sort, TSF.Quant)]
-        quants = [(t, TSF.Tag, TSF.Exists)] ++ [(x, TSF.Pos, TSF.Forall) | x <- xs]
+        quants = [(t, TSF.Tag, TSF.Forall)] ++ [(x, TSF.Pos, TSF.Forall) | x <- xs]
     phi <- pullBack i f
     return . TSF.quantifyList quants $ TSF.FBin Impl (TSF.orList disjuncts) phi

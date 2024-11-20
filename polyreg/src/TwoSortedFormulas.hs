@@ -25,6 +25,10 @@ data Sort = Pos | Tag
 data Quant = Exists | Forall 
   deriving (Show, Eq)
 
+prettyPrintQuant :: Quant -> String
+prettyPrintQuant Exists = "∃"
+prettyPrintQuant Forall = "∀"
+
 data Formula tag alphabet = 
       FTrue
     | FFalse
@@ -39,6 +43,17 @@ data Formula tag alphabet =
     -- Position tests (equality, <=, <, >, >=)
     | FTestPos  TestOp String String
   deriving (Show, Eq)
+
+prettyPrint :: (Show tag, Show alphabet) => Formula tag alphabet -> String
+prettyPrint FTrue = "⊤"
+prettyPrint FFalse = "⊥"
+prettyPrint (FBin op l r) = "(" ++ prettyPrint l ++ " " ++ prettyPrintBin op ++ " " ++ prettyPrint r ++ ")"
+prettyPrint (FNot f) = "¬" ++ prettyPrint f
+prettyPrint (FQuant q x s f) = prettyPrintQuant q ++ " " ++ x ++ " : " ++ show s ++ ". " ++ prettyPrint f
+prettyPrint (FTag x t) = x ++ " ∈ " ++ show t
+prettyPrint (FLetter x l) = x ++ " = " ++ show l
+prettyPrint (FTestPos t x y) = x ++ " " ++ prettyPrintOp t ++ " " ++ y
+
 
 andList :: [Formula tag alphabet] -> Formula tag alphabet
 andList [] = FTrue
