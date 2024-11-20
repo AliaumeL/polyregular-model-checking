@@ -70,7 +70,7 @@ instance MonadPullBack (State PullBackState) where
         case M.lookup x m of
             Just v -> return v
             Nothing -> do
-                let v = ("t" ++ show c, ["x" ++ show c ++ "n" ++ show i | i <- [1..count]])
+                let v = ("t" ++ show c, ["x" ++ show c ++ "n" ++ show i | i <- [0..count -1]])
                 put $ PullBackState (M.insert x v m) (c + 1)
                 return v
 
@@ -81,6 +81,10 @@ instance MonadPullBack (State PullBackState) where
             Nothing -> error "Variable not found in state."
 
 
+runPullBack :: FOI.FOInterpretation PosVarName Char String -> FOI.Formula PosVarName Char -> Formula String Char
+runPullBack i f = fst $ runState (pullBack i f) state
+    where
+        state = PullBackState M.empty 0
 
 
 pullBack :: (MonadPullBack m) => 
@@ -149,7 +153,7 @@ pullBack i (FOI.FOCharAt x a) = do
                         -- guess a tag
                         tx  <- tags i
                         -- guess a position
-                        nbr <- [1..arity i tx]
+                        nbr <- [0..arity i tx - 1]
                         -- assert that the tags match
                         let xt = TSF.FTag t tx
                         let phi = copyFormula i tx nbr (take (arity i tx) xs)

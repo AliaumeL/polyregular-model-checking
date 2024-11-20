@@ -105,13 +105,13 @@ spec :: Spec
 spec = do
     describe "The evaluator for FO Formulas (FOInterpretation.evalFormula)" $ do
         it "Correctly implements false" $ property $
-            \x -> (evalFormula FOFalse x) == False
+            \x -> (evalFormula FOFalse x) `shouldBe` False
         it "Correctly implements true" $ property $
-            \x -> (evalFormula FOTrue x) == True
+            \x -> (evalFormula FOTrue x) `shouldBe` True
         it "Correctly implements `there is an a`" $ property $
-            \x -> (evalFormula (FOQuant Exists "x" (FOCharAt "x" 'a')) x) == (any (== 'a') x)
+            \x -> (evalFormula (FOQuant Exists "x" (FOCharAt "x" 'a')) x) `shouldBe` (any (== 'a') x)
         it "Correctly implements `all are a’s`" $ property $
-            \x -> (evalFormula (FOQuant Forall "x" (FOCharAt "x" 'a')) x) == (all (== 'a') x)
+            \x -> (evalFormula (FOQuant Forall "x" (FOCharAt "x" 'a')) x) `shouldBe` (all (== 'a') x)
         it "Correctly recognizes a^* b^*" $ property $
             \x -> (evalFormula formulaAstarBstar x) == aStarBStar x
 
@@ -120,7 +120,16 @@ spec = do
             \x -> (evalInterpretation identityFOI x) `shouldBe` (x :: String)
         it "Correctly computes the reverse function" $ property $
             \x -> (evalInterpretation reverseFOI x) `shouldBe` (reverse x)
+        it "Correctly computes the reverse function (specific examples)" $ do
+            evalInterpretation reverseFOI "aba" `shouldBe` "aba"
+            evalInterpretation reverseFOI "abab" `shouldBe` "baba"
+            evalInterpretation reverseFOI "aaaabbbb" `shouldBe` "bbbbaaaa"
         it "Correctly computes the duplicate function" $ property $
             \x -> (evalInterpretation duplicateFOI x) `shouldBe` (x ++ x)
+        it "Correctly computes the duplicate function (specific examples)" $ do
+            evalInterpretation duplicateFOI "a" `shouldBe` "aa"
+            evalInterpretation duplicateFOI "ab" `shouldBe` "abab"
+            evalInterpretation duplicateFOI "ba" `shouldBe` "baba"
+            evalInterpretation duplicateFOI "aba" `shouldBe` "abaaba"
         it "Correctly computes the squaring function" $ property $
             \x -> (evalInterpretation squaringFOI x) `shouldBe` (squaring x)
