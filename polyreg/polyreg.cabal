@@ -75,6 +75,7 @@ test-suite polyreg-test
       FOInterpretationSpec
       FOPullBackSpec
       SimpleForProgramsSpec
+      SmtSolverSpec
       TwoSortedFormulaSpec
       Paths_polyreg
   autogen-modules:
