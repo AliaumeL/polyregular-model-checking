@@ -1,7 +1,19 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 module TwoSortedFormulas where
 
 
 import QuantifierFree
+
+import Control.Monad.Reader
+import Control.Monad.Extra (anyM, allM)
+import Data.Map (Map)
+import qualified Data.Map as Map
 
 -- This module contains a (First-order) logic with two sorts a sort (Pos) of
 -- positions, and a sort (Tag) of finitely many tags.
@@ -41,3 +53,73 @@ orList (x:xs) = FBin Disj x (orList xs)
 quantifyList :: [(String, Sort, Quant)] -> Formula tag alphabet -> Formula tag alphabet
 quantifyList [] f = f
 quantifyList ((x, s, q):xs) f = FQuant q x s (quantifyList xs f)
+
+
+type TagName = String
+
+class (Monad m) => MonadTSF m where
+    getPos    :: String -> m Int
+    getCharAt :: String -> m Char
+    getTag    :: String -> m TagName
+    withQuant :: Quant -> String -> Sort -> m Bool -> m Bool
+
+
+evalFormulaM :: (MonadTSF m) => Formula TagName Char -> m Bool
+evalFormulaM FTrue = return True
+evalFormulaM FFalse = return False
+evalFormulaM (FBin op l r) = binOpSemantics op <$> evalFormulaM l <*> evalFormulaM r
+evalFormulaM (FTestPos t x y) = testOpSemantics t <$> getPos x <*> getPos y
+evalFormulaM (FNot l) = not <$> evalFormulaM l
+evalFormulaM (FTag x t) = (== t) <$> getTag x
+evalFormulaM (FLetter x l) = (== l) <$> getCharAt x
+evalFormulaM (FQuant q x s f) = withQuant q x s (evalFormulaM f)
+
+evalFormula :: String -> [TagName] -> Formula TagName Char -> Bool
+evalFormula word tags f = runReader (evalFormulaM f) state
+    where
+        state = FormulaState word Map.empty Map.empty tags
+
+
+data FormulaState tag = FormulaState {
+    word     :: String,
+    pos      :: Map String Int,
+    tags     :: Map String tag,
+    allTags  :: [tag]
+} deriving (Eq,Show)
+
+type FormulaReader = Reader (FormulaState TagName)
+
+instance MonadTSF FormulaReader where
+    getPos x = do 
+        pos <- asks pos
+        case Map.lookup x pos of
+            Just i -> return i
+            Nothing -> error $ "Variable " ++ x ++ " not found"
+    getCharAt x = do 
+        pos <- getPos x
+        w   <- asks word
+        return $ w !! pos
+    getTag x = do 
+        ts <- asks tags
+        case Map.lookup x ts of
+            Just i -> return i
+            Nothing -> error $ "Variable " ++ x ++ " not found"
+        
+    withQuant quant x s m = case (s,quant) of 
+                                (Tag,Exists) -> valuesTag >>= anyM (\v -> localLetTag x v m)
+                                (Pos,Exists) -> valuesPos >>= anyM (\v -> localLetPos x v m) 
+                                (Tag,Forall) -> valuesTag >>= allM (\v -> localLetTag x v m)
+                                (Pos,Forall) -> valuesPos >>= allM (\v -> localLetPos x v m)
+        where
+            localLetTag x v m = do 
+                ts <- asks tags
+                local (\s -> s { tags = Map.insert x v ts }) m 
+
+            localLetPos x v m = do
+                ps <- asks pos
+                local (\s -> s { pos = Map.insert x v ps }) m
+
+            valuesTag = asks allTags
+            valuesPos = do
+                w <- asks word
+                return $ [0..length w - 1]

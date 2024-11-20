@@ -73,7 +73,9 @@ test-suite polyreg-test
   main-is: Spec.hs
   other-modules:
       FOInterpretationSpec
+      FOPullBackSpec
       SimpleForProgramsSpec
+      TwoSortedFormulaSpec
       Paths_polyreg
   autogen-modules:
       Paths_polyreg
