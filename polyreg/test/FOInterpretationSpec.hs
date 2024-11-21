@@ -65,8 +65,8 @@ duplicateFOI = Interpretation tags outputLetters domainFormula orderFormula labe
         outputLetters = []
         domainFormula _ _ = FOTrue
         orderFormula "A" "A" (x : _) (y : _) = FOTestPos Le x y
-        orderFormula "A" "B" (x : _) (y : _) = FOTrue
-        orderFormula "B" "A" (x : _) (y : _) = FOFalse
+        orderFormula "A" "B" (_ : _) (_ : _) = FOTrue
+        orderFormula "B" "A" (_ : _) (_ : _) = FOFalse
         orderFormula "B" "B" (x : _) (y : _) = FOTestPos Le x y
         orderFormula _ _ _ _ = error "Invalid position tuples"
         labelFormula _ _ _ = FOFalse
@@ -101,6 +101,37 @@ squaring :: String -> String
 squaring w = concat . map (\_ -> w) $ w
 
 
+-- | ubv -> ub(b)^|v| (a)^{|ubv|}
+asThenBsThenAsFOI :: FOInterpretation Var Alph Tag
+asThenBsThenAsFOI = Interpretation tags outputLetters domainFormula orderFormula labelFormula copyFormula arity maxArity
+    where
+        tags = ["A", "B"]
+        outputLetters = ['a', 'b']
+        domainFormula "A" _ = FOTrue
+        domainFormula "B" _ = FOTrue
+        orderFormula "A" "A" (x : _) (y : _) = FOTestPos Le x y
+        orderFormula "A" "B" (_ : _) (_ : _) = FOTrue
+        orderFormula "B" "A" (_ : _) (_ : _) = FOFalse
+        orderFormula "B" "B" (x : _) (y : _) = FOTestPos Le x y
+        orderFormula _ _ _ _ = error "Invalid position tuples"
+        -- b -> exists y. CharAt(y, 'b') /\ y <= x
+        labelFormula "A" 'b' (x : _) = FOQuant Exists "y" $ FOBin Conj (FOTestPos Le "y" x) (FOCharAt "y" 'b')
+        labelFormula "B" 'a' (x : _) = FOTrue
+        labelFormula _ _ _ = FOFalse
+        -- copy = NOT (exists y. CharAt(y, 'b') /\ y <= x)
+        copyFormula  "A" _ (x : _) = FONot $ FOQuant Exists "y" $ FOBin Conj (FOTestPos Le "y" x) (FOCharAt "y" 'b')
+        copyFormula  "A" _ _ = FOFalse
+        copyFormula  "B" _ _ = FOFalse
+        arity _ = 1
+        maxArity = 1
+
+asThenBsThenAs :: String -> String
+asThenBsThenAs w = asThenBs w ++ map (const 'a') w
+    where
+        asThenBs [] = []
+        asThenBs (x : xs) = x : (if x == 'b' then map (const 'b') xs else asThenBs xs)
+
+
 spec :: Spec
 spec = do
     describe "The evaluator for FO Formulas (FOInterpretation.evalFormula)" $ do
@@ -133,3 +164,11 @@ spec = do
             evalInterpretation duplicateFOI "aba" `shouldBe` "abaaba"
         it "Correctly computes the squaring function" $ property $
             \x -> (evalInterpretation squaringFOI x) `shouldBe` (squaring x)
+        it "Correctly computes the asThenBsThenAs function" $ property $
+            \x -> (evalInterpretation asThenBsThenAsFOI x) `shouldBe` (asThenBsThenAs x)
+        it "Correctly computes the asThenBsThenAs function (on specific examples)" $ property $ do
+            (evalInterpretation asThenBsThenAsFOI "aaa") `shouldBe` (asThenBsThenAs "aaa")
+            (evalInterpretation asThenBsThenAsFOI "aba") `shouldBe` (asThenBsThenAs "aba")
+            (evalInterpretation asThenBsThenAsFOI "aaabaaa") `shouldBe` (asThenBsThenAs "aaabaaa")
+            (evalInterpretation asThenBsThenAsFOI "baaabaaa") `shouldBe` (asThenBsThenAs "baaabaaa")
+            (evalInterpretation asThenBsThenAsFOI "aaabaaab") `shouldBe` (asThenBsThenAs "aaabaaab")

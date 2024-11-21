@@ -58,3 +58,5 @@ spec = do
             evalPullBack FOISpec.squaringFOI FOISpec.formulaAstarBstar "ba" `shouldBe`  False
         it "Works for the squaring function" $ property $
             \x -> evalPullBack FOISpec.squaringFOI FOISpec.formulaAstarBstar x `shouldBe` FOISpec.aStarBStar (FOISpec.squaring x)
+        it "Works for the asThenBsThenAs function" $ property $
+            \x -> evalPullBack FOISpec.asThenBsThenAsFOI FOISpec.formulaAstarBstar x `shouldBe` FOISpec.aStarBStar (FOISpec.asThenBsThenAs x)

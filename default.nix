@@ -3,10 +3,10 @@ pkgs.buildEnv {
   name = "polyregular-model-checking";
   paths = [
     # haskell setup
-    #pkgs.ghc
-    #pkgs.haskellPackages.stack
-    #pkgs.haskellPackages.haskell-language-server
-    #pkgs.gmp
+    pkgs.ghc
+    pkgs.haskellPackages.stack
+    pkgs.haskellPackages.haskell-language-server
+    pkgs.gmp
     # alt-ergo prover (non-free)
     # pkgs.alt-ergo
     # cvc5 prover
