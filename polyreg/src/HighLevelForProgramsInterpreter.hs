@@ -178,5 +178,5 @@ evalFunctions fs input = do
         Just main -> localWith env $ evalFunction main [ValExpr $ ListLiteral input' (TList TChar)]
         Nothing -> error "No main function found"
 
-runForProgram :: (Eq alphabet) => [Function alphabet] -> [alphabet] -> BoolDict -> Either String (VValue alphabet)
-runForProgram fs input boolDict = runInterpreter (evalFunctions fs input) (InterpreterVals M.empty M.empty M.empty (M.fromList $ map (\f -> (name f, f)) fs)) boolDict
+runForProgram :: (Eq alphabet) => [Function alphabet] -> [alphabet] -> Either String (VValue alphabet)
+runForProgram fs input = runInterpreter (evalFunctions fs input) (InterpreterVals M.empty M.empty M.empty (M.fromList $ map (\f -> (name f, f)) fs)) M.empty

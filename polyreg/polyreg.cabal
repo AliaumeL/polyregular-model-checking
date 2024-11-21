@@ -74,6 +74,7 @@ test-suite polyreg-test
   other-modules:
       FOInterpretationSpec
       FOPullBackSpec
+      HighLevelForProgramsInterpreterSpec
       SimpleForProgramsSpec
       SmtSolverSpec
       TwoSortedFormulaSpec

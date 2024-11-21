@@ -25,15 +25,18 @@ data Function alphabet = Function {
     body :: (StatementBlock alphabet)
 } deriving (Show, Eq)
 
--- A Statement Block is a list of statements, together with a list of variables that are defined for the block.
+-- A Statement Block is a list of statements, together with a list of boolean variables that are defined for the block.
 data StatementBlock a = StatementBlock [VarName] [Statement a] VType
   deriving (Show, Eq)
 
 data Statement a = 
+      -- for ( position , value ) in ( expr ) do { block }
       For VarName VarName (VExpression a) (StatementBlock a)
     | If (BoolExpr a) [Statement a] [Statement a]
     | Yield (VExpression a)
+    -- let x (value not position) = expr in stmt
     | Let VarName (VExpression a) (Statement a)
+    -- setTrue b 
     | SetTrue VarName
   deriving(Show, Eq)
 
