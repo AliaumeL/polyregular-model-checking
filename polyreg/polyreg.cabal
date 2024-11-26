@@ -29,9 +29,11 @@ library
       FOInterpretation
       FOPullBack
       ForPrograms
+      FunctionElimination
       HighLevelForPrograms
       HighLevelForProgramsInterpreter
       QuantifierFree
+      ReductionLitEq
       SimpleForPrograms
       SmtSolver
       TwoSortedFormulas
