@@ -26,6 +26,7 @@ dependencies:
 - extra
 - mtl
 - QuickCheck
+- split
 
 ghc-options:
 - -Wall
