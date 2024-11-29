@@ -17,6 +17,7 @@ prettyPrintBin Equiv = "⇔"
 
 
 
+-- TODO: add "having the same character" as a test.
 data TestOp = Eq | Neq | Lt | Le | Gt | Ge deriving (Show, Eq)
 
 prettyPrintOp :: TestOp -> String

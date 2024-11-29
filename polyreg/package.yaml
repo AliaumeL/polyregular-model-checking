@@ -26,7 +26,6 @@ dependencies:
   - extra
   - mtl
   - text
-  - megaparsec
 
 ghc-options:
   - -Wall

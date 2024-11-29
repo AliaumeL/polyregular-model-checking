@@ -18,7 +18,7 @@ import qualified Data.Map as Map
 -- This module contains a (First-order) logic with two sorts a sort (Pos) of
 -- positions, and a sort (Tag) of finitely many tags.
 
-data Sort = Pos | Tag
+data Sort = Pos | Tag 
   deriving (Show, Eq)
 
 
@@ -42,6 +42,7 @@ data Formula tag alphabet =
     | FLetter String alphabet
     -- Position tests (equality, <=, <, >, >=)
     | FTestPos  TestOp String String
+    -- 
   deriving (Show, Eq)
 
 prettyPrint :: (Show tag, Show alphabet) => Formula tag alphabet -> String

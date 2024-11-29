@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -25,13 +25,14 @@ source-repository head
 
 library
   exposed-modules:
-      FinSets
       FOInterpretation
       FOPullBack
       ForPrograms
+      FOTranslation
       FunctionElimination
       HighLevelForPrograms
       HighLevelForProgramsInterpreter
+      Latex
       QuantifierFree
       ReductionLitEq
       SimpleForPrograms
@@ -48,7 +49,6 @@ library
       base >=4.7 && <5
     , containers
     , extra
-    , megaparsec
     , mtl
     , process
     , text
@@ -67,7 +67,6 @@ executable polyreg-exe
       base >=4.7 && <5
     , containers
     , extra
-    , megaparsec
     , mtl
     , polyreg
     , process
@@ -97,7 +96,6 @@ test-suite polyreg-test
     , containers
     , extra
     , hspec
-    , megaparsec
     , mtl
     , polyreg
     , process
