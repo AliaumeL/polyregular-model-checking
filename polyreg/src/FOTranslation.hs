@@ -183,3 +183,60 @@ transition sp (PrintChar c) = f
 transition sp (Seq ss) = undefined
 
 
+-- Now, we need, given a source path, a whole program,
+-- and a boolean expression "b", to construct a formula
+-- deciding if "b" holds (taking as arguments the input position variables only)
+--
+isSatisfied :: SourcePath -> ForStmtDB -> BoolExprDB -> FormulaDB
+isSatisfied = undefined
+
+-- Finally, we can leverage this to produce
+-- a selection function. It collects all the boolean tests
+-- above a given source path and takes the conjunct of 
+-- the corresponding "isSatisfied" formulas.
+shouldBeProduced :: ForStmtDB -> SourcePath -> FormulaDB
+shouldBeProduced p sp = andList $ map (\(sp, b) -> isSatisfied sp p b) $ booleanTestsAbove sp
+    where
+        booleanTests :: [Movement] -> [(SourcePath, BoolExprDB)]
+        booleanTests [] = []
+        booleanTests m@(MovIfLeft  b : ms) = (SourcePath m, b) : booleanTests ms
+        booleanTests m@(MovIfRight b : ms) = (SourcePath m, b) : booleanTests ms
+        booleanTests m@(MovFor _ _ : ms) = booleanTests ms
+        booleanTests m@(MovSeq _ : ms) = booleanTests ms
+
+        booleanTestsAbove :: SourcePath -> [(SourcePath, BoolExprDB)]
+        booleanTestsAbove (SourcePath m) = map (\(SourcePath m, b) -> (SourcePath (reverse m), b)) . booleanTests . reverse $ m
+
+-- Let us now compute Order formula
+compareSourcePaths :: SourcePath -> SourcePath -> FormulaDB
+compareSourcePaths (SourcePath m1) (SourcePath m2) = undefined
+
+-- And the Label formula
+shouldProduceChar :: SourcePath -> Char -> FormulaDB
+shouldProduceChar sp c = undefined
+
+-- And the Copy formula
+shouldCopyChar :: SourcePath -> Int -> FormulaDB
+shouldCopyChar sp i = undefined
+
+
+data FoInterpretationDB = FoInterpretationDB {
+    domainFormula  :: SourcePath -> FormulaDB,
+    orderFormula   :: SourcePath -> SourcePath -> FormulaDB,
+    labelFormula   :: SourcePath -> Char -> FormulaDB,
+    copyFormula    :: SourcePath -> Int -> FormulaDB,
+    arity          :: SourcePath -> Int,
+    maxArity       :: Int
+}
+
+-- We can now conclude the translation
+
+toFoInterpretation :: ForStmtDB -> FoInterpretationDB
+toFoInterpretation p = FoInterpretationDB {
+    domainFormula = shouldBeProduced p,
+    orderFormula  = compareSourcePaths,
+    labelFormula  = shouldProduceChar,
+    copyFormula   = shouldCopyChar,
+    arity         = undefined,
+    maxArity      = undefined
+}
