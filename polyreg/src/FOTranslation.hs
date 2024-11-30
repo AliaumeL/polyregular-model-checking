@@ -1,4 +1,7 @@
 module FOTranslation where
+
+import Control.Monad.State
+
 --
 -- This module performs the translation 
 -- from a Simple For Program (SFP) into
@@ -13,6 +16,10 @@ module FOTranslation where
 -- variables and distinguish them from quantified
 -- ones, in order to simplify writing our compositional
 -- transition monoid.
+--
+-- This module is completely independent, and we 
+-- convert from the usual For statements into the De Brujin indexes,
+-- and back to FO interpretations using usual variable names.
 
 import QuantifierFree
 
@@ -86,6 +93,7 @@ data FormulaDB = FConst   Bool
                | FCharAt  PosDB Char
                | FQuant   Quant Sort FormulaDB
                deriving (Show, Eq)
+
 
 
 injectBoolExpr :: (BoolDB -> FormulaDB) -> BoolExprDB -> FormulaDB
@@ -187,6 +195,16 @@ transition sp (Seq ss) = undefined
 -- and a boolean expression "b", to construct a formula
 -- deciding if "b" holds (taking as arguments the input position variables only)
 --
+-- To that end, we need to go to this precise source path, and
+-- *unroll* loops enough to reach the boolean expression.
+--
+-- [(For <- body), enterFor ] = compute "body" up to the "i-1" time and then enter the loop
+--
+-- [Seq cs, SeqNumber i] = compute the transition function of the prefix of length "i"
+--
+-- [If e l r, IfLeft] = compute the transition function of the "l" branch (does not care about e)
+-- [If e l r, IfRight] = compute the transition function of the "r" branch (does not care about e)
+--
 isSatisfied :: SourcePath -> ForStmtDB -> BoolExprDB -> FormulaDB
 isSatisfied = undefined
 
@@ -240,3 +258,63 @@ toFoInterpretation p = FoInterpretationDB {
     arity         = undefined,
     maxArity      = undefined
 }
+
+
+
+--- Evaluations 
+
+data EvalFormulaState = EvalFormulaState {
+    inputBoolValues :: BoolDB -> Bool,
+    outputBoolValues :: BoolDB -> Bool,
+    booleanValues :: BoolDB -> Bool,
+    positionValues :: PosDB -> Int
+}
+
+evalFormulaDB :: EvalFormulaState -> String -> FormulaDB -> Bool
+evalFormulaDB s w (FConst b) = b
+evalFormulaDB s w (FVarIn b) = inputBoolValues s b
+evalFormulaDB s w (FVarOut b) = outputBoolValues s b
+evalFormulaDB s w (FVar b) = booleanValues s b
+evalFormulaDB s w (FBin op l r) = evalBin op (evalFormulaDB s w l) (evalFormulaDB s w r)
+evalFormulaDB s w (FNot f) = not (evalFormulaDB s f)
+evalFormulaDB s w (FPosPred op p1 p2) = evalTest op (positionValues s p1) (positionValues s p2)
+evalFormulaDB s w (FCharAt p c) = (w !! positionValues s p) == c
+evalFormulaDB s w (FQuant Exists Pos f) = any (\i -> evalFormulaDB (s { positionValues = \(PosDB p) -> if p == 1 then i else positionValues s (PosDB (p-1)) }) w f) [0..length w]
+evalFormulaDB s w (FQuant Forall Pos f) = all (\i -> evalFormulaDB (s { positionValues = \(PosDB p) -> if p == 1 then i else positionValues s (PosDB (p-1)) }) w f) [0..length w]
+evalFormulaDB s w (FQuant Exists Bool f) = any (\i -> evalFormulaDB (s { booleanValues = \(BoolDB b) -> if b == 1 then i else booleanValues s (BoolDB (b-1)) }) w f) [True, False]
+evalFormulaDB s w (FQuant Forall Bool f) = all (\i -> evalFormulaDB (s { booleanValues = \(BoolDB b) -> if b == 1 then i else booleanValues s (BoolDB (b-1)) }) w f) [True, False]
+
+
+data EvalStmtState = EvalStmtState {
+    word     :: String,
+    boolVars :: BoolDB -> Bool,
+    posVars  :: PosDB -> Int
+} 
+
+evalStmtDB :: ForStmtDB -> State EvalStmtState String
+evalStmtDB (SetTrue b) = do
+    s <- get
+    put (s { boolVars = \(BoolDB b') -> if b == b' then True else boolVars s (BoolDB b') })
+    return True
+evalStmtDB (If e l r) = do
+    s <- get
+    let b = evalFormulaDB (EvalFormulaState (boolVars s) (boolVars s) (boolVars s) (posVars s)) (word s) e
+    if b then evalStmtDB l else evalStmtDB r
+evalStmtDB (For i d body) = do
+    s <- get
+    let positions = case d of
+                        LTR -> [0 .. length (word s) - 1]
+                        RTL -> reverse [0 .. length (word s) - 1]
+    let new_state = \x -> if x == i then True else boolVars s (BoolDB x)
+    content <- mapM (\x -> put (s { posVars = \(PosDB p) -> if p == 1 then x else posVars s (PosDB (p-1)) }) >> evalStmtDB body) positions
+    put (s { boolVars = new_state })
+    return $ and content
+evalStmtDB (PrintPos p) = do
+    s <- get
+    return [word s !! posVars s p]
+evalStmtDB (PrintChar c) = return [c]
+evalStmtDB (Seq ss) = do
+    s <- get
+    content <- mapM (\x -> put (s { boolVars = \(BoolDB b) -> if b == x then True else boolVars s (BoolDB b) }) >> evalStmtDB x) ss
+    return $ concat content
+
