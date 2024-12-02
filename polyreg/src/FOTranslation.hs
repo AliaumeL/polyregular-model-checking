@@ -94,6 +94,48 @@ data FormulaDB = FConst   Bool
                | FQuant   Quant Sort FormulaDB
                deriving (Show, Eq)
 
+prettyPrintSort :: Sort -> String
+prettyPrintSort Pos = "\\mathfrak{p}"
+prettyPrintSort Bool = "\\mathfrak{b}"
+
+prettyPrintM :: FormulaDB -> State [String] String
+prettyPrintM (FConst True) = return $ "\\top"
+prettyPrintM (FConst False) = return $ "\\bot"
+prettyPrintM (FVarIn (BoolDB b)) = return $ "\\mathcal{I}_" ++ show b
+prettyPrintM (FVarOut (BoolDB b)) = return $ "\\mathcal{O}_" ++ show b
+prettyPrintM (FVar (BoolDB b)) = get >>= \s -> return $ s !! b
+prettyPrintM (FBin op l r) = do
+    l' <- prettyPrintM l
+    r' <- prettyPrintM r
+    return $ "(" ++ l' ++ " " ++ show op ++ " " ++ r' ++ ")"
+prettyPrintM (FNot f) = do
+    f' <- prettyPrintM f
+    return $ "\\neg (" ++ f' ++ ")"
+prettyPrintM (FPosPred op (PosDB p1) (PosDB p2)) = do
+    l1 <- get >>= \s -> return $ s !! p1
+    l2 <- get >>= \s -> return $ s !! p2
+    return $ "(" ++ l1 ++ " " ++ show op ++ " " ++ l2 ++ ")"
+prettyPrintM (FCharAt (PosDB p) c) = do
+    l <- get >>= \s -> return $ s !! p
+    return $ "\\mathsf{char}_{" ++ [c] ++ "}(" ++ l ++ ")"
+prettyPrintM (FQuant Exists t f) = do
+    f' <- prettyPrintM f
+    modify (\s -> s ++ [prettyPrintSort t ++ "_{" ++ show (length s) ++ "}"])
+    v <- get >>= \s -> return $ last s
+    return $ "\\exists " ++ v ++ ". " ++ f'
+prettyPrintM (FQuant Forall t f) = do
+    f' <- prettyPrintM f
+    modify (\s -> s ++ [prettyPrintSort t ++ "_{" ++ show (length s) ++ "}"])
+    v <- get >>= \s -> return $ last s
+    return $ "\\forall " ++ v ++ ". " ++ f'
+
+prettyPrint :: FormulaDB -> String
+prettyPrint f = evalState (prettyPrintM f) []
+     
+
+
+
+
 
 
 injectBoolExpr :: (BoolDB -> FormulaDB) -> BoolExprDB -> FormulaDB
@@ -270,6 +312,9 @@ data EvalFormulaState = EvalFormulaState {
     positionValues :: PosDB -> Int
 }
 
+
+{- 
+
 evalFormulaDB :: EvalFormulaState -> String -> FormulaDB -> Bool
 evalFormulaDB s w (FConst b) = b
 evalFormulaDB s w (FVarIn b) = inputBoolValues s b
@@ -284,6 +329,7 @@ evalFormulaDB s w (FQuant Forall Pos f) = all (\i -> evalFormulaDB (s { position
 evalFormulaDB s w (FQuant Exists Bool f) = any (\i -> evalFormulaDB (s { booleanValues = \(BoolDB b) -> if b == 1 then i else booleanValues s (BoolDB (b-1)) }) w f) [True, False]
 evalFormulaDB s w (FQuant Forall Bool f) = all (\i -> evalFormulaDB (s { booleanValues = \(BoolDB b) -> if b == 1 then i else booleanValues s (BoolDB (b-1)) }) w f) [True, False]
 
+-}
 
 data EvalStmtState = EvalStmtState {
     word     :: String,
@@ -291,6 +337,8 @@ data EvalStmtState = EvalStmtState {
     posVars  :: PosDB -> Int
 } 
 
+
+{- 
 evalStmtDB :: ForStmtDB -> State EvalStmtState String
 evalStmtDB (SetTrue b) = do
     s <- get
@@ -318,3 +366,4 @@ evalStmtDB (Seq ss) = do
     content <- mapM (\x -> put (s { boolVars = \(BoolDB b) -> if b == x then True else boolVars s (BoolDB b) }) >> evalStmtDB x) ss
     return $ concat content
 
+-}

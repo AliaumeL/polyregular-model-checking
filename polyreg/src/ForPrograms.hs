@@ -5,26 +5,6 @@ import Control.Monad
 import Data.Map (Map)
 import qualified Data.Map as Map
 
-
--- | v = variable names 
--- | a = atom names (to bind positions to output variables)
-data Types v a = Boolean | Position a | Output OutputType | Function (FunctionType v a)
-    deriving (Show, Eq)
-
-data OutputType = Unit | OutputOne | OutputList OutputType 
-    deriving (Show, Eq)
-
-
--- | A function takes as input
---  (w, positions in w)
---  (u, positions in u)
---  etc...
---  So its input type is a list of pairs of output types and the number of positions in that output type
-data FunctionType v a = 
-        FunctionOutput   [(OutputType, Int)] OutputType
-      | FunctionBoolean  [(OutputType, Int)]
-    deriving (Show, Eq)
-
 data BOp = And | Or | Impl | Iff 
     deriving (Show, Eq)
 
@@ -108,8 +88,5 @@ data Program v t = Program [StmtFun v t] v t
 
 -- | A program without type annotations
 type UProgram = Program String ()
-
--- | A program with type annotations
-type TProgram = Program String (Types String Int)
 
 
