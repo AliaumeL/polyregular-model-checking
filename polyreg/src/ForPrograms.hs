@@ -64,6 +64,8 @@ data Stmt v t = SIf (BExpr v t) (Stmt v t) (Stmt v t) t
               | SSeq [Stmt v t] t
                deriving (Show, Eq)
 
+
+
 letBooleans :: [String] -> Stmt String () -> Stmt String ()
 letBooleans [] _ = error "Empty list of booleans"
 letBooleans [b] block = SLetBoolean b block ()
