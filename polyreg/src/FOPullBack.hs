@@ -43,8 +43,8 @@ inject (FOI.FOQuant FOI.Forall x f) = TSF.FQuant TSF.Forall x TSF.Pos (inject f)
 -- [ x = y  ]  = xT = yT /\ x1 = y1 /\ ... /\ xn = yn
 
 class (Monad m) => MonadPullBack m where
-    freshVar :: FOI.VarName -> Int -> m (TagVarName, [PosVarName])
-    getPos   :: FOI.VarName -> m (TagVarName, [PosVarName])
+    freshVar     :: FOI.VarName -> Int -> m (TagVarName, [PosVarName])
+    getPos       :: FOI.VarName -> m (TagVarName, [PosVarName])
     withFreshVar :: FOI.VarName -> Int -> (TagVarName -> [PosVarName] -> m a) -> m a
 
 

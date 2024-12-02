@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -25,11 +25,18 @@ source-repository head
 
 library
   exposed-modules:
+      FinSets
       FOInterpretation
       FOPullBack
+      ForPrograms
+      ForProgramsTyping
+      FOTranslation
+      FunctionElimination
       HighLevelForPrograms
       HighLevelForProgramsInterpreter
+      Latex
       QuantifierFree
+      ReductionLitEq
       SimpleForPrograms
       SmtSolver
       TwoSortedFormulas
@@ -41,12 +48,12 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing
   build-depends:
-      QuickCheck
-    , base >=4.7 && <5
+      base >=4.7 && <5
     , containers
     , extra
     , mtl
     , process
+    , text
   default-language: Haskell2010
 
 executable polyreg-exe
@@ -59,13 +66,13 @@ executable polyreg-exe
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      QuickCheck
-    , base >=4.7 && <5
+      base >=4.7 && <5
     , containers
     , extra
     , mtl
     , polyreg
     , process
+    , text
   default-language: Haskell2010
 
 test-suite polyreg-test
@@ -74,6 +81,7 @@ test-suite polyreg-test
   other-modules:
       FOInterpretationSpec
       FOPullBackSpec
+      ForProgramSpec
       HighLevelForProgramsInterpreterSpec
       SimpleForProgramsSpec
       SmtSolverSpec
@@ -93,4 +101,5 @@ test-suite polyreg-test
     , mtl
     , polyreg
     , process
+    , text
   default-language: Haskell2010
