@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -25,7 +25,6 @@ source-repository head
 
 library
   exposed-modules:
-      FinSets
       FOInterpretation
       FOPullBack
       ForPrograms
@@ -35,6 +34,14 @@ library
       HighLevelForPrograms
       HighLevelForProgramsInterpreter
       Latex
+      Parser.HighLevelForProgram.Abs
+      Parser.HighLevelForProgram.ErrM
+      Parser.HighLevelForProgram.Lex
+      Parser.HighLevelForProgram.Par
+      Parser.HighLevelForProgram.Print
+      Parser.HighLevelForProgram.Skel
+      Parser.ParsedToForProgram
+      Parser.ParseHighLevel
       QuantifierFree
       ReductionLitEq
       SimpleForPrograms
@@ -47,8 +54,12 @@ library
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing
+  build-tools:
+      alex
+    , happy
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
     , containers
     , extra
     , mtl
@@ -65,8 +76,12 @@ executable polyreg-exe
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
     , containers
     , extra
     , mtl
@@ -83,6 +98,7 @@ test-suite polyreg-test
       FOPullBackSpec
       ForProgramSpec
       HighLevelForProgramsInterpreterSpec
+      Parser.ParseHighLevelSpec
       SimpleForProgramsSpec
       SmtSolverSpec
       TwoSortedFormulaSpec
@@ -92,8 +108,12 @@ test-suite polyreg-test
   hs-source-dirs:
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
   build-depends:
       QuickCheck
+    , array
     , base >=4.7 && <5
     , containers
     , extra
