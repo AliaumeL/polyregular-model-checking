@@ -184,6 +184,12 @@ guardOrThrow False s = do
 newtype TypeMonad a = TypeMonad (ReaderT TypingContext (Except TypeError) a)
     deriving (Functor, Applicative, Monad, MonadError TypeError, MonadReader TypingContext)
 
+
+runTypeMonad :: TypeMonad a -> Either TypeError a
+runTypeMonad (TypeMonad m) = runExcept (runReaderT m ctx)
+    where
+        ctx = TypingContext Map.empty Map.empty
+
 instance MonadFail TypeMonad where
     fail s = do
         ctx <- ask
@@ -621,15 +627,24 @@ inferFunctionM (StmtFun v args s (Just (TFun (FPred args')))) = do
     withCtx (const ctx') $ do
         s' <- inferStmtM s TBool
         return (StmtFun v args s' (TFun (FPred args')))
-inferFunctionM _ = do
+inferFunctionM (StmtFun v _ _ _) = do
     ctx <- ask
-    throwError (TypeError "(inferFunctionM) Invalid function type"  ctx)
+    throwError (TypeError ("(inferFunctionM) Impossible to infer function type " ++ v)  ctx)
 
-inferProgramM :: [StmtFun String (Maybe ValueType)] -> TypeMonad ()
-inferProgramM [] = return ()
+inferProgramM :: [StmtFun String (Maybe ValueType)] -> TypeMonad [StmtFun String ValueType]
+inferProgramM [] = return []
 inferProgramM (f : fs) = do
     f' <- inferFunctionM f
     oldFuncs <- asks funcs
     TFun (FProd args t) <- return (getType f')
     let newFuncs = Map.insert (funName f) (FProd args t) oldFuncs
-    withCtx (\ctx -> ctx {funcs = newFuncs}) $ inferProgramM fs
+    ts <- withCtx (\ctx -> ctx {funcs = newFuncs}) $ inferProgramM fs
+    return (f' : ts)
+
+
+
+inferProgram :: (Program String (Maybe ValueType)) -> Either TypeError (Program String ValueType)
+inferProgram (Program p v) = Program <$> runTypeMonad (inferProgramM p) <*> pure v
+
+typecheckProgram :: (Program String ValueType) -> Either TypeError ()
+typecheckProgram (Program p v) =  runTypeMonad (typeCheckProgramM p)

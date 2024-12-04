@@ -110,7 +110,7 @@ unlitEqFunction (StmtFun v args stmt ()) = do
 
 
 unlitEqProgram :: UProgram -> UProgram
-unlitEqProgram (Program funcs m ()) = Program newFuncs' m ()
+unlitEqProgram (Program funcs m) = Program newFuncs' m
     where
         newFuncs :: FreshM [StmtFun String ()]
         newFuncs = mapM unlitEqFunction funcs

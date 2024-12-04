@@ -3,7 +3,10 @@ module Parser.ParsedToForProgram where
 import Control.Monad
 
 import qualified Parser.HighLevelForProgram.Abs as P
+import qualified ForProgramsTyping as T
 import ForPrograms 
+
+import Control.Monad.Except
 
 type M a = Either String a
 
@@ -20,10 +23,13 @@ type PAStmt = Stmt String (Maybe PType)
 type PAStmtFun = StmtFun String (Maybe PType)
 
 
-parsedToForProgram :: P.Program -> M PAProgram
-parsedToForProgram (P.ProgramC fs) = do 
+parsedToForProgramRaw :: P.Program -> M PAProgram
+parsedToForProgramRaw (P.ProgramC fs) = do 
     progs <- forM fs parsedToFunction
-    return $ Program progs "main" Nothing
+    return $ Program progs "main" 
+
+parsedToForProgram :: P.Program -> M (Program String (Maybe T.ValueType))
+parsedToForProgram p = parsedToForProgramRaw p >>= typeRemap
 
 
 identToString :: P.Ident -> String
@@ -32,9 +38,9 @@ identToString (P.Ident s) = s
 identsToStrings :: [P.Ident] -> [String]
 identsToStrings = map identToString
 
-parsedToArgD :: P.ArgD -> (String, [String])
-parsedToArgD (P.ArgDSole (P.Ident name) t) = (name, [])
-parsedToArgD (P.ArgDWithPoses (P.Ident name) t poses) = (name, identsToStrings poses)
+parsedToArgD :: P.ArgD -> ((String, PType), [String])
+parsedToArgD (P.ArgDSole (P.Ident name) t) = (name, t, [])
+parsedToArgD (P.ArgDWithPoses (P.Ident name) t poses) = (name, t,  identsToStrings poses)
 
 data RetContext = RBool | RVal
 
@@ -198,3 +204,25 @@ parsedToOutputExpr (P.VEFunc i args) = do
     args <- forM args parsedToArg
     return $ OApp (identToString i) args Nothing
 parsedToOutputExpr _ = Left "Expected an output expression"
+
+
+data InvalidTypeWritten = InvalidTypeWritten PType deriving (Show)
+
+translateListType :: PType -> M T.OutputType
+translateListType (P.TList t) = T.TOList <$> translateListType t
+translateListType (P.TChar) = return T.TOChar
+translateListType t =  throwError . show $ InvalidTypeWritten t
+
+translateType :: PType -> M T.ValueType
+translateType P.TChar = T.TOutput <$> translateListType (P.TChar)
+translateType (P.TList t) = T.TOutput <$> translateListType (P.TList t)
+translateType P.TBool = return T.TBool
+
+translateMaybeType :: Maybe PType -> M (Maybe T.ValueType)
+translateMaybeType Nothing = return Nothing
+translateMaybeType (Just t) = Just <$> translateType t
+
+typeRemap :: PAProgram -> M (Program String (Maybe T.ValueType))
+typeRemap p = mapM translateMaybeType p
+
+
