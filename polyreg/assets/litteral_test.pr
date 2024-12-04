@@ -1,0 +1,49 @@
+def getFirstWord (s : [Char]) : [Char] :=
+    let mut seen_space : Bool := False in
+    for (i, v : Char) in s do 
+        if not seen_space and not (v =Char= ' ') then 
+            yield v
+        endif
+        if v =Char= ' ' then 
+            setTrue seen_space
+        endif
+    done
+
+def getCurrentWord (s : [Char] with (i)) : [Char] :=
+    let mut seen_space : Bool := False in
+    for (j, v : Char) in s do 
+       if j > i then 
+           if v =Char= ' ' then 
+               setTrue seen_space
+           endif
+           if not seen_space then 
+              yield v 
+           endif
+       endif
+     done 
+
+def words (s : [Char]) : [[Char]] :=
+    yield getFirstWord(s)
+    for (i, v : Char) in s do 
+        if v =Char= ' ' then 
+            yield getCurrentWord(s with (i)) 
+        endif 
+     done
+
+
+def main (w : [Char]) : [Char] :=
+    let v : [[Char]] := words(w) in
+    if v =[Char]= [] then
+        return "No words found"
+    else
+        if v =[Char]= [""] then
+            return "It is the empty string"
+        else
+            if v =[Char]= ["go", "to", "park"] then
+                return "gotopark!"
+            else
+                return "No match"
+            endif
+        endif
+    endif
+
