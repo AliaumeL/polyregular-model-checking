@@ -1,0 +1,63 @@
+-- Translate to haskell with `bnfc --haskell -d -p Parser HighLevelForProgram.cf`
+-- Remember to remove the Test.hs file, which breaks the build
+
+comment "#" ;
+
+ProgramC. Program ::= [Func] ;
+
+separator nonempty Func "" ;
+
+FuncC. Func ::= "def" Ident "(" [ArgD] ")" ":" Type ":=" [Stmt] ;
+
+
+SFor. Stmt ::= "for" "(" Ident "," Ident ")" "in" Expr "do" [Stmt] "done" ;
+SIf.  Stmt ::= "if" Expr "then" [Stmt] "endif";
+SIfE. Stmt ::=  "if" Expr "then" [Stmt] "else" [Stmt] "endif" ;
+SYield. Stmt ::= "yield" Expr ;
+SReturn. Stmt ::= "return" Expr ;
+SLetIn.  Stmt ::= "let" Ident ":" Type  ":=" Expr "in" Stmt ;
+SLetBIn. Stmt ::= "let mut" Ident ":" Type ":=" "False" "in" Stmt ;
+SLetSetTrue. Stmt ::= "setTrue" Ident;
+
+separator nonempty Stmt "" ;
+
+VEChar.        Expr3 ::= Char ; 
+VEString.      Expr3 ::= String ;
+VEListConstr.  Expr3 ::= "[" [Expr] "]" ;
+VEGen.         Expr3 ::= "{" Type "|" Stmt "|" "}" ;
+VEVal.         Expr3 ::= Ident ;
+VERev.         Expr3 ::= "reversed" "(" Expr ")" ;
+VEFunc.        Expr3 ::= Ident "(" [VEArg] ")" ;
+BETrue.        Expr3 ::= "True" ;
+BEFalse.       Expr3 ::= "False" ;
+BENot.         Expr3 ::= "not" Expr3;
+BEBinOp.       Expr2 ::= Expr3 BinOp Expr3 ;
+BEAnd.         Expr1 ::= Expr2 "and" Expr1;
+BEOr.          Expr ::= Expr1 "or" Expr;
+coercions Expr 3 ;
+separator nonempty Expr "," ;
+
+TChar. Type1 ::= "Char" ;
+TList. Type1 ::= "[" Type "]" ;
+TBool. Type2 ::= "Bool" ;
+_.     Type  ::= Type1 ; 
+_.     Type  ::= Type2 ;
+
+
+VEArgSole. VEArg    ::= Expr ;
+VEArgWithPoses. VEArg ::= Expr "with" "(" [Ident] ")" ;
+separator nonempty Ident "," ;
+separator VEArg "," ;
+
+ArgDSole. ArgD ::= Ident ":" Type;
+ArgDWithPoses. ArgD ::= Ident ":" Type "with" "(" [Ident] ")";
+separator ArgD "," ;
+
+BinOpEq.  BinOp ::= "=" ;
+BinOpNeq. BinOp ::= "!=" ;
+BinOpLeq. BinOp ::= "<=" ;
+BinOpLt.  BinOp ::= "<" ;
+BinOpGeq. BinOp ::= ">=" ;
+BinOpGt.  BinOp ::= ">" ; 
+BinOpVEq. BinOp ::= "===" ; 
+BinOpVNe. BinOp ::= "!==" ;
