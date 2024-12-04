@@ -3,6 +3,7 @@
 module FunctionElimination where
 
 import ForPrograms
+import ForProgramsTyping
 
 import Control.Monad
 import Control.Monad.State
@@ -12,14 +13,59 @@ import qualified Data.Map as M
 import Data.Tuple.Extra
 
 
+--
+-- We want to eliminate function calls from the program.
+-- First we design a verifier for this property.
+--
+hasFunctionCall :: Program String t ->  Bool
+hasFunctionCall (Program funcs _) = any (\(StmtFun _ _ s _) -> hasFunctionCallStmt s) funcs
+
+hasFunctionCallStmt :: Stmt String t -> Bool
+hasFunctionCallStmt  (SYield o _) = hasFunctionCallOExpr o
+hasFunctionCallStmt  (SOReturn o _) = hasFunctionCallOExpr o
+hasFunctionCallStmt  (SBReturn b _) = hasFunctionCallBExpr b
+hasFunctionCallStmt  (SIf b s1 s2 _) = hasFunctionCallBExpr b || hasFunctionCallStmt s1 || hasFunctionCallStmt s2
+hasFunctionCallStmt  (SLetOutput _ o s _) = hasFunctionCallOExpr o || hasFunctionCallStmt s
+hasFunctionCallStmt  (SLetBoolean _ s _) = hasFunctionCallStmt s
+hasFunctionCallStmt  (SSetTrue _ _) = False
+hasFunctionCallStmt  (SFor _ o s _) = hasFunctionCallOExpr o || hasFunctionCallStmt s
+hasFunctionCallStmt  (SSeq ss _) = any hasFunctionCallStmt ss
+
+hasFunctionCallBExpr :: BExpr String t -> Bool
+hasFunctionCallBExpr (BConst _ _) = False
+hasFunctionCallBExpr (BNot b _) = hasFunctionCallBExpr b
+hasFunctionCallBExpr (BOp _ b1 b2 _) = hasFunctionCallBExpr b1 || hasFunctionCallBExpr b2
+hasFunctionCallBExpr (BComp _ p1 p2 _) = hasFunctionCallPExpr p1 || hasFunctionCallPExpr p2
+hasFunctionCallBExpr (BVar v _) = False
+hasFunctionCallBExpr (BGen s _) = hasFunctionCallStmt s
+hasFunctionCallBExpr (BApp v ops _) = True
+hasFunctionCallBExpr (BLitEq _ c o _) = hasFunctionCallOExpr o
+
+hasFunctionCallPExpr :: PExpr String t -> Bool
+hasFunctionCallPExpr (PVar _ _) = False
+
+hasFunctionCallCExpr :: CExpr String t -> Bool
+hasFunctionCallCExpr x = False
+
+hasFunctionCallOExpr :: OExpr String t -> Bool
+hasFunctionCallOExpr (OVar _ _) = False
+hasFunctionCallOExpr (OConst _ _) = False
+hasFunctionCallOExpr (OList os _) = any hasFunctionCallOExpr os
+hasFunctionCallOExpr (ORev o _) = hasFunctionCallOExpr o
+hasFunctionCallOExpr (OIndex o p _) = hasFunctionCallOExpr o || hasFunctionCallPExpr p
+hasFunctionCallOExpr (OApp _ ops _) = True
+hasFunctionCallOExpr (OGen s _) = hasFunctionCallStmt s
+
+
+
 class (Monad m) => MonadElim m where
     introduceVar     :: String -> m String
     translateVar     :: String -> m String
-    getFunctionBody  :: String -> m (StmtFun String ())
-    putFunctionBody  :: (StmtFun String ()) -> m ()
+    getFunctionBody  :: String -> m (StmtFun String ValueType)
+    putFunctionBody  :: (StmtFun String ValueType) -> m ()
     resetVariables   :: m ()
 
-type ElimM = State (Int, Map String String, (Map String (StmtFun String ())))
+type ElimM = State (Int, Map String String, (Map String (StmtFun String ValueType)))
 
 instance MonadElim ElimM where
     introduceVar s = do
@@ -44,219 +90,219 @@ instance MonadElim ElimM where
         put (c, m, M.insert (funName stmt) stmt f)
 
 
-refreshBExpr :: (MonadElim m) => BExpr String () -> m (BExpr String ())
-refreshBExpr (BConst b ()) = pure $ BConst b ()
-refreshBExpr (BNot b ()) = do
+refreshBExpr :: (MonadElim m) => BExpr String ValueType -> m (BExpr String ValueType)
+refreshBExpr (BConst b t) = pure $ BConst b t
+refreshBExpr (BNot b t) = do
     b' <- refreshBExpr b
-    return $ BNot b' ()
-refreshBExpr (BOp op b1 b2 ()) = do
+    return $ BNot b' t
+refreshBExpr (BOp op b1 b2 t) = do
     b1' <- refreshBExpr b1
     b2' <- refreshBExpr b2
-    return $ BOp op b1' b2' ()
-refreshBExpr (BComp c p1 p2 ()) = do
+    return $ BOp op b1' b2' t
+refreshBExpr (BComp c p1 p2 t) = do
     p1' <- refreshPExpr p1
     p2' <- refreshPExpr p2
-    return $ BComp c p1' p2' ()
-refreshBExpr (BVar v ()) = do
+    return $ BComp c p1' p2' t
+refreshBExpr (BVar v t) = do
     v' <- translateVar v
-    return $ BVar v' ()
-refreshBExpr (BGen stmt ()) = do
+    return $ BVar v' t
+refreshBExpr (BGen stmt t) = do
     stmt' <- refreshStmt stmt
-    return $ BGen stmt' ()
-refreshBExpr (BApp v ops ()) = do
+    return $ BGen stmt' t
+refreshBExpr (BApp v ops t) = do
     ops' <- mapM (\(o, ps) -> do
             o' <- refreshOExpr o
             ps' <- mapM refreshPExpr ps
             return (o', ps')
         ) ops
     v' <- translateVar v
-    return $ BApp v' ops' ()
-refreshBExpr (BLitEq () c o ()) = do
+    return $ BApp v' ops' t
+refreshBExpr (BLitEq t c o t') = do
     c' <- refreshCExpr c
     o' <- refreshOExpr o
-    return $ BLitEq () c' o' ()
+    return $ BLitEq t c' o' t'
 
-refreshPExpr :: (MonadElim m) => PExpr String () -> m (PExpr String ())
-refreshPExpr (PVar v ()) = do
+refreshPExpr :: (MonadElim m) => PExpr String ValueType -> m (PExpr String ValueType)
+refreshPExpr (PVar v t) = do
     v' <- translateVar v
-    return $ PVar v' ()
+    return $ PVar v' t
 
-refreshCExpr :: (MonadElim m) => CExpr String () -> m (CExpr String ())
+refreshCExpr :: (MonadElim m) => CExpr String ValueType -> m (CExpr String ValueType)
 refreshCExpr x = pure x
 
-refreshOExpr :: (MonadElim m) => OExpr String () -> m (OExpr String ())
-refreshOExpr (OVar v ()) = do
+refreshOExpr :: (MonadElim m) => OExpr String ValueType -> m (OExpr String ValueType)
+refreshOExpr (OVar v t) = do
     v' <- translateVar v
-    return $ OVar v' ()
-refreshOExpr (OConst c ()) = pure (OConst c ())
-refreshOExpr (OList os ()) = do
+    return $ OVar v' t
+refreshOExpr (OConst c t) = pure (OConst c t)
+refreshOExpr (OList os t) = do
     os' <- mapM refreshOExpr os
-    return $ OList os' ()
-refreshOExpr (ORev o ()) = do
+    return $ OList os' t
+refreshOExpr (ORev o t) = do
     o' <- refreshOExpr o
-    return $ ORev o' ()
-refreshOExpr (OIndex o p ()) = do
+    return $ ORev o' t
+refreshOExpr (OIndex o p t) = do
     o' <- refreshOExpr o
     p' <- refreshPExpr p
-    return $ OIndex o' p' ()
-refreshOExpr (OApp v ops ()) = do
+    return $ OIndex o' p' t
+refreshOExpr (OApp v ops t) = do
     ops' <- mapM (\(o, ps) -> do
             o' <- refreshOExpr o
             ps' <- mapM refreshPExpr ps
             return (o', ps')
         ) ops
     v' <- translateVar v
-    return $ OApp v' ops' ()
-refreshOExpr (OGen stmt ()) = do
+    return $ OApp v' ops' t
+refreshOExpr (OGen stmt t) = do
     stmt' <- refreshStmt stmt
-    return $ OGen stmt' ()
+    return $ OGen stmt' t
 
-refreshStmt :: (MonadElim m) => Stmt String () -> m (Stmt String ())
-refreshStmt (SYield o ()) = do
+refreshStmt :: (MonadElim m) => Stmt String ValueType -> m (Stmt String ValueType)
+refreshStmt (SYield o t) = do
     o' <- refreshOExpr o
-    return $ SYield o' ()
-refreshStmt (SOReturn o ()) = do
+    return $ SYield o' t
+refreshStmt (SOReturn o t) = do
     o' <- refreshOExpr o
-    return $ SOReturn o' ()
-refreshStmt (SBReturn b ()) = do
+    return $ SOReturn o' t
+refreshStmt (SBReturn b t) = do
     b' <- refreshBExpr b
-    return $ SBReturn b' ()
-refreshStmt (SIf b s1 s2 ()) = do
+    return $ SBReturn b' t
+refreshStmt (SIf b s1 s2 t) = do
     b' <- refreshBExpr b
     s1' <- refreshStmt s1
     s2' <- refreshStmt s2
-    return $ SIf b' s1' s2' ()
-refreshStmt (SLetOutput (v, ()) o s ()) = do
+    return $ SIf b' s1' s2' t
+refreshStmt (SLetOutput (v, t') o s t) = do
     o' <- refreshOExpr o
     v' <- introduceVar v
     s' <- refreshStmt s
-    return $ SLetOutput (v', ()) o' s' ()
-refreshStmt (SLetBoolean v s ()) = do
+    return $ SLetOutput (v', t') o' s' t
+refreshStmt (SLetBoolean v s t) = do
     v' <- introduceVar v
     s' <- refreshStmt s
-    return $ SLetBoolean v' s' ()
-refreshStmt (SSetTrue v ()) = do
+    return $ SLetBoolean v' s' t
+refreshStmt (SSetTrue v t) = do
     v' <- translateVar v
-    return $ SSetTrue v' ()
-refreshStmt (SFor (i, e, ()) v s ()) = do
+    return $ SSetTrue v' t
+refreshStmt (SFor (i, e, t') v s t) = do
     v' <- refreshOExpr v
     i' <- introduceVar i
     e' <- introduceVar e
     s' <- refreshStmt s
-    return $ SFor (i', e', ()) v' s' ()
-refreshStmt (SSeq ss ()) = do
+    return $ SFor (i', e', t') v' s' t
+refreshStmt (SSeq ss t) = do
     ss' <- mapM refreshStmt ss
-    return $ SSeq ss' ()
+    return $ SSeq ss' t
 
 
-refreshAndReset :: (MonadElim m) => Stmt String () -> m (Stmt String ())
+refreshAndReset :: (MonadElim m) => Stmt String ValueType -> m (Stmt String ValueType)
 refreshAndReset stmt = do
     stmt' <-  refreshStmt stmt
     resetVariables
     return stmt'
 
 data SubstMap = SubstMap {
-    pVars :: Map String (PExpr String ()),
-    oVars :: Map String (OExpr String ())
+    pVars :: Map String (PExpr String ValueType),
+    oVars :: Map String (OExpr String ValueType)
 } deriving(Show, Eq)
 
 
-substBExpr :: SubstMap -> BExpr String () -> BExpr String ()
-substBExpr _ (BConst b ()) = BConst b ()
-substBExpr s (BNot b ()) = BNot (substBExpr s b) ()
-substBExpr s (BOp op b1 b2 ()) = BOp op (substBExpr s b1) (substBExpr s b2) ()
-substBExpr s (BComp c p1 p2 ()) = BComp c (substPExpr s p1) (substPExpr s p2) ()
-substBExpr _ (BVar v ()) = BVar v ()
-substBExpr s (BGen stmt ()) = BGen (substStmt s stmt) ()
-substBExpr s (BApp v ops ()) = BApp v (map (\(o, ps) -> (substOExpr s o, map (substPExpr s) ps)) ops) ()
-substBExpr s (BLitEq () c o ()) = BLitEq () (substCExpr s c) (substOExpr s o) ()
+substBExpr :: SubstMap -> BExpr String ValueType -> BExpr String ValueType
+substBExpr _ (BConst b t) = BConst b t
+substBExpr s (BNot b t) = BNot (substBExpr s b) t
+substBExpr s (BOp op b1 b2 t) = BOp op (substBExpr s b1) (substBExpr s b2) t
+substBExpr s (BComp c p1 p2 t) = BComp c (substPExpr s p1) (substPExpr s p2) t
+substBExpr _ (BVar v t) = BVar v t
+substBExpr s (BGen stmt t) = BGen (substStmt s stmt) t
+substBExpr s (BApp v ops t) = BApp v (map (\(o, ps) -> (substOExpr s o, map (substPExpr s) ps)) ops) t
+substBExpr s (BLitEq t' c o t) = BLitEq t' (substCExpr s c) (substOExpr s o) t
 
-substPExpr :: SubstMap -> PExpr String () -> PExpr String ()
-substPExpr s (PVar v ()) = case M.lookup v (pVars s) of
+substPExpr :: SubstMap -> PExpr String ValueType -> PExpr String ValueType
+substPExpr s (PVar v t) = case M.lookup v (pVars s) of
     Nothing -> error $ "(substPexpr) Variable not found: " ++ v
     Just p -> p
 
-substCExpr :: SubstMap -> CExpr String () -> CExpr String ()
+substCExpr :: SubstMap -> CExpr String ValueType -> CExpr String ValueType
 substCExpr _ x = x
 
-substOExpr :: SubstMap -> OExpr String () -> OExpr String ()
-substOExpr s (OVar v ()) = case M.lookup v (oVars s) of
+substOExpr :: SubstMap -> OExpr String ValueType -> OExpr String ValueType
+substOExpr s (OVar v t) = case M.lookup v (oVars s) of
     Nothing -> error $ "(substOExpr) Variable not found: " ++ v
     Just o -> o
-substOExpr s (OConst c ()) = OConst (substCExpr s c) ()
-substOExpr s (OList os ()) = OList (map (substOExpr s) os) ()
-substOExpr s (ORev o ()) = ORev (substOExpr s o) ()
-substOExpr s (OIndex o p ()) = OIndex (substOExpr s o) (substPExpr s p) ()
-substOExpr s (OApp v ops ()) = OApp v (map (\(o, ps) -> (substOExpr s o, map (substPExpr s) ps)) ops) ()
-substOExpr s (OGen stmt ()) = OGen (substStmt s stmt) ()
+substOExpr s (OConst c t) = OConst (substCExpr s c) t
+substOExpr s (OList os t) = OList (map (substOExpr s) os) t
+substOExpr s (ORev o t) = ORev (substOExpr s o) t
+substOExpr s (OIndex o p t) = OIndex (substOExpr s o) (substPExpr s p) t
+substOExpr s (OApp v ops t) = OApp v (map (\(o, ps) -> (substOExpr s o, map (substPExpr s) ps)) ops) t
+substOExpr s (OGen stmt t) = OGen (substStmt s stmt) t
 
-substStmt :: SubstMap -> Stmt String () -> Stmt String ()
-substStmt s (SYield o ()) = SYield (substOExpr s o) ()
-substStmt s (SOReturn o ()) = SOReturn (substOExpr s o) ()
-substStmt s (SBReturn b ()) = SBReturn (substBExpr s b) ()
-substStmt s (SIf b s1 s2 ()) = SIf (substBExpr s b) (substStmt s s1) (substStmt s s2) ()
-substStmt s (SLetOutput (v, ()) o stmt ()) = SLetOutput (v, ()) (substOExpr s o) (substStmt s stmt) ()
-substStmt s (SLetBoolean v stmt ()) = SLetBoolean v (substStmt s stmt) ()
-substStmt _ (SSetTrue v ()) = SSetTrue v ()
-substStmt s (SFor (i, e, ()) v stmt ()) = SFor (i, e, ()) (substOExpr s v) (substStmt s stmt) ()
-substStmt s (SSeq ss ()) = SSeq (map (substStmt s) ss) ()
+substStmt :: SubstMap -> Stmt String ValueType -> Stmt String ValueType
+substStmt s (SYield o t) = SYield (substOExpr s o) t
+substStmt s (SOReturn o t) = SOReturn (substOExpr s o) t
+substStmt s (SBReturn b t) = SBReturn (substBExpr s b) t
+substStmt s (SIf b s1 s2 t) = SIf (substBExpr s b) (substStmt s s1) (substStmt s s2) t
+substStmt s (SLetOutput (v, t') o stmt t) = SLetOutput (v, t') (substOExpr s o) (substStmt s stmt) t
+substStmt s (SLetBoolean v stmt t) = SLetBoolean v (substStmt s stmt) t
+substStmt _ (SSetTrue v t) = SSetTrue v t
+substStmt s (SFor (i, e, t') v stmt t) = SFor (i, e, t') (substOExpr s v) (substStmt s stmt) t
+substStmt s (SSeq ss t) = SSeq (map (substStmt s) ss) t
 
 
-makeArguments :: [(String, t, [String])] -> [(OExpr String (), [PExpr String ()])] -> SubstMap
+makeArguments :: [(String, ValueType, [String])] -> [(OExpr String ValueType, [PExpr String ValueType])] -> SubstMap
 makeArguments names values = SubstMap {
     pVars = M.fromList $ zip (concatMap thd3 names) (concatMap snd values),
     oVars = M.fromList $ zip (map fst3 names) (map fst values)
 }
 
 
-elimBExpr :: (MonadElim m) => BExpr String () -> m (BExpr String ())
-elimBExpr (BConst b ()) = pure $ BConst b ()
-elimBExpr (BNot b ()) = do
+elimBExpr :: (MonadElim m) => BExpr String ValueType -> m (BExpr String ValueType)
+elimBExpr (BConst b t) = pure $ BConst b t
+elimBExpr (BNot b t) = do
     b' <- elimBExpr b
-    return $ BNot b' ()
-elimBExpr (BOp op b1 b2 ()) = do
+    return $ BNot b' t
+elimBExpr (BOp op b1 b2 t) = do
     b1' <- elimBExpr b1
     b2' <- elimBExpr b2
-    return $ BOp op b1' b2' ()
-elimBExpr (BComp c p1 p2 ()) = do
+    return $ BOp op b1' b2' t
+elimBExpr (BComp c p1 p2 t) = do
     p1' <- elimPExpr p1
     p2' <- elimPExpr p2
-    return $ BComp c p1' p2' ()
-elimBExpr (BVar v ()) = pure $ BVar v ()
-elimBExpr (BGen stmt ()) = do
+    return $ BComp c p1' p2' t
+elimBExpr (BVar v t) = pure $ BVar v t
+elimBExpr (BGen stmt t) = do
     stmt' <- elimStmt stmt
-    return $ BGen stmt' ()
-elimBExpr (BApp v ops ()) = do
+    return $ BGen stmt' t
+elimBExpr (BApp v ops t) = do
     (StmtFun _ args body _) <- getFunctionBody v
     let argsmap = makeArguments args ops
     body' <- refreshAndReset . substStmt argsmap $ body
-    return $ BGen body' ()
-elimBExpr (BLitEq () c o ()) = do
+    return $ BGen body' t
+elimBExpr (BLitEq t' c o t) = do
     c' <- elimCExpr c
     o' <- elimOExpr o
-    return $ BLitEq () c' o' ()
+    return $ BLitEq t' c' o' t
 
 
-elimPExpr :: (MonadElim m) => PExpr String () -> m (PExpr String ())
+elimPExpr :: (MonadElim m) => PExpr String ValueType -> m (PExpr String ValueType)
 elimPExpr x = pure x
 
-elimCExpr :: (MonadElim m) => CExpr String () -> m (CExpr String ())
+elimCExpr :: (MonadElim m) => CExpr String ValueType -> m (CExpr String ValueType)
 elimCExpr x = pure x
 
-elimOExpr :: (MonadElim m) => OExpr String () -> m (OExpr String ())
-elimOExpr (OVar v ()) = pure $ OVar v ()
-elimOExpr (OConst c ()) = pure $ OConst c ()
-elimOExpr (OList os ()) = do
+elimOExpr :: (MonadElim m) => OExpr String ValueType -> m (OExpr String ValueType)
+elimOExpr (OVar v t) = pure $ OVar v t
+elimOExpr (OConst c t) = pure $ OConst c t
+elimOExpr (OList os t) = do
     os' <- mapM elimOExpr os
-    return $ OList os' ()
-elimOExpr (ORev o ()) = do
+    return $ OList os' t
+elimOExpr (ORev o t) = do
     o' <- elimOExpr o
-    return $ ORev o' ()
-elimOExpr (OIndex o p ()) = do
+    return $ ORev o' t
+elimOExpr (OIndex o p t) = do
     o' <- elimOExpr o
     p' <- elimPExpr p
-    return $ OIndex o' p' ()
-elimOExpr (OApp v ops ()) = do
+    return $ OIndex o' p' t
+elimOExpr (OApp v ops t) = do
     (StmtFun _ args body _) <- getFunctionBody v
     ops' <- mapM (\(o, ps) -> do
             o' <- elimOExpr o
@@ -265,50 +311,50 @@ elimOExpr (OApp v ops ()) = do
         ) ops
     let argsmap = makeArguments args ops'
     body' <- refreshAndReset . substStmt argsmap $ body
-    return $ OGen body' ()
-elimOExpr (OGen stmt ()) = do
+    return $ OGen body' t
+elimOExpr (OGen stmt t) = do
     stmt' <- elimStmt stmt
-    return $ OGen stmt' ()
+    return $ OGen stmt' t
 
-elimStmt :: (MonadElim m) => Stmt String () -> m (Stmt String ())
-elimStmt (SYield o ()) = do
+elimStmt :: (MonadElim m) => Stmt String ValueType -> m (Stmt String ValueType)
+elimStmt (SYield o t) = do
     o' <- elimOExpr o
-    return $ SYield o' ()
-elimStmt (SOReturn o ()) = do
+    return $ SYield o' t
+elimStmt (SOReturn o t) = do
     o' <- elimOExpr o
-    return $ SOReturn o' ()
-elimStmt (SBReturn b ()) = do
+    return $ SOReturn o' t
+elimStmt (SBReturn b t) = do
     b' <- elimBExpr b
-    return $ SBReturn b' ()
-elimStmt (SIf b s1 s2 ()) = do
+    return $ SBReturn b' t
+elimStmt (SIf b s1 s2 t) = do
     b' <- elimBExpr b
     s1' <- elimStmt s1
     s2' <- elimStmt s2
-    return $ SIf b' s1' s2' ()
-elimStmt (SLetOutput v o stmt ()) = do
+    return $ SIf b' s1' s2' t
+elimStmt (SLetOutput v o stmt t) = do
     o' <- elimOExpr o
     stmt' <- elimStmt stmt
-    return $ SLetOutput v o' stmt' ()
-elimStmt (SLetBoolean v stmt ()) = do
+    return $ SLetOutput v o' stmt' t
+elimStmt (SLetBoolean v stmt t) = do
     stmt' <- elimStmt stmt
-    return $ SLetBoolean v stmt' ()
-elimStmt (SSetTrue v ()) = pure $ SSetTrue v ()
-elimStmt (SFor (i, e, ()) v stmt ()) = do
+    return $ SLetBoolean v stmt' t
+elimStmt (SSetTrue v t) = pure $ SSetTrue v t
+elimStmt (SFor (i, e, t') v stmt t) = do
     v' <- elimOExpr v
     stmt' <- elimStmt stmt
-    return $ SFor (i, e, ()) v' stmt' ()
-elimStmt (SSeq ss ()) = do
+    return $ SFor (i, e, t') v' stmt' t
+elimStmt (SSeq ss t) = do
     ss' <- mapM elimStmt ss
-    return $ SSeq ss' ()
+    return $ SSeq ss' t
 
 
-elimProgramM :: (MonadElim m) => UProgram -> m UProgram
+elimProgramM :: (MonadElim m) => TProgram -> m TProgram
 elimProgramM (Program funcs m) = do
-    newFuncs <- forM funcs $ \(StmtFun v args stmt _) -> do
+    newFuncs <- forM funcs $ \(StmtFun v args stmt t) -> do
                     stmt' <- elimStmt stmt
-                    putFunctionBody (StmtFun v args stmt' ()) 
-                    return $ StmtFun v args stmt' ()
+                    putFunctionBody (StmtFun v args stmt' t) 
+                    return $ StmtFun v args stmt' t
     return $ Program newFuncs m
 
-elimProgram :: UProgram -> UProgram
-elimProgram p = evalState (elimProgramM p :: ElimM UProgram) (0, M.empty, M.empty)
+elimProgram :: TProgram -> TProgram
+elimProgram p = evalState (elimProgramM p :: ElimM TProgram) (0, M.empty, M.empty)

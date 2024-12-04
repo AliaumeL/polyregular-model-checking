@@ -82,5 +82,3 @@ data Program v t = Program [StmtFun v t] v
 
 -- | A program without type annotations
 type UProgram = Program String ()
-
-

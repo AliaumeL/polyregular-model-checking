@@ -50,6 +50,9 @@ data FunctionType = FProd [Argument] ValueType
 data ValueType = TBool | TPos Position | TOutput OutputType | TConst OutputType
     deriving (Show, Eq)
 
+
+type TProgram = Program String ValueType
+
 class HasType a where
     getType :: a -> ValueType
 
