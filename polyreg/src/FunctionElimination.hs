@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module FunctionElimination where
+module FunctionElimination (eliminateFunctionCalls, hasFunctionCall)
+where
 
 import ForPrograms
 import ForProgramsTyping
@@ -227,7 +228,7 @@ substCExpr _ x = x
 
 substOExpr :: SubstMap -> OExpr String ValueType -> OExpr String ValueType
 substOExpr s (OVar v t) = case M.lookup v (oVars s) of
-    Nothing -> error $ "(substOExpr) Variable not found: " ++ v
+    Nothing -> error $ "(substOExpr) Variable not found: " ++ v ++ " in " ++ show s
     Just o -> o
 substOExpr s (OConst c t) = OConst (substCExpr s c) t
 substOExpr s (OList os t) = OList (map (substOExpr s) os) t
@@ -356,5 +357,5 @@ elimProgramM (Program funcs m) = do
                     return $ StmtFun v args stmt' t
     return $ Program newFuncs m
 
-elimProgram :: TProgram -> TProgram
-elimProgram p = evalState (elimProgramM p :: ElimM TProgram) (0, M.empty, M.empty)
+eliminateFunctionCalls :: TProgram -> TProgram
+eliminateFunctionCalls p = evalState (elimProgramM p :: ElimM TProgram) (0, M.empty, M.empty)

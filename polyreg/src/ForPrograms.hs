@@ -57,16 +57,25 @@ data Stmt v t = SIf (BExpr v t) (Stmt v t) (Stmt v t) t
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
 
+oExprType :: OExpr v t -> t
+oExprType (OVar _ t) = t
+oExprType (OConst _ t) = t
+oExprType (OList _ t) = t
+oExprType (ORev _ t) = t
+oExprType (OIndex _ _ t) = t
+oExprType (OApp _ _ t) = t
+oExprType (OGen _ t) = t
 
-letBooleans :: [String] -> Stmt String () -> Stmt String ()
-letBooleans [] _ = error "Empty list of booleans"
-letBooleans [b] block = SLetBoolean b block ()
-letBooleans (b : bs) block = SLetBoolean b (letBooleans bs block) ()
 
-letOutputs :: [(String, OExpr String ())] -> Stmt String () -> Stmt String ()
-letOutputs [] _ = error "Empty list of outputs"
-letOutputs [(v, e)] block = SLetOutput (v, ()) e block ()
-letOutputs ((v, e) : es) block = SLetOutput (v, ()) e (letOutputs es block) ()
+letBooleans :: t -> [String] -> Stmt String t -> Stmt String t
+letBooleans _ [] _ = error "Empty list of booleans"
+letBooleans t [b] block = SLetBoolean b block t
+letBooleans t (b : bs) block = SLetBoolean b (letBooleans t bs block) t
+
+letOutputs :: t -> [(String, OExpr String t)] -> Stmt String t -> Stmt String t
+letOutputs _ [] _ = error "Empty list of outputs"
+letOutputs t [(v, e)] block = SLetOutput (v, oExprType e) e block t
+letOutputs t ((v, e) : es) block = SLetOutput (v, oExprType e) e (letOutputs t es block) t
 
 -- | declares a function with a given type and a block of statements
 data StmtFun v t = StmtFun v [(v, t, [v])] (Stmt v t) t
