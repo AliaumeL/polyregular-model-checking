@@ -23,7 +23,6 @@ instance MonadFresh FreshM where
 
 unlitEq :: (MonadFresh m) => (CExpr String ()) -> (OExpr String ()) -> m (BExpr String ())
 unlitEq (CChar c _) v = pure $ BLitEq () (CChar c ()) v ()
-unlitEq (CUnit _) v = unlitEq (CList [] ()) v
 unlitEq (CList xs _) v = do
         let n = length xs
         vars  <- mapM (\i -> fresh ("b" ++ show i)) [0..n+1]

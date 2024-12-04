@@ -1,7 +1,7 @@
 def getFirstWord (s : [Char]) : [Char] :=
     let mut seen_space : Bool := False in
     for (i, v : Char) in s do 
-        if not seen_space and v =Char= ' ' then 
+        if not seen_space and not (v =Char= ' ') then 
             yield v
         endif
         if v =Char= ' ' then 
@@ -26,9 +26,21 @@ def charToList (c : Char) : [Char] :=
     yield c
 
 def words (s : [Char]) : [[Char]] :=
-    yield getFirstWord(s) 
+    yield getFirstWord(s)
     for (i, v : Char) in s do 
         if v =Char= ' ' then 
             yield getCurrentWord(s with (i)) 
         endif 
      done
+
+def main (s : [Char]) : [Char] :=
+    let mut not_first : Bool := False in
+    for (i, w : [Char]) in reversed(words(s)) do 
+        if not_first then 
+            yield ' '
+        endif
+        setTrue not_first
+        for (j, c : Char) in w do 
+            yield c
+        done
+    done

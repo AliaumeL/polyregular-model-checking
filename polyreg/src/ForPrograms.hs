@@ -25,18 +25,12 @@ data PExpr v t = PVar v t
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
 data CExpr v t = CChar Char t
-               | CUnit t
                | CList [CExpr v t] t
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
 instance Semigroup (CExpr v t) where
     CList xs _ <> CList ys _ = CList (xs ++ ys) undefined
-    CUnit _ <> x = x
-    x <> CUnit _ = x
     _ <> _ = error "Cannot concatenate"
-
-instance Monoid t => Monoid (CExpr v t) where
-    mempty = CUnit mempty
 
 data OExpr v t = OVar v t
                | OConst (CExpr v t) t

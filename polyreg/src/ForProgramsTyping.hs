@@ -79,7 +79,6 @@ instance HasType (PExpr String ValueType) where
 
 instance HasType (CExpr String ValueType) where
     getType (CChar _ t) = t
-    getType (CUnit t) = t
     getType (CList _ t) = t
 
 instance HasType (OExpr String ValueType) where
