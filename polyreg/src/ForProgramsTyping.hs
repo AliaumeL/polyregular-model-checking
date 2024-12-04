@@ -290,6 +290,7 @@ inferConstM TOChar (CChar c _)  = return (CChar c (TConst TOChar))
 inferConstM (TOList t) (CList xs _) = do
     xs' <- mapM (inferConstM t) xs
     return (CList xs' (TConst (TOList t)))
+inferConstM t x = throwWithCtx $ "(inferConstM) Invalid constant expression" ++ show x ++ " of alleged type " ++ show t
 
 inferOutputM :: OutputType -> OExpr String (Maybe ValueType) -> TypeMonad (OExpr String ValueType)
 inferOutputM t' (OVar v _) = do
