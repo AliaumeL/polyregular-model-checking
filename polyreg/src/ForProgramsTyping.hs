@@ -18,6 +18,9 @@ import Data.Map    (Map)
 import qualified Data.Map as Map
 import Control.Monad.Except
 import Control.Monad.Reader
+import Control.Monad (forM)
+
+import Data.Tuple.Extra
 
 -------
 -- As a first step, we need to go from typed AST to untyped AST.
@@ -25,48 +28,10 @@ import Control.Monad.Reader
 -- *origin* of this position in terms of *untyped AST*.
 -------
 
-eraseTypes :: Stmt v t -> Stmt v ()
-eraseTypes (SIf b s1 s2 _) = SIf (eraseTypesB b) (eraseTypes s1) (eraseTypes s2) ()
-eraseTypes (SYield e _) = SYield (eraseTypesO e) ()
-eraseTypes (SOReturn e _) = SOReturn (eraseTypesO e) ()
-eraseTypes (SBReturn b _) = SBReturn (eraseTypesB b) ()
-eraseTypes (SLetOutput v e s _) = SLetOutput v (eraseTypesO e) (eraseTypes s) ()
-eraseTypes (SLetBoolean v s _) = SLetBoolean v (eraseTypes s) ()
-eraseTypes (SSetTrue v _) = SSetTrue v ()
-eraseTypes (SFor (v, v') e s _) = SFor (v, v') (eraseTypesO e) (eraseTypes s) ()
-eraseTypes (SSeq ss _) = SSeq (map eraseTypes ss) ()
-
-eraseTypesB :: BExpr v t -> BExpr v ()
-eraseTypesB (BConst b _) = BConst b ()
-eraseTypesB (BNot e _) = BNot (eraseTypesB e) ()
-eraseTypesB (BOp op e1 e2 _) = BOp op (eraseTypesB e1) (eraseTypesB e2) ()
-eraseTypesB (BComp c e1 e2 _) = BComp c (eraseTypesP e1) (eraseTypesP e2) ()
-eraseTypesB (BVar v _) = BVar v ()
-eraseTypesB (BGen s _) = BGen (eraseTypes s) ()
-eraseTypesB (BApp v args _) = BApp v (map (\(o, ps) -> (eraseTypesO o, map eraseTypesP ps)) args) ()
-eraseTypesB (BLitEq c o _) = BLitEq (eraseTypesC c) (eraseTypesO o) ()
-
-eraseTypesP :: PExpr v t -> PExpr v ()
-eraseTypesP (PVar v _) = PVar v ()
-
-eraseTypesC :: CExpr v t -> CExpr v ()
-eraseTypesC (CChar c _) = CChar c ()
-eraseTypesC (CUnit _) = CUnit ()
-eraseTypesC (CList xs _) = CList (map eraseTypesC xs) ()
-
 eraseTypesO :: OExpr v t -> OExpr v ()
-eraseTypesO (OVar v _) = OVar v ()
-eraseTypesO (OConst c _) = OConst (eraseTypesC c) ()
-eraseTypesO (OList xs _) = OList (map eraseTypesO xs) ()
-eraseTypesO (ORev o _) = ORev (eraseTypesO o) ()
-eraseTypesO (OIndex o p _) = OIndex (eraseTypesO o) (eraseTypesP p) ()
-eraseTypesO (OApp v args _) = OApp v (map (\(o, ps) -> (eraseTypesO o, map eraseTypesP ps)) args) ()
-eraseTypesO (OGen s _) = OGen (eraseTypes s) ()
+eraseTypesO p = fmap (const ()) p
 
-
-
-data OutputType = TUnit
-                | TOList OutputType
+data OutputType = TOList OutputType
                 | TOChar
                 deriving (Show, Eq)
 
@@ -79,14 +44,11 @@ unPosition (Position o) = o
 data Argument = Argument OutputType Int 
     deriving (Show, Eq)
 
-data FunctionType = FProd [Argument] OutputType
-                  | FPred [Argument]
+data FunctionType = FProd [Argument] ValueType
     deriving (Show, Eq)
 
-
-data ValueType = TBool | TPos Position | TOutput OutputType | TConst OutputType | TFun FunctionType
+data ValueType = TBool | TPos Position | TOutput OutputType | TConst OutputType
     deriving (Show, Eq)
-
 
 class HasType a where
     getType :: a -> ValueType
@@ -110,7 +72,7 @@ instance HasType (BExpr String ValueType) where
     getType (BVar _ t) = t
     getType (BGen _ t) = t
     getType (BApp _ _ t) = t
-    getType (BLitEq _ _ t) = t
+    getType (BLitEq _ _ _ t) = t
 
 instance HasType (PExpr String ValueType) where
     getType (PVar _ t) = t
@@ -133,33 +95,10 @@ instance HasType (StmtFun String ValueType) where
     getType (StmtFun _ _ _ t) = t
 
 
--- Checks if two types are compatible.
--- This is needed because of the possibly empty lists
--- in the output type.
-isCompatibleOutput :: OutputType -> OutputType -> Bool
-isCompatibleOutput TUnit TUnit = True
-isCompatibleOutput TUnit (TOList _) = True
-isCompatibleOutput (TOList _) TUnit = True
-isCompatibleOutput (TOList t1) (TOList t2) = isCompatibleOutput t1 t2
-isCompatibleOutput TOChar TOChar = True
-isCompatibleOutput _ _ = False
-
-
-
-
-isCompatibleArgument :: Argument -> Argument -> Bool
-isCompatibleArgument (Argument t1 n1) (Argument t2 n2) = t1 `isCompatibleOutput` t2 && n1 == n2
-
-areCompatibleArguments :: [Argument] -> [Argument] -> Bool
-areCompatibleArguments x y = all (uncurry isCompatibleArgument) (zip x y)
-
-
-
 data TypingContext = TypingContext {
     funcs :: Map String FunctionType,
     vars  :: Map String ValueType
 } deriving (Show, Eq)
-
 
 data TypeError = TypeError {
     message :: String,
@@ -168,8 +107,10 @@ data TypeError = TypeError {
 
 class (Monad m, MonadReader TypingContext m, MonadError TypeError m) => MonadTyping m where
     withCtx :: (TypingContext -> TypingContext) -> m a -> m a
-    getFuncPred :: String -> m [Argument]
-    getFuncProd :: String -> m ([Argument], OutputType)
+    withNewVar :: String -> ValueType -> m a -> m a
+    withNewVars :: [(String, ValueType)] -> m a -> m a
+    withNewFunc :: String -> FunctionType -> m a -> m a
+    getFuncProd :: String -> m FunctionType
     getConst    :: String -> m OutputType
     getPos      :: String -> m Position
     getOutput   :: String -> m OutputType
@@ -181,9 +122,13 @@ guardOrThrow False s = do
     ctx <- ask
     throwError (TypeError ("Guard: " ++ s) ctx)
 
+throwWithCtx :: MonadTyping m => String -> m a
+throwWithCtx s = do
+    ctx <- ask
+    throwError (TypeError s ctx)
+
 newtype TypeMonad a = TypeMonad (ReaderT TypingContext (Except TypeError) a)
     deriving (Functor, Applicative, Monad, MonadError TypeError, MonadReader TypingContext)
-
 
 runTypeMonad :: TypeMonad a -> Either TypeError a
 runTypeMonad (TypeMonad m) = runExcept (runReaderT m ctx)
@@ -198,6 +143,25 @@ instance MonadFail TypeMonad where
 instance MonadTyping TypeMonad where
     withCtx f m = local f m
 
+    withNewVar v t m = do
+        ctx <- ask
+        guardOrThrow (Map.notMember v (vars ctx)) ("Variable " ++ v ++ " already declared")
+        let ctx' = TypingContext (funcs ctx) (Map.insert v t (vars ctx))
+        local (const ctx') m
+
+    withNewVars vs m = do
+        ctx <- ask
+        let newVars = Map.fromList vs
+        guardOrThrow (Map.null (Map.intersection newVars (vars ctx))) $ "Some of those variables is already declared" ++ show vs
+        let ctx' = TypingContext (funcs ctx) (Map.union newVars (vars ctx))
+        local (const ctx') m
+
+    withNewFunc v t m = do
+        ctx <- ask
+        guardOrThrow (Map.notMember v (funcs ctx)) ("Function " ++ v ++ " already declared")
+        let ctx' = TypingContext (Map.insert v t (funcs ctx)) (vars ctx)
+        local (const ctx') m
+
     getBool v = do
         ctx <- ask
         case Map.lookup v (vars ctx) of
@@ -205,19 +169,12 @@ instance MonadTyping TypeMonad where
             Just (_)   -> throwError (TypeError ("Variable " ++ v ++ " is not a boolean") ctx)
             _          -> throwError (TypeError ("Variable " ++ v ++ " not found") ctx)
 
-    getFuncPred v = do
-        ctx <- ask
-        case Map.lookup v (funcs ctx) of
-            Just (FPred args) -> return args
-            Just (_)          -> throwError (TypeError ("Function " ++ v ++ " is not a predicate") ctx)
-            _                 -> throwError (TypeError ("Function " ++ v ++ " not found") ctx)
 
     getFuncProd v = do
         ctx <- ask
         case Map.lookup v (funcs ctx) of
-            Just (FProd args t) -> return (args, t)
-            Just (_)            -> throwError (TypeError ("Function " ++ v ++ " is not a product") ctx)
-            _                   -> throwError (TypeError ("Function " ++ v ++ " not found") ctx)
+            Just x  -> return x
+            Nothing -> throwError (TypeError ("Function " ++ v ++ " not found") ctx)
 
 
     getConst v = do
@@ -242,234 +199,37 @@ instance MonadTyping TypeMonad where
             _                -> throwError (TypeError ("Output " ++ v ++ " not found") ctx)
         
 
+introduceArgument :: (String, OutputType, [String]) -> [(String, ValueType)]
+introduceArgument (v, t, ps) = do 
+    (v, TOutput t) : zip ps (repeat (TPos (Position (OVar v ()))))
 
+introduceArguments :: [(String, OutputType, [String])] -> [(String, ValueType)]
+introduceArguments = concatMap introduceArgument
 
-typeCheckBoolM :: BExpr String ValueType -> TypeMonad ()
-typeCheckBoolM (BConst _ TBool) = return ()
-typeCheckBoolM (BNot e TBool) = typeCheckBoolM e
-typeCheckBoolM (BOp _ e1 e2 TBool) = do
-    typeCheckBoolM e1
-    typeCheckBoolM e2
-typeCheckBoolM (BComp _ e1 e2 TBool) = do
-    (Position o1) <- typeCheckPosM e1
-    (Position o2) <- typeCheckPosM e2
-    guardOrThrow (o1 == o2) $ "(BComp) Positions " ++ show o1 ++ " and "++ show o2 ++ "do not have the same origin"
-typeCheckBoolM (BVar v TBool) = getBool v
-typeCheckBoolM (BGen s TBool) = do
-    t' <- typeCheckStmtM s
-    guardOrThrow (t' == TBool) $ "(BGen) Types do not match between " ++ show t' ++ " and " ++ show TBool
-typeCheckBoolM (BApp v args TBool) = do
-    args' <- getFuncPred v
-    targs <- typeCheckArgsM  args
-    guardOrThrow (args' == targs) $ "(BApp) Arguments do not match between " ++ show args' ++ " and " ++ show targs
-typeCheckBoolM (BLitEq c o TBool) = do
-    t1 <- typeCheckConstM c
-    t2 <- typeCheckOutputM o
-    guardOrThrow (t1 == t2) $ "(BLitEq) Types do not match between " ++ show t1 ++ " and " ++ show t2
-typeCheckBoolM x = do
-    ctx <- ask
-    throwError (TypeError ("Invalid boolean expression" ++ show x) ctx)
+inferFunctionM :: StmtFun String (Maybe ValueType) -> TypeMonad (StmtFun String ValueType)
+inferFunctionM (StmtFun name args s (Just t)) = do
+    typedArgs <- forM args $ \(v, t, ps) -> 
+            case t of
+                Just (TOutput t') -> return (v, t', ps)
+                Just t' -> throwWithCtx $ "(inferFunctionM) Argument " ++ v ++ " has invalid type annotation " ++ show t'
+                Nothing ->
+                    throwWithCtx $ "(inferFunctionM) Argument " ++ v ++ " has no type annotation"
+    let newVars = introduceArguments typedArgs
+    withNewVars newVars $ do
+        s' <- inferStmtM s t
+        let wrappedTypedArgs = map (\(v, t, ps) -> (v, TOutput t, ps)) typedArgs
+        return (StmtFun name wrappedTypedArgs s' t)
+inferFunctionM (StmtFun n _ _ Nothing) =
+    throwWithCtx $ "(inferFunctionM) Function " ++ n ++ " has no type annotation"
 
-
-typeCheckPosM :: PExpr String ValueType -> TypeMonad Position
-typeCheckPosM (PVar v t) = do
-    t' <- getPos v
-    guardOrThrow (t == TPos t') $ "(PVar) Types do not match between " ++ show t ++ " and " ++ show t'
-    return t'
-
-typeCheckConstM :: CExpr String ValueType -> TypeMonad OutputType
-typeCheckConstM (CChar _ (TConst TOChar)) = return TOChar
-typeCheckConstM (CUnit (TConst TUnit)) = return TUnit
-typeCheckConstM (CList xs (TConst (TOList t))) = do
-    ts <- mapM (typeCheckConstM) xs
-    guardOrThrow (all (isCompatibleOutput t) ts) $ "(CList) Types do not match between " ++ show t ++ " and " ++ show ts
-    return (TOList t)
-typeCheckConstM x = do
-    ctx <- ask
-    throwError (TypeError ("Invalid constant expression" ++ show x) ctx)
-
-typeCheckOutputM :: OExpr String ValueType -> TypeMonad OutputType
-typeCheckOutputM (OVar v (TOutput t)) = do
-    t' <- getOutput v
-    guardOrThrow (t == t') $ "(OVar) Types do not match between " ++ show t ++ " and " ++ show t'
-    return t
-typeCheckOutputM (OConst c (TOutput t)) = do
-    t' <- typeCheckConstM c
-    guardOrThrow (t == t') $ "(OConst) Types do not match between " ++ show t ++ " and " ++ show t'
-    return t
-typeCheckOutputM (OList xs (TOutput (TOList t))) = do
-    ts <- mapM (typeCheckOutputM) xs
-    guardOrThrow (all (isCompatibleOutput t) ts) $ "(OList) Types do not match between " ++ show t ++ " and " ++ show ts
-    return (TOList t)
-typeCheckOutputM (ORev o (TOutput t)) = do
-    t' <- typeCheckOutputM o
-    guardOrThrow (t == t') $ "(ORev) Types do not match between " ++ show t ++ " and " ++ show t'
-    return t
-typeCheckOutputM (OIndex o p (TOutput t)) = do
-    t' <- typeCheckOutputM o
-    (Position t'') <- typeCheckPosM p
-    let o' = eraseTypesO o
-    guardOrThrow (t == t')  $ "(OIndex) Types do not match between " ++ show t ++ " and " ++ show t'
-    guardOrThrow (o' == t'') $ "(OIndex) Origins do not match between " ++ show o ++ " and " ++ show t''
-    return t
-typeCheckOutputM (OApp v args (TOutput t)) = do
-    (args', t') <- getFuncProd v
-    targs <- typeCheckArgsM args
-    guardOrThrow (t == t') $ "(OApp) Types do not match between " ++ show t ++ " and " ++ show t'
-    guardOrThrow (areCompatibleArguments args' targs) $ "(OApp) Arguments do not match between " ++ show args' ++ " and " ++ show targs
-    return t
-typeCheckOutputM (OGen s (TOutput t)) = do
-    TOutput t' <- typeCheckStmtM s
-    guardOrThrow (t `isCompatibleOutput` t') $ "(OGen) Types do not match between " ++ show t ++ " and " ++ show t'
-    return t
-typeCheckOutputM x = do
-    ctx <- ask
-    throwError (TypeError ("Invalid output expression" ++ show x) ctx)
-
-typeCheckStmtM :: Stmt String ValueType -> TypeMonad ValueType
-typeCheckStmtM (SIf e s1 s2 t) = do
-    typeCheckBoolM e
-    t1 <- typeCheckStmtM s1
-    t2 <- typeCheckStmtM s2
-    guardOrThrow (t1 == t2) $ "(SIf) Branches type do not match between " ++ show t1 ++ " and " ++ show t2
-    guardOrThrow (t == t1) $ "(SIf) Branches do not match the global type " ++ show t ++ " and " ++ show t1
-    return t
--- x : τ 
--- -----
--- yield x : [τ]
-typeCheckStmtM (SYield o t) = do
-    t' <- typeCheckOutputM o
-    guardOrThrow (t == TOutput (TOList t')) $ "(SYield) Types do not match between " ++ show t ++ " and " ++ show t'
-    return t
-typeCheckStmtM (SOReturn o t) = do
-    t' <- typeCheckOutputM o
-    guardOrThrow (t == TOutput t') $ "(SOReturn) Types do not match between " ++ show t ++ " and " ++ show t'
-    return t
-typeCheckStmtM (SBReturn b t) = do
-    typeCheckBoolM b
-    guardOrThrow (t == TBool) $ "(SBReturn) Types do not match between " ++ show t ++ " and " ++ show TBool
-    return t
-typeCheckStmtM (SLetOutput v o s t) = do
-    t' <- typeCheckOutputM o
-    ctx <- ask
-    let ctx' = TypingContext (funcs ctx) (Map.insert v (TOutput t') (vars ctx))
-    withCtx (const ctx') $ do
-        t'' <- typeCheckStmtM s
-        guardOrThrow (t == t'') $ "(SLetOutput) Types do not match between " ++ show t ++ " and " ++ show t''
-        return t
-typeCheckStmtM (SLetBoolean v s t) = do
-    ctx <- ask
-    let ctx' = TypingContext (funcs ctx) (Map.insert v TBool (vars ctx))
-    withCtx (const ctx') $ do
-        t' <- typeCheckStmtM s
-        guardOrThrow (t == t') $ "(SLetBoolean) Types do not match between " ++ show t ++ " and " ++ show t'
-        return t
-typeCheckStmtM (SSetTrue v t) = do
-    getBool v
-    guardOrThrow (t == TBool) $ "(SSetTrue) Types do not match between " ++ show t ++ " and " ++ show TBool
-    return t
-typeCheckStmtM (SFor (v1, v2) o s t) = do
-    ctx <- ask
-    (TOList to) <- typeCheckOutputM o
-    let v1t = TPos (Position (eraseTypesO o))
-    let v2t = TOutput to
-    let newVars = Map.insert v1 v1t (Map.insert v2 v2t (vars ctx))
-    let ctx' = TypingContext (funcs ctx) newVars
-    withCtx (const ctx') $ do
-        t' <- typeCheckStmtM s
-        guardOrThrow (t == t') $ "(SFor) Types do not match between " ++ show t ++ " and " ++ show t'
-        return t
-typeCheckStmtM (SSeq ss t) = do
-    ts <- mapM typeCheckStmtM ss
-    guardOrThrow (all (== t) ts) $ "(SSeq) Types do not match between " ++ show t ++ " and " ++ show ts
-    return t
-    
--- We check if all the arguments have as origin the given value, and return
--- the corresponding type
-typeCheckArgM :: OExpr String ValueType -> [PExpr String ValueType] -> TypeMonad Argument
-typeCheckArgM o ps = do
-    t <- typeCheckOutputM o
-    ts <- mapM typeCheckPosM ps
-    let o' = eraseTypesO o
-    guardOrThrow (all ((==) o' . unPosition) ts) $ "(typeCheckArgM) Types do not match between " ++ show t ++ " and " ++ show ts
-    return (Argument t (length ps))
-
-typeCheckArgsM :: [(OExpr String ValueType, [PExpr String ValueType])] -> TypeMonad [Argument]
-typeCheckArgsM = mapM (uncurry typeCheckArgM)
-
-
-alignArgument :: (String, [String]) -> Argument -> [(String, ValueType)]
-alignArgument (v, ps) (Argument t n) = (v, TOutput t) : zip ps (take n (repeat (TPos (Position (OVar v ())))))
-
-alignArguments :: [(String, [String])] -> [Argument] -> [(String, ValueType)]
-alignArguments args args' = concatMap (uncurry alignArgument) (zip args args')
-
-typeCheckFunctionM :: StmtFun String ValueType -> TypeMonad FunctionType
-typeCheckFunctionM (StmtFun _ args s (TFun (FProd args' t))) = do
-    ctx <- ask
-    let newVars = Map.fromList (alignArguments args args')
-    let ctx' = TypingContext (funcs ctx) newVars
-    withCtx (const ctx') $ do
-        t' <- typeCheckStmtM s
-        guardOrThrow (TOutput t == t') $ "(typeCheckFunctionM) Types do not match between " ++ show t ++ " and " ++ show t'
-        return (FProd args' t)
-typeCheckFunctionM (StmtFun _ args s (TFun (FPred args'))) = do
-    ctx <- ask
-    let newVars = Map.fromList (alignArguments args args')
-    let ctx' = TypingContext (funcs ctx) newVars
-    withCtx (const ctx') $ do
-        t <- typeCheckStmtM s
-        guardOrThrow (t == TBool) $ "(typeCheckFunctionM) Types do not match between " ++ show t ++ " and " ++ show TBool
-        return (FPred args')
-typeCheckFunctionM _ = do
-    ctx <- ask
-    throwError (TypeError "(typeCheckFunctionM) Invalid function type"  ctx)
-
-
-typeCheckProgramM :: [StmtFun String ValueType] -> TypeMonad ()
-typeCheckProgramM (f : fs) = do
-    t <- typeCheckFunctionM f
-    oldFuncs <- asks funcs
-    let newFuncs = Map.insert (funName f) t oldFuncs
-    withCtx (\ctx -> ctx {funcs = newFuncs}) $ typeCheckProgramM fs
-typeCheckProgramM [] = return ()
-
-
---- Now that we have Type Checking
--- we will add some Type Inference Program.
---
--- It reads a program with *Partial Types*,
--- i.e., Maybe ValueType, and infers the types
--- of the rest of the program (if possible).
-
--- In order to "unify" types of lists, we rely on the
--- following partial ordering: 
-
-class PartialOrder a where
-    isCompatible :: a -> a -> Bool
-    precompares  :: a -> a -> Maybe Ordering
-
-maybeMaximalElem :: (PartialOrder a) => [a] -> Maybe a
-maybeMaximalElem [] = Nothing
-maybeMaximalElem (x : xs) = foldl f (Just x) xs
-    where 
-        f Nothing _ = Nothing
-        f (Just x) y = case precompares x y of
-            Just GT -> Just x
-            Just EQ -> Just x
-            Just LT -> Just y
-            Nothing -> Nothing
-
-instance PartialOrder OutputType where
-    isCompatible = isCompatibleOutput
-
-    precompares TUnit TUnit = Just EQ
-    precompares TUnit (TOList _) = Just LT
-    precompares (TOList _) TUnit = Just GT
-    precompares (TOList t1) (TOList t2) = precompares t1 t2
-    precompares TOChar TOChar = Just EQ
-    precompares _ _ = Nothing
-
+inferProgramM :: [StmtFun String (Maybe ValueType)] -> TypeMonad [StmtFun String ValueType]
+inferProgramM [] = return []
+inferProgramM (f : fs) = do
+    f' <- inferFunctionM f
+    let (StmtFun n args _ t) = f'
+    let args' = map (\(_, TOutput t, l) -> Argument t (length l)) args
+    ts <- withNewFunc n (FProd args' t) $ inferProgramM fs
+    return (f' : ts)
 
 -- Inference can be made top->down. That is, we know the types 
 -- of the functions, and generators, so we can infer
@@ -493,6 +253,7 @@ inferBoolM (BOp op e1 e2 _) = do
 inferBoolM (BComp c e1 e2 _) = do
     e1' <- inferPosM e1
     e2' <- inferPosM e2
+    guardOrThrow (getType e1' == getType e2') ("Comparing positions of different types " ++ show e1' ++ " and " ++ show e2')
     return (BComp c e1' e2' TBool)
 inferBoolM (BVar v _) = do
     getBool v
@@ -501,59 +262,62 @@ inferBoolM (BGen s (Just t)) = do
     s' <- inferStmtM s t
     return (BGen s' TBool)
 inferBoolM (BApp v args _) = do
-    args' <- inferArgsM args
+    (FProd argsTs t) <- getFuncProd v
+    guardOrThrow (t == TBool) ("Function " ++ v ++ " has return type " ++ show t ++ " but expected Bool")
+    args' <- inferArgsM argsTs args
     return (BApp v args' TBool)
-inferBoolM (BLitEq c o _) = do
-    c' <- inferConstM c
-    o' <- inferOutputM o
-    return (BLitEq c' o' TBool)
+inferBoolM (BLitEq (Just t'@(TOutput t)) c o _) = do
+    c' <- inferConstM t c
+    o' <- inferOutputM t o
+    return (BLitEq t' c' o' TBool)
 inferBoolM x = do
     ctx <- ask
     throwError (TypeError ("Invalid boolean expression" ++ show x) ctx)
 
-inferPosM :: PExpr String (Maybe ValueType) -> TypeMonad (PExpr String ValueType)
+inferPosM :: (PExpr String (Maybe ValueType)) -> TypeMonad (PExpr String ValueType)
 inferPosM (PVar v _) = do
-    t <- getPos v
-    return (PVar v (TPos t))
+    (Position o) <- getPos v
+    return (PVar v (TPos (Position o)))
 
-inferConstM :: CExpr String (Maybe ValueType) -> TypeMonad (CExpr String ValueType)
-inferConstM (CChar c _) = return (CChar c (TConst TOChar))
-inferConstM (CUnit _) = return (CUnit (TConst TUnit))
-inferConstM (CList xs _) = do
-    xs' <- mapM inferConstM xs
-    let ts = map getType xs'
-    Just t <- maybeMaximalElem <$> mapM (\(TConst x) -> return x) ts
+checkPosM :: (OExpr String ()) -> PExpr String (Maybe ValueType) -> TypeMonad (PExpr String ValueType)
+checkPosM o (PVar v _) = do
+    (Position o') <- getPos v
+    guardOrThrow (o == o') ("Variable " ++ v ++ " is bound to " ++ show o' ++ " but expected to be bound to" ++ show o)
+    return (PVar v (TPos (Position o)))
+
+inferConstM :: OutputType -> CExpr String (Maybe ValueType) ->  TypeMonad (CExpr String ValueType)
+inferConstM TOChar (CChar c _)  = return (CChar c (TConst TOChar))
+inferConstM (TOList t) (CList xs _) = do
+    xs' <- mapM (inferConstM t) xs
     return (CList xs' (TConst (TOList t)))
 
-inferOutputM :: OExpr String (Maybe ValueType) -> TypeMonad (OExpr String ValueType)
-inferOutputM (OVar v _) = do
+inferOutputM :: OutputType -> OExpr String (Maybe ValueType) -> TypeMonad (OExpr String ValueType)
+inferOutputM t' (OVar v _) = do
     t <- getOutput v
+    guardOrThrow (t == t') ("Variable " ++ v ++ " has type " ++ show t ++ " but expected " ++ show t')
     return (OVar v (TOutput t))
-inferOutputM (OConst c _) = do
-    c' <- inferConstM c
-    TConst t <- return (getType c')
+inferOutputM t (OConst c _) = do
+    c' <- inferConstM t c
     return (OConst c' (TOutput t))
-inferOutputM (OList xs _) = do
-    xs' <- mapM inferOutputM xs
-    let ts = map getType xs'
-    Just t <- maybeMaximalElem <$> mapM (\(TOutput x) -> return x) ts
+inferOutputM (TOList t) (OList xs _) = do
+    xs' <- mapM (inferOutputM t) xs
     return (OList xs' (TOutput (TOList t)))
-inferOutputM (ORev o _) = do
-    o' <- inferOutputM o
-    return (ORev o' (getType o'))
-inferOutputM (OIndex o p _) = do
-    o' <- inferOutputM o
-    p' <- inferPosM p
-    TOutput (TOList t) <- return (getType o')
+inferOutputM t@(TOList t') (ORev o _) = do
+    o' <- inferOutputM t o
+    return (ORev o' (TOutput t))
+inferOutputM t (OIndex o p _) = do
+    o' <- inferOutputM (TOList t) o
+    p' <- checkPosM (eraseTypesO o') p
     return (OIndex o' p' (TOutput t))
-inferOutputM (OApp v args _) = do
-    (_, t) <- getFuncProd v
-    args'' <- inferArgsM args
+inferOutputM t (OApp v args _) = do
+    (FProd argsTs value)  <- getFuncProd v
+    guardOrThrow (value == (TOutput t)) ("Function " ++ v ++ " has return type " ++ show value ++ " but expected " ++ show t)
+    args'' <- inferArgsM argsTs args
     return (OApp v args'' (TOutput t))
-inferOutputM (OGen s (Just t)) = do
-    s' <- inferStmtM s t
-    return (OGen s' t)
-inferOutputM x = do
+inferOutputM t (OGen s _) = do
+    s' <- inferStmtM s (TOutput t)
+    return (OGen s' (TOutput t))
+inferOutputM t x = do
     ctx <- ask
     throwError (TypeError ("Invalid output expression" ++ show x) ctx)
 
@@ -564,87 +328,55 @@ inferStmtM (SIf e s1 s2 _) t = do
     s1' <- inferStmtM s1 t
     s2' <- inferStmtM s2 t
     return (SIf e' s1' s2' t)
-inferStmtM (SYield o _) t = do
-    o' <- inferOutputM o
-    return (SYield o' t)
-inferStmtM (SOReturn o _) t = do
-    o' <- inferOutputM o
-    return (SOReturn o' t)
-inferStmtM (SBReturn b _) _ = do
+inferStmtM (SYield o _) t'@(TOutput (TOList t)) = do
+    o' <- inferOutputM t o
+    return (SYield o' t')
+inferStmtM (SOReturn o _) (TOutput t) = do
+    o' <- inferOutputM t o
+    return (SOReturn o' (TOutput t))
+inferStmtM (SBReturn b _) TBool = do
     b' <- inferBoolM b
     return (SBReturn b' TBool)
-inferStmtM (SLetOutput v o s _) t = do
-    ctx <- ask
-    o' <- inferOutputM o
-    let ctx' = TypingContext (funcs ctx) (Map.insert v (getType o') (vars ctx))
-    withCtx (const ctx') $ do
+inferStmtM (SBReturn _ _) t = do
+    throwWithCtx ("(inferStmtM) Invalid return type for SBReturn " ++ show t)    
+inferStmtM (SLetOutput (v, Just (TOutput tv)) o s _) t = do
+    o' <- inferOutputM tv o
+    withNewVar v (TOutput tv) $ do
         s' <- inferStmtM s t
-        return (SLetOutput v o' s' t)
+        return (SLetOutput (v, TOutput tv) o' s' t)
 inferStmtM (SLetBoolean v s _) t = do
-    ctx <- ask
-    let ctx' = TypingContext (funcs ctx) (Map.insert v TBool (vars ctx))
-    withCtx (const ctx') $ do
+    withNewVar v TBool $ do
         s' <- inferStmtM s t
         return (SLetBoolean v s' t)
 inferStmtM (SSetTrue v _) t = do
+    getBool v
     return (SSetTrue v t)
-inferStmtM (SFor (v1, v2) o s _) t = do
-    ctx <- ask
-    o' <- inferOutputM o
+inferStmtM (SFor (v1, v2, Just (TOutput v2t)) o s _) t = do
+    o' <- inferOutputM (TOList v2t) o
     let v1t = TPos (Position (eraseTypesO o))
-    let v2t = getType o'
-    let newVars = Map.insert v1 v1t (Map.insert v2 v2t (vars ctx))
-    let ctx' = TypingContext (funcs ctx) newVars
-    withCtx (const ctx') $ do
+    withNewVars [(v1, v1t), (v2, TOutput v2t)] $ do
         s' <- inferStmtM s t
-        return (SFor (v1, v2) o' s' t)
+        return (SFor (v1, v2, TOutput v2t) o' s' t)
 inferStmtM (SSeq ss _) t = do
     ss' <- mapM (\s -> inferStmtM s t) ss
     return (SSeq ss' t)
+inferStmtM s _ = 
+    throwWithCtx $ "Invalid statement " ++ show s
 
 
-inferArgM :: OExpr String (Maybe ValueType) -> [PExpr String (Maybe ValueType)] -> TypeMonad (OExpr String ValueType, [PExpr String ValueType])
-inferArgM o ps = do
-    o' <- inferOutputM o
-    ps' <- mapM inferPosM ps
+inferArgM :: Argument -> (OExpr String (Maybe ValueType), [PExpr String (Maybe ValueType)]) -> TypeMonad (OExpr String ValueType, [PExpr String ValueType])
+inferArgM (Argument t l) (o, ps) = do
+    guardOrThrow (l == length ps) ("Argument " ++ show o ++ " has " ++ show l ++ " positions but " ++ show (length ps) ++ " were given")
+    o' <- inferOutputM t o
+    ps' <- mapM (checkPosM (eraseTypesO o)) ps
     return (o', ps')
 
-inferArgsM :: [(OExpr String (Maybe ValueType), [PExpr String (Maybe ValueType)])] -> TypeMonad ([(OExpr String ValueType, [PExpr String ValueType])])
-inferArgsM = mapM (uncurry inferArgM)
+zipWithM :: Monad m => (a -> b -> m c) -> [a] -> [b] -> m [c]
+zipWithM f xs ys = sequence (zipWith f xs ys)
 
-inferFunctionM :: StmtFun String (Maybe ValueType) -> TypeMonad (StmtFun String ValueType)
-inferFunctionM (StmtFun v args s (Just (TFun (FProd args' t)))) = do
-    ctx <- ask
-    let newVars = Map.fromList (alignArguments args args')
-    let ctx' = TypingContext (funcs ctx) newVars
-    withCtx (const ctx') $ do
-        s' <- inferStmtM s (TOutput t)
-        return (StmtFun v args s' (TFun (FProd args' t)))
-inferFunctionM (StmtFun v args s (Just (TFun (FPred args')))) = do
-    ctx <- ask
-    let newVars = Map.fromList (alignArguments args args')
-    let ctx' = TypingContext (funcs ctx) newVars
-    withCtx (const ctx') $ do
-        s' <- inferStmtM s TBool
-        return (StmtFun v args s' (TFun (FPred args')))
-inferFunctionM (StmtFun v _ _ _) = do
-    ctx <- ask
-    throwError (TypeError ("(inferFunctionM) Impossible to infer function type " ++ v)  ctx)
-
-inferProgramM :: [StmtFun String (Maybe ValueType)] -> TypeMonad [StmtFun String ValueType]
-inferProgramM [] = return []
-inferProgramM (f : fs) = do
-    f' <- inferFunctionM f
-    oldFuncs <- asks funcs
-    TFun (FProd args t) <- return (getType f')
-    let newFuncs = Map.insert (funName f) (FProd args t) oldFuncs
-    ts <- withCtx (\ctx -> ctx {funcs = newFuncs}) $ inferProgramM fs
-    return (f' : ts)
-
-
+inferArgsM :: [Argument] -> [(OExpr String (Maybe ValueType), [PExpr String (Maybe ValueType)])] -> TypeMonad ([(OExpr String ValueType, [PExpr String ValueType])])
+inferArgsM ts os = zipWithM inferArgM ts os 
 
 inferProgram :: (Program String (Maybe ValueType)) -> Either TypeError (Program String ValueType)
 inferProgram (Program p v) = Program <$> runTypeMonad (inferProgramM p) <*> pure v
 
-typecheckProgram :: (Program String ValueType) -> Either TypeError ()
-typecheckProgram (Program p v) =  runTypeMonad (typeCheckProgramM p)

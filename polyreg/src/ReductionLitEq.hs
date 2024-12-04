@@ -22,7 +22,7 @@ instance MonadFresh FreshM where
         return $ s ++ "#" ++ show i
 
 unlitEq :: (MonadFresh m) => (CExpr String ()) -> (OExpr String ()) -> m (BExpr String ())
-unlitEq (CChar c _) v = pure $ BLitEq (CChar c ()) v ()
+unlitEq (CChar c _) v = pure $ BLitEq () (CChar c ()) v ()
 unlitEq (CUnit _) v = unlitEq (CList [] ()) v
 unlitEq (CList xs _) v = do
         let n = length xs
@@ -31,7 +31,7 @@ unlitEq (CList xs _) v = do
         i     <- fresh "i"
         tests <- mapM (\x -> unlitEq x (OVar e ())) xs
         let ifs = makeIfs tests vars
-        let body = SFor (i, e) v ifs ()
+        let body = SFor (i, e, ()) v ifs ()
         return . (\x -> BGen x ()) . letBooleans vars $ SSeq [ body, SBReturn (BConst True ()) () ] ()
 
 -- makeIfs v cexprs bvars 
@@ -55,7 +55,7 @@ makeIfs _ _ = error "makeIfs: incompatible lists of arguments"
 
 
 unlitEqBExpr :: (MonadFresh m) => BExpr String () -> m (BExpr String ())
-unlitEqBExpr (BLitEq c o ()) = unlitEq c o
+unlitEqBExpr (BLitEq () c o ()) = unlitEq c o
 unlitEqBExpr (BConst b ()) = pure $ BConst b ()
 unlitEqBExpr (BNot b ()) = do
     b' <- unlitEqBExpr b
@@ -97,10 +97,10 @@ unlitEqStmt (SLetBoolean v s ()) = do
     s' <- unlitEqStmt s
     return $ SLetBoolean v s' ()
 unlitEqStmt (SSetTrue v ()) = pure $ SSetTrue v ()
-unlitEqStmt (SFor (i, e) v s ()) = do
+unlitEqStmt (SFor (i, e, ()) v s ()) = do
     v' <- unlitEqOExpr v
     s' <- unlitEqStmt s
-    return $ SFor (i, e) v' s' ()
+    return $ SFor (i, e, ()) v' s' ()
 unlitEqStmt (SSeq ss ()) = SSeq <$> mapM unlitEqStmt ss <*> pure ()
 
 unlitEqFunction :: (MonadFresh m) => StmtFun String () -> m (StmtFun String ())

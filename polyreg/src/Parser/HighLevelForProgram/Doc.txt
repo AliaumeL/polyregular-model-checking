@@ -41,9 +41,8 @@ The reserved words used in HighLevelForProgram are the following:
 The symbols used in HighLevelForProgram are the following:
   | ( | ) | : | :=
   | , | [ | ] | {
-  | | | } | = | !=
-  | <= | < | >= | >
-  | === | !== |  |
+  | } | = | != | <=
+  | < | >= | > | !==
 
 ===Comments===
 Single-line comments begin with #.There are no multiple-line comments in the grammar.
@@ -58,20 +57,20 @@ All other symbols are terminals.
   | //[Func]// | -> | //Func//
   |  |  **|**  | //Func// //[Func]//
   | //Func// | -> | ``def`` //Ident// ``(`` //[ArgD]// ``)`` ``:`` //Type// ``:=`` //[Stmt]//
-  | //Stmt// | -> | ``for`` ``(`` //Ident// ``,`` //Ident// ``)`` ``in`` //Expr// ``do`` //[Stmt]// ``done``
+  | //Stmt// | -> | ``for`` ``(`` //Ident// ``,`` //Ident// ``:`` //Type// ``)`` ``in`` //Expr// ``do`` //[Stmt]// ``done``
   |  |  **|**  | ``if`` //Expr// ``then`` //[Stmt]// ``endif``
   |  |  **|**  | ``if`` //Expr// ``then`` //[Stmt]// ``else`` //[Stmt]// ``endif``
   |  |  **|**  | ``yield`` //Expr//
   |  |  **|**  | ``return`` //Expr//
   |  |  **|**  | ``let`` //Ident// ``:`` //Type// ``:=`` //Expr// ``in`` //Stmt//
-  |  |  **|**  | ``let`` ``mut`` //Ident// ``:`` //Type// ``:=`` ``False`` ``in`` //Stmt//
+  |  |  **|**  | ``let`` ``mut`` //Ident// ``:`` ``Bool`` ``:=`` ``False`` ``in`` //Stmt//
   |  |  **|**  | ``setTrue`` //Ident//
   | //[Stmt]// | -> | //Stmt//
   |  |  **|**  | //Stmt// //[Stmt]//
   | //Expr3// | -> | //Char//
   |  |  **|**  | //String//
   |  |  **|**  | ``[`` //[Expr]// ``]``
-  |  |  **|**  | ``{`` //Type// ``|`` //Stmt// ``|`` ``}``
+  |  |  **|**  | ``{`` //Stmt// ``}``
   |  |  **|**  | //Ident//
   |  |  **|**  | ``reversed`` ``(`` //Expr// ``)``
   |  |  **|**  | //Ident// ``(`` //[VEArg]// ``)``
@@ -110,7 +109,7 @@ All other symbols are terminals.
   |  |  **|**  | ``<``
   |  |  **|**  | ``>=``
   |  |  **|**  | ``>``
-  |  |  **|**  | ``===``
+  |  |  **|**  | ``=`` //Type// ``=``
   |  |  **|**  | ``!==``
 
 

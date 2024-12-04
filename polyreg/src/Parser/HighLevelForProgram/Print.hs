@@ -154,13 +154,13 @@ instance Print Parser.HighLevelForProgram.Abs.Func where
 
 instance Print Parser.HighLevelForProgram.Abs.Stmt where
   prt i = \case
-    Parser.HighLevelForProgram.Abs.SFor id_1 id_2 expr stmts -> prPrec i 0 (concatD [doc (showString "for"), doc (showString "("), prt 0 id_1, doc (showString ","), prt 0 id_2, doc (showString ")"), doc (showString "in"), prt 0 expr, doc (showString "do"), prt 0 stmts, doc (showString "done")])
+    Parser.HighLevelForProgram.Abs.SFor id_1 id_2 type_ expr stmts -> prPrec i 0 (concatD [doc (showString "for"), doc (showString "("), prt 0 id_1, doc (showString ","), prt 0 id_2, doc (showString ":"), prt 0 type_, doc (showString ")"), doc (showString "in"), prt 0 expr, doc (showString "do"), prt 0 stmts, doc (showString "done")])
     Parser.HighLevelForProgram.Abs.SIf expr stmts -> prPrec i 0 (concatD [doc (showString "if"), prt 0 expr, doc (showString "then"), prt 0 stmts, doc (showString "endif")])
     Parser.HighLevelForProgram.Abs.SIfE expr stmts1 stmts2 -> prPrec i 0 (concatD [doc (showString "if"), prt 0 expr, doc (showString "then"), prt 0 stmts1, doc (showString "else"), prt 0 stmts2, doc (showString "endif")])
     Parser.HighLevelForProgram.Abs.SYield expr -> prPrec i 0 (concatD [doc (showString "yield"), prt 0 expr])
     Parser.HighLevelForProgram.Abs.SReturn expr -> prPrec i 0 (concatD [doc (showString "return"), prt 0 expr])
     Parser.HighLevelForProgram.Abs.SLetIn id_ type_ expr stmt -> prPrec i 0 (concatD [doc (showString "let"), prt 0 id_, doc (showString ":"), prt 0 type_, doc (showString ":="), prt 0 expr, doc (showString "in"), prt 0 stmt])
-    Parser.HighLevelForProgram.Abs.SLetBIn id_ type_ stmt -> prPrec i 0 (concatD [doc (showString "let"), doc (showString "mut"), prt 0 id_, doc (showString ":"), prt 0 type_, doc (showString ":="), doc (showString "False"), doc (showString "in"), prt 0 stmt])
+    Parser.HighLevelForProgram.Abs.SLetBIn id_ stmt -> prPrec i 0 (concatD [doc (showString "let"), doc (showString "mut"), prt 0 id_, doc (showString ":"), doc (showString "Bool"), doc (showString ":="), doc (showString "False"), doc (showString "in"), prt 0 stmt])
     Parser.HighLevelForProgram.Abs.SLetSetTrue id_ -> prPrec i 0 (concatD [doc (showString "setTrue"), prt 0 id_])
 
 instance Print [Parser.HighLevelForProgram.Abs.Stmt] where
@@ -173,7 +173,7 @@ instance Print Parser.HighLevelForProgram.Abs.Expr where
     Parser.HighLevelForProgram.Abs.VEChar c -> prPrec i 3 (concatD [prt 0 c])
     Parser.HighLevelForProgram.Abs.VEString str -> prPrec i 3 (concatD [printString str])
     Parser.HighLevelForProgram.Abs.VEListConstr exprs -> prPrec i 3 (concatD [doc (showString "["), prt 0 exprs, doc (showString "]")])
-    Parser.HighLevelForProgram.Abs.VEGen type_ stmt -> prPrec i 3 (concatD [doc (showString "{"), prt 0 type_, doc (showString "|"), prt 0 stmt, doc (showString "|"), doc (showString "}")])
+    Parser.HighLevelForProgram.Abs.VEGen stmt -> prPrec i 3 (concatD [doc (showString "{"), prt 0 stmt, doc (showString "}")])
     Parser.HighLevelForProgram.Abs.VEVal id_ -> prPrec i 3 (concatD [prt 0 id_])
     Parser.HighLevelForProgram.Abs.VERev expr -> prPrec i 3 (concatD [doc (showString "reversed"), doc (showString "("), prt 0 expr, doc (showString ")")])
     Parser.HighLevelForProgram.Abs.VEFunc id_ veargs -> prPrec i 3 (concatD [prt 0 id_, doc (showString "("), prt 0 veargs, doc (showString ")")])
@@ -228,5 +228,5 @@ instance Print Parser.HighLevelForProgram.Abs.BinOp where
     Parser.HighLevelForProgram.Abs.BinOpLt -> prPrec i 0 (concatD [doc (showString "<")])
     Parser.HighLevelForProgram.Abs.BinOpGeq -> prPrec i 0 (concatD [doc (showString ">=")])
     Parser.HighLevelForProgram.Abs.BinOpGt -> prPrec i 0 (concatD [doc (showString ">")])
-    Parser.HighLevelForProgram.Abs.BinOpVEq -> prPrec i 0 (concatD [doc (showString "===")])
+    Parser.HighLevelForProgram.Abs.BinOpVEq type_ -> prPrec i 0 (concatD [doc (showString "="), prt 0 type_, doc (showString "=")])
     Parser.HighLevelForProgram.Abs.BinOpVNe -> prPrec i 0 (concatD [doc (showString "!==")])

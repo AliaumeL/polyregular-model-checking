@@ -9,6 +9,8 @@ import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as M
 
+import Data.Tuple.Extra
+
 
 class (Monad m) => MonadElim m where
     introduceVar     :: String -> m String
@@ -69,10 +71,10 @@ refreshBExpr (BApp v ops ()) = do
         ) ops
     v' <- translateVar v
     return $ BApp v' ops' ()
-refreshBExpr (BLitEq c o ()) = do
+refreshBExpr (BLitEq () c o ()) = do
     c' <- refreshCExpr c
     o' <- refreshOExpr o
-    return $ BLitEq c' o' ()
+    return $ BLitEq () c' o' ()
 
 refreshPExpr :: (MonadElim m) => PExpr String () -> m (PExpr String ())
 refreshPExpr (PVar v ()) = do
@@ -124,11 +126,11 @@ refreshStmt (SIf b s1 s2 ()) = do
     s1' <- refreshStmt s1
     s2' <- refreshStmt s2
     return $ SIf b' s1' s2' ()
-refreshStmt (SLetOutput v o s ()) = do
+refreshStmt (SLetOutput (v, ()) o s ()) = do
     o' <- refreshOExpr o
     v' <- introduceVar v
     s' <- refreshStmt s
-    return $ SLetOutput v' o' s' ()
+    return $ SLetOutput (v', ()) o' s' ()
 refreshStmt (SLetBoolean v s ()) = do
     v' <- introduceVar v
     s' <- refreshStmt s
@@ -136,12 +138,12 @@ refreshStmt (SLetBoolean v s ()) = do
 refreshStmt (SSetTrue v ()) = do
     v' <- translateVar v
     return $ SSetTrue v' ()
-refreshStmt (SFor (i, e) v s ()) = do
+refreshStmt (SFor (i, e, ()) v s ()) = do
     v' <- refreshOExpr v
     i' <- introduceVar i
     e' <- introduceVar e
     s' <- refreshStmt s
-    return $ SFor (i', e') v' s' ()
+    return $ SFor (i', e', ()) v' s' ()
 refreshStmt (SSeq ss ()) = do
     ss' <- mapM refreshStmt ss
     return $ SSeq ss' ()
@@ -167,7 +169,7 @@ substBExpr s (BComp c p1 p2 ()) = BComp c (substPExpr s p1) (substPExpr s p2) ()
 substBExpr _ (BVar v ()) = BVar v ()
 substBExpr s (BGen stmt ()) = BGen (substStmt s stmt) ()
 substBExpr s (BApp v ops ()) = BApp v (map (\(o, ps) -> (substOExpr s o, map (substPExpr s) ps)) ops) ()
-substBExpr s (BLitEq c o ()) = BLitEq (substCExpr s c) (substOExpr s o) ()
+substBExpr s (BLitEq () c o ()) = BLitEq () (substCExpr s c) (substOExpr s o) ()
 
 substPExpr :: SubstMap -> PExpr String () -> PExpr String ()
 substPExpr s (PVar v ()) = case M.lookup v (pVars s) of
@@ -193,17 +195,17 @@ substStmt s (SYield o ()) = SYield (substOExpr s o) ()
 substStmt s (SOReturn o ()) = SOReturn (substOExpr s o) ()
 substStmt s (SBReturn b ()) = SBReturn (substBExpr s b) ()
 substStmt s (SIf b s1 s2 ()) = SIf (substBExpr s b) (substStmt s s1) (substStmt s s2) ()
-substStmt s (SLetOutput v o stmt ()) = SLetOutput v (substOExpr s o) (substStmt s stmt) ()
+substStmt s (SLetOutput (v, ()) o stmt ()) = SLetOutput (v, ()) (substOExpr s o) (substStmt s stmt) ()
 substStmt s (SLetBoolean v stmt ()) = SLetBoolean v (substStmt s stmt) ()
 substStmt _ (SSetTrue v ()) = SSetTrue v ()
-substStmt s (SFor (i, e) v stmt ()) = SFor (i, e) (substOExpr s v) (substStmt s stmt) ()
+substStmt s (SFor (i, e, ()) v stmt ()) = SFor (i, e, ()) (substOExpr s v) (substStmt s stmt) ()
 substStmt s (SSeq ss ()) = SSeq (map (substStmt s) ss) ()
 
 
-makeArguments :: [(String, [String])] -> [(OExpr String (), [PExpr String ()])] -> SubstMap
+makeArguments :: [(String, t, [String])] -> [(OExpr String (), [PExpr String ()])] -> SubstMap
 makeArguments names values = SubstMap {
-    pVars = M.fromList $ zip (concatMap snd names) (concatMap snd values),
-    oVars = M.fromList $ zip (map fst names) (map fst values)
+    pVars = M.fromList $ zip (concatMap thd3 names) (concatMap snd values),
+    oVars = M.fromList $ zip (map fst3 names) (map fst values)
 }
 
 
@@ -229,10 +231,10 @@ elimBExpr (BApp v ops ()) = do
     let argsmap = makeArguments args ops
     body' <- refreshAndReset . substStmt argsmap $ body
     return $ BGen body' ()
-elimBExpr (BLitEq c o ()) = do
+elimBExpr (BLitEq () c o ()) = do
     c' <- elimCExpr c
     o' <- elimOExpr o
-    return $ BLitEq c' o' ()
+    return $ BLitEq () c' o' ()
 
 
 elimPExpr :: (MonadElim m) => PExpr String () -> m (PExpr String ())
@@ -291,10 +293,10 @@ elimStmt (SLetBoolean v stmt ()) = do
     stmt' <- elimStmt stmt
     return $ SLetBoolean v stmt' ()
 elimStmt (SSetTrue v ()) = pure $ SSetTrue v ()
-elimStmt (SFor (i, e) v stmt ()) = do
+elimStmt (SFor (i, e, ()) v stmt ()) = do
     v' <- elimOExpr v
     stmt' <- elimStmt stmt
-    return $ SFor (i, e) v' stmt' ()
+    return $ SFor (i, e, ()) v' stmt' ()
 elimStmt (SSeq ss ()) = do
     ss' <- mapM elimStmt ss
     return $ SSeq ss' ()

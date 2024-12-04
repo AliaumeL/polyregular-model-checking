@@ -18,7 +18,7 @@ data BExpr v t = BConst Bool t
                | BGen (Stmt v t) t
                -- tests
                | BApp v [(OExpr v t, [PExpr v t])] t
-               | BLitEq (CExpr v t) (OExpr v t) t
+               | BLitEq t (CExpr v t) (OExpr v t) t
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
 data PExpr v t = PVar v t
@@ -55,10 +55,10 @@ data Stmt v t = SIf (BExpr v t) (Stmt v t) (Stmt v t) t
               | SYield (OExpr v t) t
               | SOReturn (OExpr v t) t
               | SBReturn (BExpr v t) t
-              | SLetOutput v (OExpr v t) (Stmt v t) t
+              | SLetOutput (v, t) (OExpr v t) (Stmt v t) t
               | SLetBoolean v (Stmt v t) t
               | SSetTrue v t
-              | SFor (v, v) (OExpr v t) (Stmt v t) t
+              | SFor (v, v, t) (OExpr v t) (Stmt v t) t
               | SSeq [Stmt v t] t
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
@@ -71,8 +71,8 @@ letBooleans (b : bs) block = SLetBoolean b (letBooleans bs block) ()
 
 letOutputs :: [(String, OExpr String ())] -> Stmt String () -> Stmt String ()
 letOutputs [] _ = error "Empty list of outputs"
-letOutputs [(v, e)] block = SLetOutput v e block ()
-letOutputs ((v, e) : es) block = SLetOutput v e (letOutputs es block) ()
+letOutputs [(v, e)] block = SLetOutput (v, ()) e block ()
+letOutputs ((v, e) : es) block = SLetOutput (v, ()) e (letOutputs es block) ()
 
 -- | declares a function with a given type and a block of statements
 data StmtFun v t = StmtFun v [(v, t, [v])] (Stmt v t) t

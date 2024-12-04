@@ -38,9 +38,9 @@ identToString (P.Ident s) = s
 identsToStrings :: [P.Ident] -> [String]
 identsToStrings = map identToString
 
-parsedToArgD :: P.ArgD -> ((String, PType), [String])
-parsedToArgD (P.ArgDSole (P.Ident name) t) = (name, t, [])
-parsedToArgD (P.ArgDWithPoses (P.Ident name) t poses) = (name, t,  identsToStrings poses)
+parsedToArgD :: P.ArgD -> (String, Maybe PType, [String])
+parsedToArgD (P.ArgDSole (P.Ident name) t) = (name, Just t, [])
+parsedToArgD (P.ArgDWithPoses (P.Ident name) t poses) = (name, Just t,  identsToStrings poses)
 
 data RetContext = RBool | RVal
 
@@ -64,21 +64,11 @@ annotateTypeOExpr (OIndex e p _) t = OIndex e p (Just t)
 annotateTypeOExpr (OApp f args _) t = OApp f args (Just t)
 annotateTypeOExpr (OGen stmt _) t = OGen stmt (Just t)
 
-annotateTypeBExpr :: PABExpr -> PABExpr
-annotateTypeBExpr (BVar v _) = BVar v (Just P.TBool)
-annotateTypeBExpr (BLitEq e1 e2 _) = BLitEq e1 e2 (Just P.TBool)
-annotateTypeBExpr (BComp c e1 e2 _) = BComp c e1 e2 (Just P.TBool)
-annotateTypeBExpr (BOp op e1 e2 _) = BOp op e1 e2 (Just P.TBool)
-annotateTypeBExpr (BNot e _) = BNot e (Just P.TBool)
-annotateTypeBExpr (BGen stmt _) = BGen stmt (Just P.TBool)
-annotateTypeBExpr (BApp f args _) = BApp f args (Just P.TBool)
-
-
 parsedToStmt :: RetContext -> P.Stmt -> M PAStmt
-parsedToStmt ctx (P.SFor i v list stmts) = do
+parsedToStmt ctx (P.SFor i v t list stmts) = do
     list' <- parsedToOutputExpr list
     stmts' <- forM stmts (parsedToStmt ctx)
-    return $ SFor (identToString i, identToString v) list' (SSeq stmts' Nothing) Nothing
+    return $ SFor (identToString i, identToString v, (Just t)) list' (SSeq stmts' Nothing) Nothing
 parsedToStmt ctx (P.SIf cond stmts) = do
     cond' <- parsedToBoolExpr cond
     stmts' <- forM stmts (parsedToStmt ctx)
@@ -104,21 +94,13 @@ parsedToStmt ctx (P.SLetIn i t e stmt) = do
         RVal ->   do
             e' <- parsedToOutputExpr e
             let e'' = annotateTypeOExpr e' t
-            return $ SLetOutput (identToString i) e'' stmt' Nothing
+            return $ SLetOutput (identToString i, Just t) e'' stmt' Nothing
         RBool -> do
             Left "Boolean non-mut variables not supported"
-            -- e' <- parsedToBoolExpr e
-            -- let e'' = annotateTypeBExpr e'
-            -- return $ SLetBoolean (identToString i) stmt' Nothing
-parsedToStmt ctx (P.SLetBIn i t stmt) = do
+parsedToStmt ctx (P.SLetBIn i stmt) = do
     stmt' <- parsedToStmt ctx stmt
     return $ SLetBoolean (identToString i) stmt' Nothing
 parsedToStmt ctx (P.SLetSetTrue i) = return $ SSetTrue (identToString i) Nothing
-
-isVBinOpVal :: P.BinOp -> Bool
-isVBinOpVal P.BinOpVEq = True
-isVBinOpVal P.BinOpVNe = True
-isVBinOpVal _ = False
 
 binOpPToComp :: P.BinOp -> Comp
 binOpPToComp P.BinOpEq = Eq
@@ -153,7 +135,7 @@ parsedToBoolExpr :: P.Expr -> M PABExpr
 parsedToBoolExpr (P.VEChar a) = Left "Char in boolean expression"
 parsedToBoolExpr (P.VEString a) = Left "String in boolean expression"
 parsedToBoolExpr (P.VEListConstr a) = Left "List in boolean expression"
-parsedToBoolExpr (P.VEGen t stmt) = do 
+parsedToBoolExpr (P.VEGen stmt) = do 
     stmt' <- parsedToStmt RBool stmt
     return $ BGen stmt' (Just P.TBool)
 parsedToBoolExpr (P.VEVal i) = return $ BVar (identToString i) (Just P.TBool)
@@ -166,18 +148,17 @@ parsedToBoolExpr P.BEFalse = Left "Error: Boolean literals not supported"
 parsedToBoolExpr (P.BENot e) = do 
     e' <- parsedToBoolExpr e
     return $ BNot e' (Just P.TBool)
-parsedToBoolExpr (P.BEBinOp e1 op e2) = 
-    if isVBinOpVal op then do
-        e1 <- parsedToOutputExpr e1
-        e2 <- parsedToConstExpr e2
-        if op == P.BinOpVEq then
-            return $ BLitEq e2 e1 (Just P.TBool)
-        else
-            return $ BNot (BLitEq e2 e1 (Just P.TBool)) (Just P.TBool)
-    else do 
-        e1' <- expectVar e1
-        e2' <- expectVar e2
-        return $ BComp (binOpPToComp op) (PVar e1' Nothing) (PVar e2' Nothing) (Just P.TBool)
+parsedToBoolExpr (P.BEBinOp e1 op e2) =
+    case op of 
+        P.BinOpVEq t -> do
+            e1' <- parsedToOutputExpr e1
+            e2' <- parsedToConstExpr e2 
+            return $ BLitEq (Just t) e2' e1' (Just P.TBool)
+        P.BinOpVEq t -> undefined 
+        op -> do
+            e1' <- expectVar e1
+            e2' <- expectVar e2
+            return $ BComp (binOpPToComp op) (PVar e1' Nothing) (PVar e2' Nothing) (Just P.TBool)
 parsedToBoolExpr (P.BEAnd e1 e2) = do 
     e1' <- parsedToBoolExpr e1
     e2' <- parsedToBoolExpr e2
@@ -193,9 +174,9 @@ parsedToOutputExpr (P.VEString s) = return $ OConst (CList (map (\c -> CChar c (
 parsedToOutputExpr (P.VEListConstr es) = do
     es' <- forM es parsedToOutputExpr
     return $ OList es' Nothing
-parsedToOutputExpr (P.VEGen t stmt) = do
+parsedToOutputExpr (P.VEGen stmt) = do
     stmt' <- parsedToStmt RVal stmt
-    return $ OGen stmt' (Just t)
+    return $ OGen stmt' Nothing
 parsedToOutputExpr (P.VEVal i) = return $ OVar (identToString i) Nothing
 parsedToOutputExpr (P.VERev e) = do
     e' <- parsedToOutputExpr e
