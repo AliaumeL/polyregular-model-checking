@@ -301,12 +301,12 @@ elimStmt (SSeq ss ()) = do
 
 
 elimProgramM :: (MonadElim m) => UProgram -> m UProgram
-elimProgramM (Program funcs m ()) = do
+elimProgramM (Program funcs m) = do
     newFuncs <- forM funcs $ \(StmtFun v args stmt _) -> do
                     stmt' <- elimStmt stmt
                     putFunctionBody (StmtFun v args stmt' ()) 
                     return $ StmtFun v args stmt' ()
-    return $ Program newFuncs m ()
+    return $ Program newFuncs m
 
 elimProgram :: UProgram -> UProgram
 elimProgram p = evalState (elimProgramM p :: ElimM UProgram) (0, M.empty, M.empty)

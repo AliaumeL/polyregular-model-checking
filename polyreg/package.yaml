@@ -26,6 +26,11 @@ dependencies:
   - extra
   - mtl
   - text
+  - array
+
+build-tools:
+  - alex
+  - happy 
 
 ghc-options:
   - -Wall
