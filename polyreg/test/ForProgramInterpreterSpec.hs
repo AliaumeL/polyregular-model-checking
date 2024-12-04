@@ -7,8 +7,21 @@ import ForPrograms
 import ForProgramInterpreter
 import Parser.ParseHighLevel
 
+dumbWords :: String -> [String]
+dumbWords w = go w []
+    where
+        go :: String -> String -> [String]
+        go [] acc = [reverse acc]
+        go (' ' : xs) acc = (reverse acc) : go xs []
+        go (x : xs) acc = go xs (x : acc)
+
+dumbUnWords :: [String] -> String
+dumbUnWords [] = ""
+dumbUnWords [x] = x
+dumbUnWords (x:xs) = x ++ " " ++ dumbUnWords xs
+
 reverseOrderOfWords :: String -> String
-reverseOrderOfWords = unwords . reverse . words
+reverseOrderOfWords = dumbUnWords . reverse . dumbWords
 
 fromRight' :: Either a b -> b
 fromRight' (Right x) = x
