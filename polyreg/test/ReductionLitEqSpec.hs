@@ -19,7 +19,7 @@ spec :: Spec
 spec = do 
     testProgram <- runIO $ parseFromFile "assets/litteral_test.pr"
     let infered = fromRight' (inferProgram (fromRight' testProgram))
-    describe "We actually remove function calls" $ do
+    describe "We actually remove literal tests calls" $ do
         it "Starts with a program with some BLitEq calls" $ do 
             (hasLitEq infered) `shouldBe` True
         it "Ends with a program without function calls" $ do

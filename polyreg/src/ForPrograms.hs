@@ -32,7 +32,7 @@ data CExpr v t = CChar Char t
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
 instance Semigroup (CExpr v t) where
-    CList xs _ <> CList ys _ = CList (xs ++ ys) undefined
+    CList xs t <> CList ys _ = CList (xs ++ ys) t
     _ <> _ = error "Cannot concatenate"
 
 data OExpr v t = OVar v t

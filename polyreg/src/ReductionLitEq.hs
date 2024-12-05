@@ -67,16 +67,16 @@ instance MonadFresh FreshM where
 
 unlitEq :: (MonadFresh m) => (CExpr String ValueType) -> (OExpr String ValueType) -> m (BExpr String ValueType)
 unlitEq (CChar c t) v = pure $ BLitEq t (CChar c t) v TBool
-unlitEq (CList xs (TOutput (TOList t))) v = do
+unlitEq (CList xs (TConst (TOList t))) v = do
         let n = length xs
-        vars  <- mapM (\i -> fresh ("b" ++ show i)) [0..n+1]
+        vars  <- mapM (\i -> fresh ("b" ++ show i)) [0..n]
         e     <- fresh "v"
         i     <- fresh "i"
         tests <- mapM (\x -> unlitEq x (OVar e (TOutput t))) xs
         let ifs = makeIfs tests vars
         let body = SFor (i, e, (TOutput t)) v ifs TBool
         return . (\x -> BGen x TBool) . letBooleans TBool vars $ SSeq [ body, SBReturn (BConst True TBool) TBool ] TBool
-unlitEq _ _ = error "unlitEq: incompatible arguments"
+unlitEq a b = error $ "unlitEq: incompatible arguments " ++ show a ++ " " ++ show b
 
 -- makeIfs v cexprs bvars 
 makeIfs :: [BExpr String ValueType] -> [String] -> Stmt String ValueType
@@ -95,7 +95,7 @@ makeIfs (t : ts) (b : bs) = SIf cond (SSeq trueBranch TBool) falseBranch TBool
                            (SSeq [] TBool)
                            TBool
                      ]
-makeIfs _ _ = error "makeIfs: incompatible lists of arguments"
+makeIfs a b = error $ "makeIfs: incompatible lists of arguments" ++ show a ++ " " ++ show b
 
 
 unlitEqBExpr :: (MonadFresh m) => BExpr String ValueType -> m (BExpr String ValueType)
