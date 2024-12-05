@@ -143,8 +143,8 @@ parsedToBoolExpr (P.VERev e) = Left "Rev in boolean expression"
 parsedToBoolExpr (P.VEFunc i args) = do 
     args <- forM args parsedToArg
     return $ BApp (identToString i) args (Just P.TBool)
-parsedToBoolExpr P.BETrue = Left "Error: Boolean literals not supported"
-parsedToBoolExpr P.BEFalse = Left "Error: Boolean literals not supported"
+parsedToBoolExpr (P.BETrue)  = return $ BConst True (Just P.TBool)
+parsedToBoolExpr (P.BEFalse) = return $ BConst False (Just P.TBool)
 parsedToBoolExpr (P.BENot e) = do 
     e' <- parsedToBoolExpr e
     return $ BNot e' (Just P.TBool)

@@ -71,12 +71,12 @@ oExprType (OGen _ t) = t
 
 
 letBooleans :: t -> [String] -> Stmt String t -> Stmt String t
-letBooleans _ [] _ = error "Empty list of booleans"
+letBooleans _ [] block = block
 letBooleans t [b] block = SLetBoolean b block t
 letBooleans t (b : bs) block = SLetBoolean b (letBooleans t bs block) t
 
 letOutputs :: t -> [(String, OExpr String t)] -> Stmt String t -> Stmt String t
-letOutputs _ [] _ = error "Empty list of outputs"
+letOutputs _ [] block = block
 letOutputs t [(v, e)] block = SLetOutput (v, oExprType e) e block t
 letOutputs t ((v, e) : es) block = SLetOutput (v, oExprType e) e (letOutputs t es block) t
 

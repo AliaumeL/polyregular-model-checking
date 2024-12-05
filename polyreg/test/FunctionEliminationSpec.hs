@@ -11,9 +11,9 @@ import ForProgramsTyping
 import Parser.ParseHighLevel
 import FunctionElimination
 
-fromRight' :: Either a b -> b
+fromRight' :: (Show a, Show b) => Either a b -> b
 fromRight' (Right x) = x
-fromRight' _ = error "fromRight'"
+fromRight' e = error . show $ e
 
 
 untypeProgram :: Program String a -> Program String ()
@@ -84,5 +84,18 @@ spec = do
             let expected = runProgramString (untypeProgram infered)    input
             let actual = runProgramString   (untypeProgram eliminated) input
             actual `shouldBe` expected
-
+    describe "We actually remove function calls in `boolean_funcs.pr`" $ do
+        testProgram <- runIO $ parseFromFile "assets/boolean_funcs.pr"
+        let infered = fromRight' (inferProgram (fromRight' testProgram))
+        it "Starts with a program with function calls" $ do 
+            (hasFunctionCall infered) `shouldBe` True
+        it "Ends with a program without function calls" $ do
+            let eliminated = eliminateFunctionCalls infered
+            (hasFunctionCall eliminated) `shouldBe` False
+        it "The program still works" $ do
+            let eliminated = eliminateFunctionCalls infered
+            let input = "go to park"
+            let expected = runProgramString (untypeProgram infered)    input
+            let actual = runProgramString   (untypeProgram eliminated) input
+            actual `shouldBe` expected
 

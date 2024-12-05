@@ -1,0 +1,15 @@
+def isOnlyAs (s : [Char]) : Bool :=
+    for (j, v : Char) in s do 
+        if not (v =Char= 'a') then
+            return False
+        endif 
+    done 
+    return True
+
+def main (w : [Char]) : [Char] :=
+    if isOnlyAs(w) then
+        return "yes"
+    else
+        return "no"
+    endif
+
