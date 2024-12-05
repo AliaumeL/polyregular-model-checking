@@ -1,4 +1,5 @@
--- Translate to haskell with `bnfc --haskell -d -p Parser HighLevelForProgram.cf`
+-- Translate to haskell with 
+-- `bnfc --haskell -d -p Parser HighLevelForProgram.cf`
 -- Remember to remove the Test.hs file, which breaks the build
 
 comment "#" ;
@@ -35,7 +36,7 @@ BEBinOp.       Expr2 ::= Expr3 BinOp Expr3 ;
 BEAnd.         Expr1 ::= Expr2 "and" Expr1;
 BEOr.          Expr ::= Expr1 "or" Expr;
 coercions Expr 3 ;
-separator nonempty Expr "," ;
+separator Expr "," ;
 
 TChar. Type1 ::= "Char" ;
 TList. Type1 ::= "[" Type "]" ;

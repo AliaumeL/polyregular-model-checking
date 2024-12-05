@@ -167,7 +167,10 @@ Expr
   | Expr1 { $1 }
 
 ListExpr :: { [Parser.HighLevelForProgram.Abs.Expr] }
-ListExpr : Expr { (:[]) $1 } | Expr ',' ListExpr { (:) $1 $3 }
+ListExpr
+  : {- empty -} { [] }
+  | Expr { (:[]) $1 }
+  | Expr ',' ListExpr { (:) $1 $3 }
 
 Type1 :: { Parser.HighLevelForProgram.Abs.Type }
 Type1

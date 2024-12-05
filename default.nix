@@ -6,6 +6,8 @@ pkgs.buildEnv {
     pkgs.ghc
     pkgs.haskellPackages.stack
     pkgs.haskellPackages.haskell-language-server
+    # bncf parser haskell
+    pkgs.haskellPackages.BNFC
     pkgs.gmp
     # alt-ergo prover (non-free)
     # pkgs.alt-ergo

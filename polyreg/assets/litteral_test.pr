@@ -22,24 +22,24 @@ def getCurrentWord (s : [Char] with (i)) : [Char] :=
        endif
      done 
 
-def words (s : [Char]) : [[Char]] :=
-    yield getFirstWord(s)
-    for (i, v : Char) in s do 
-        if v =Char= ' ' then 
-            yield getCurrentWord(s with (i)) 
+def words (ss : [Char]) : [[Char]] :=
+    yield getFirstWord(ss)
+    for (i, vv : Char) in ss do 
+        if vv =Char= ' ' then 
+            yield getCurrentWord(ss with (i)) 
         endif 
      done
 
 
 def main (w : [Char]) : [Char] :=
     let v : [[Char]] := words(w) in
-    if v =[Char]= [] then
+    if v =[[Char]]= [] then
         return "No words found"
     else
-        if v =[Char]= [""] then
+        if v =[[Char]]= [""] then
             return "It is the empty string"
         else
-            if v =[Char]= ["go", "to", "park"] then
+            if v =[[Char]]= ["go", "to", "park"] then
                 return "gotopark!"
             else
                 return "No match"

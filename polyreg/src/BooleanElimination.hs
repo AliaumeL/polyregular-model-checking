@@ -110,9 +110,9 @@ extractFreshGenerators (BLitEq t c o t') = return (BLitEq t c o t', [])
 
 
 returnWithVar :: ValueType -> String -> String -> BExpr String ValueType -> Stmt String ValueType
-returnWithVar t b r x = SIf (BVar r t) 
-                          (SSeq [(SSetTrue b t), 
-                                (SIf x (SSetTrue r t) (SSeq [] t) t)] t)
+returnWithVar t b r x = SIf (BNot (BVar r TBool) TBool)
+                          (SSeq [(SSetTrue r t), 
+                                (SIf x (SSetTrue b t) (SSeq [] t) t)] t)
                           (SSeq [] t)
                           t
 

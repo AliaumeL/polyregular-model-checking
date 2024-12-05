@@ -382,4 +382,3 @@ inferArgsM ts os = zipWithM inferArgM ts os
 
 inferProgram :: (Program String (Maybe ValueType)) -> Either TypeError (Program String ValueType)
 inferProgram (Program p v) = Program <$> runTypeMonad (inferProgramM p) <*> pure v
-

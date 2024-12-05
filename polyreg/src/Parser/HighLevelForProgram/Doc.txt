@@ -84,7 +84,8 @@ All other symbols are terminals.
   |  |  **|**  | //Expr2//
   | //Expr// | -> | //Expr1// ``or`` //Expr//
   |  |  **|**  | //Expr1//
-  | //[Expr]// | -> | //Expr//
+  | //[Expr]// | -> | **eps**
+  |  |  **|**  | //Expr//
   |  |  **|**  | //Expr// ``,`` //[Expr]//
   | //Type1// | -> | ``Char``
   |  |  **|**  | ``[`` //Type// ``]``

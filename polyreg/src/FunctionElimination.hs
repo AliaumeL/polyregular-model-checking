@@ -1,15 +1,20 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module FunctionElimination (eliminateFunctionCalls, hasFunctionCall)
-where
+module FunctionElimination (eliminateFunctionCalls, hasFunctionCall, substStmt, substOExpr, substBExpr, SubstMap(..)) where
 
 import ForPrograms
 import ForProgramsTyping
 
 import Control.Monad
 import Control.Monad.State
+import Control.Monad.Except
+
 import Data.Map (Map)
 import qualified Data.Map as M
+
+import Data.Set (Set)
+import qualified Data.Set as S
 
 import Data.Tuple.Extra
 
@@ -58,38 +63,97 @@ hasFunctionCallOExpr (OApp _ ops _) = True
 hasFunctionCallOExpr (OGen s _) = hasFunctionCallStmt s
 
 
+-- And now for the elimination procedure
 
 class (Monad m) => MonadElim m where
-    introduceVar     :: String -> m String
-    translateVar     :: String -> m String
-    getFunctionBody  :: String -> m (StmtFun String ValueType)
-    putFunctionBody  :: (StmtFun String ValueType) -> m ()
-    resetVariables   :: m ()
+    withFreshVar     :: String -> m a -> m a
+    withFreshVars    :: [String] -> m a -> m a
+    getVar           :: String -> m String
 
-type ElimM = State (Int, Map String String, (Map String (StmtFun String ValueType)))
+    -- sets the identity mapping for the local variables
+    -- provided, and removes them after the computation
+    withLocalVars   :: [String] -> m a -> m a
+
+    withFunction     :: StmtFun String ValueType -> m a -> m a
+    getFunctionBody  :: String -> m (StmtFun String ValueType)
+
+    throwElimError   :: String -> m a
+    guardElim        :: Bool -> String -> m ()
+
+
+data ElimState = ElimState {
+    counter :: Int, -- counter for the new variable names
+    varMap  :: Map String String, -- map from old variable names to new variable names
+    funMap  :: Map String (StmtFun String ValueType) -- map from function names to their bodies
+} deriving (Eq, Show)
+
+data ElimError = ElimError String ElimState
+    deriving (Eq, Show)
+
+newtype ElimM a = ElimM (StateT ElimState (Except ElimError) a)
+    deriving (Functor, Applicative, Monad, MonadState ElimState, MonadError ElimError)
+
+runElimM :: ElimM a -> a
+runElimM (ElimM m) = case runExcept (runStateT m (ElimState 0 M.empty M.empty)) of
+    Left e -> error $ show e
+    Right (a, _) -> a
 
 instance MonadElim ElimM where
-    introduceVar s = do
-        (i, m, f) <- get
-        put (i + 1, M.insert s (s ++ "#" ++ show i) m, f)
-        return $ s ++ "#" ++ show i
-    translateVar s = do
-        (_, m, _) <- get
-        case M.lookup s m of
-            Nothing -> error $ "Variable not found: " ++ s
-            Just s' -> return s'
-    resetVariables = do
-        (c, _, f) <- get
-        put (c, M.empty, f)
-    getFunctionBody s = do
-        (_, _, f) <- get
-        case M.lookup s f of
-            Nothing -> error $ "Function not found: " ++ s
-            Just stmt -> return stmt
-    putFunctionBody stmt = do
-        (c, m, f) <- get
-        put (c, m, M.insert (funName stmt) stmt f)
+    withLocalVars ss m = do
+        let names = zip ss ss
+        let subst = M.fromList names
+        modify (\st -> st { varMap = M.union subst (varMap st) })
+        a <- m
+        modify (\st -> st { varMap = foldr M.delete (varMap st) ss })
+        return a
+        
+    withFreshVar s m = do
+        c <- gets counter
+        let name = s ++ "#" ++ show c
+        modify (\st -> st { counter = c + 1, varMap = M.insert s name (varMap st) })
+        a <- m
+        modify (\st -> st { varMap = M.delete s (varMap st) })
+        return a
 
+    withFreshVars ss m = do
+        c <- gets counter
+        let names = zipWith (\s i -> s ++ "#" ++ show i) ss [c..]
+        modify (\st -> st { counter = c + length ss, varMap = M.union (M.fromList $ zip ss names) (varMap st) })
+        a <- m
+        modify (\st -> st { varMap = foldr M.delete (varMap st) ss })
+        return a
+
+    getVar s = do 
+        m <- gets varMap
+        case M.lookup s m of
+            Nothing -> throwElimError $ "Variable not found: " ++ s
+            Just v  -> return v
+
+    withFunction f@(StmtFun v _ _ _) m = do 
+        modify (\st -> st { funMap = M.insert v f (funMap st) })
+        a <- m
+        modify (\st -> st { funMap = M.delete v (funMap st) })
+        return a
+
+    getFunctionBody v = do
+        m <- gets funMap
+        case M.lookup v m of
+            Nothing -> throwElimError $ "Function not found: " ++ v
+            Just f  -> return f
+
+    throwElimError s = do
+        ctx <- get
+        throwError $ ElimError s ctx
+
+    guardElim b s = unless b $ throwElimError s
+
+
+-- | 
+-- Our first goal is to globally refresh the variables names in a given program.
+-- This means: every variable name that is *quantified* should be 
+-- replaced by a fresh name. 
+-- On unquantified variables, we hard error.
+-- |
 
 refreshBExpr :: (MonadElim m) => BExpr String ValueType -> m (BExpr String ValueType)
 refreshBExpr (BConst b t) = pure $ BConst b t
@@ -105,7 +169,7 @@ refreshBExpr (BComp c p1 p2 t) = do
     p2' <- refreshPExpr p2
     return $ BComp c p1' p2' t
 refreshBExpr (BVar v t) = do
-    v' <- translateVar v
+    v' <- getVar v
     return $ BVar v' t
 refreshBExpr (BGen stmt t) = do
     stmt' <- refreshStmt stmt
@@ -116,8 +180,7 @@ refreshBExpr (BApp v ops t) = do
             ps' <- mapM refreshPExpr ps
             return (o', ps')
         ) ops
-    v' <- translateVar v
-    return $ BApp v' ops' t
+    return $ BApp v ops' t
 refreshBExpr (BLitEq t c o t') = do
     c' <- refreshCExpr c
     o' <- refreshOExpr o
@@ -125,7 +188,7 @@ refreshBExpr (BLitEq t c o t') = do
 
 refreshPExpr :: (MonadElim m) => PExpr String ValueType -> m (PExpr String ValueType)
 refreshPExpr (PVar v t) = do
-    v' <- translateVar v
+    v' <- getVar v
     return $ PVar v' t
 
 refreshCExpr :: (MonadElim m) => CExpr String ValueType -> m (CExpr String ValueType)
@@ -133,7 +196,7 @@ refreshCExpr x = pure x
 
 refreshOExpr :: (MonadElim m) => OExpr String ValueType -> m (OExpr String ValueType)
 refreshOExpr (OVar v t) = do
-    v' <- translateVar v
+    v' <- getVar v
     return $ OVar v' t
 refreshOExpr (OConst c t) = pure (OConst c t)
 refreshOExpr (OList os t) = do
@@ -152,8 +215,7 @@ refreshOExpr (OApp v ops t) = do
             ps' <- mapM refreshPExpr ps
             return (o', ps')
         ) ops
-    v' <- translateVar v
-    return $ OApp v' ops' t
+    return $ OApp v ops' t
 refreshOExpr (OGen stmt t) = do
     stmt' <- refreshStmt stmt
     return $ OGen stmt' t
@@ -175,38 +237,53 @@ refreshStmt (SIf b s1 s2 t) = do
     return $ SIf b' s1' s2' t
 refreshStmt (SLetOutput (v, t') o s t) = do
     o' <- refreshOExpr o
-    v' <- introduceVar v
-    s' <- refreshStmt s
-    return $ SLetOutput (v', t') o' s' t
+    withFreshVar v $ do
+        v' <- getVar v
+        s' <- refreshStmt s
+        return $ SLetOutput (v', t') o' s' t
 refreshStmt (SLetBoolean v s t) = do
-    v' <- introduceVar v
-    s' <- refreshStmt s
-    return $ SLetBoolean v' s' t
+    withFreshVar v $ do
+        v' <- getVar v
+        s' <- refreshStmt s
+        return $ SLetBoolean v' s' t
 refreshStmt (SSetTrue v t) = do
-    v' <- translateVar v
+    v' <- getVar v
     return $ SSetTrue v' t
 refreshStmt (SFor (i, e, t') v s t) = do
     v' <- refreshOExpr v
-    i' <- introduceVar i
-    e' <- introduceVar e
-    s' <- refreshStmt s
-    return $ SFor (i', e', t') v' s' t
+    withFreshVars [i, e] $ do
+        i' <- getVar i
+        e' <- getVar e
+        s' <- refreshStmt s
+        return $ SFor (i', e', t') v' s' t
 refreshStmt (SSeq ss t) = do
     ss' <- mapM refreshStmt ss
     return $ SSeq ss' t
 
+-- | 
+-- Now, we can eliminate functions as follows.
+-- Whenever we encounter a function call, we replace
+-- it by a generator with the body of the function.
+--
+-- BApp f [(o1, [p1, p2]), (o2, [p3, p4])] t
+-- ->
+-- OGen ( substitute (body f) σ) t 
+-- where
+-- σ maps the arguments of f to the values of the arguments
+--
+-- |
 
-refreshAndReset :: (MonadElim m) => Stmt String ValueType -> m (Stmt String ValueType)
-refreshAndReset stmt = do
-    stmt' <-  refreshStmt stmt
-    resetVariables
-    return stmt'
-
+-- First we code the actual substitution operation,
+-- without any check.
+-- We cannot error: if something is not in the
+-- substitution map, we just leave it as is.
+-- Furthermore, because we are only going to
+-- substitute function arguments, we will 
+-- only need to substitute PExpr and OExpr.
 data SubstMap = SubstMap {
     pVars :: Map String (PExpr String ValueType),
     oVars :: Map String (OExpr String ValueType)
 } deriving(Show, Eq)
-
 
 substBExpr :: SubstMap -> BExpr String ValueType -> BExpr String ValueType
 substBExpr _ (BConst b t) = BConst b t
@@ -220,7 +297,7 @@ substBExpr s (BLitEq t' c o t) = BLitEq t' (substCExpr s c) (substOExpr s o) t
 
 substPExpr :: SubstMap -> PExpr String ValueType -> PExpr String ValueType
 substPExpr s (PVar v t) = case M.lookup v (pVars s) of
-    Nothing -> error $ "(substPexpr) Variable not found: " ++ v
+    Nothing -> (PVar v t)
     Just p -> p
 
 substCExpr :: SubstMap -> CExpr String ValueType -> CExpr String ValueType
@@ -228,7 +305,7 @@ substCExpr _ x = x
 
 substOExpr :: SubstMap -> OExpr String ValueType -> OExpr String ValueType
 substOExpr s (OVar v t) = case M.lookup v (oVars s) of
-    Nothing -> error $ "(substOExpr) Variable not found: " ++ v ++ " in " ++ show s
+    Nothing -> OVar v t
     Just o -> o
 substOExpr s (OConst c t) = OConst (substCExpr s c) t
 substOExpr s (OList os t) = OList (map (substOExpr s) os) t
@@ -276,7 +353,7 @@ elimBExpr (BGen stmt t) = do
 elimBExpr (BApp v ops t) = do
     (StmtFun _ args body _) <- getFunctionBody v
     let argsmap = makeArguments args ops
-    body' <- refreshAndReset . substStmt argsmap $ body
+    body' <- refreshStmt . substStmt argsmap $ body
     return $ BGen body' t
 elimBExpr (BLitEq t' c o t) = do
     c' <- elimCExpr c
@@ -303,6 +380,12 @@ elimOExpr (OIndex o p t) = do
     o' <- elimOExpr o
     p' <- elimPExpr p
     return $ OIndex o' p' t
+-- Applications
+-- 1. get the function body
+-- 2. eliminate function calls in the arguments
+-- 3. substitute the arguments in the body
+-- 4. freshen the variables in the body
+-- 5. create a generator with the new body
 elimOExpr (OApp v ops t) = do
     (StmtFun _ args body _) <- getFunctionBody v
     ops' <- mapM (\(o, ps) -> do
@@ -310,8 +393,10 @@ elimOExpr (OApp v ops t) = do
             ps' <- mapM elimPExpr ps
             return (o', ps')
         ) ops
+    let freeVars = freeVarsStmt body
     let argsmap = makeArguments args ops'
-    body' <- refreshAndReset . substStmt argsmap $ body
+    let bodyWithoutVars = substStmt argsmap body
+    body' <- refreshStmt bodyWithoutVars
     return $ OGen body' t
 elimOExpr (OGen stmt t) = do
     stmt' <- elimStmt stmt
@@ -332,30 +417,39 @@ elimStmt (SIf b s1 s2 t) = do
     s1' <- elimStmt s1
     s2' <- elimStmt s2
     return $ SIf b' s1' s2' t
-elimStmt (SLetOutput v o stmt t) = do
+elimStmt (SLetOutput (v,tv) o stmt t) = do
     o' <- elimOExpr o
-    stmt' <- elimStmt stmt
-    return $ SLetOutput v o' stmt' t
+    withLocalVars [v] $ do
+        stmt' <- elimStmt stmt
+        return $ SLetOutput (v,tv) o' stmt' t
 elimStmt (SLetBoolean v stmt t) = do
     stmt' <- elimStmt stmt
-    return $ SLetBoolean v stmt' t
+    withLocalVars [v] $ do 
+        return $ SLetBoolean v stmt' t
 elimStmt (SSetTrue v t) = pure $ SSetTrue v t
 elimStmt (SFor (i, e, t') v stmt t) = do
     v' <- elimOExpr v
-    stmt' <- elimStmt stmt
-    return $ SFor (i, e, t') v' stmt' t
+    withLocalVars [i,e] $ do 
+        stmt' <- elimStmt stmt
+        return $ SFor (i, e, t') v' stmt' t
 elimStmt (SSeq ss t) = do
     ss' <- mapM elimStmt ss
     return $ SSeq ss' t
 
+elimProgramFuncsM :: (MonadElim m) => [StmtFun String ValueType] -> m [StmtFun String ValueType]
+elimProgramFuncsM [] = pure []
+elimProgramFuncsM (StmtFun v args stmt t : fs) = do
+    let outArgs = map fst3 args
+    let posArgs = concatMap thd3 args
+    stmt' <- withLocalVars (outArgs ++ posArgs) $ elimStmt stmt
+    withFunction (StmtFun v args stmt' t) $ do
+        fs' <- elimProgramFuncsM fs
+        return $ StmtFun v args stmt' t : fs'
 
 elimProgramM :: (MonadElim m) => TProgram -> m TProgram
 elimProgramM (Program funcs m) = do
-    newFuncs <- forM funcs $ \(StmtFun v args stmt t) -> do
-                    stmt' <- elimStmt stmt
-                    putFunctionBody (StmtFun v args stmt' t) 
-                    return $ StmtFun v args stmt' t
+    newFuncs <- elimProgramFuncsM funcs
     return $ Program newFuncs m
 
 eliminateFunctionCalls :: TProgram -> TProgram
-eliminateFunctionCalls p = evalState (elimProgramM p :: ElimM TProgram) (0, M.empty, M.empty)
+eliminateFunctionCalls p = runElimM $ elimProgramM p
