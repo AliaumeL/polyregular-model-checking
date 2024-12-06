@@ -31,7 +31,7 @@ data Expr
     = VEChar Char
     | VEString String
     | VEListConstr [Expr]
-    | VEGen Stmt
+    | VEGen [Stmt]
     | VEVal Ident
     | VERev Expr
     | VEFunc Ident [VEArg]

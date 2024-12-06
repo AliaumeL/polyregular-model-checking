@@ -173,7 +173,7 @@ instance Print Parser.HighLevelForProgram.Abs.Expr where
     Parser.HighLevelForProgram.Abs.VEChar c -> prPrec i 3 (concatD [prt 0 c])
     Parser.HighLevelForProgram.Abs.VEString str -> prPrec i 3 (concatD [printString str])
     Parser.HighLevelForProgram.Abs.VEListConstr exprs -> prPrec i 3 (concatD [doc (showString "["), prt 0 exprs, doc (showString "]")])
-    Parser.HighLevelForProgram.Abs.VEGen stmt -> prPrec i 3 (concatD [doc (showString "{"), prt 0 stmt, doc (showString "}")])
+    Parser.HighLevelForProgram.Abs.VEGen stmts -> prPrec i 3 (concatD [doc (showString "{"), prt 0 stmts, doc (showString "}")])
     Parser.HighLevelForProgram.Abs.VEVal id_ -> prPrec i 3 (concatD [prt 0 id_])
     Parser.HighLevelForProgram.Abs.VERev expr -> prPrec i 3 (concatD [doc (showString "reversed"), doc (showString "("), prt 0 expr, doc (showString ")")])
     Parser.HighLevelForProgram.Abs.VEFunc id_ veargs -> prPrec i 3 (concatD [prt 0 id_, doc (showString "("), prt 0 veargs, doc (showString ")")])

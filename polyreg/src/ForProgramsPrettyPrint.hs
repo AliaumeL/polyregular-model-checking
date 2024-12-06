@@ -51,16 +51,8 @@ toAbsStmt (SYield o _) = pure $ A.SYield (toAbsOExpr o)
 toAbsStmt (SOReturn o _) = pure $ A.SReturn (toAbsOExpr o)
 toAbsStmt (SBReturn b _) = pure $ A.SReturn (toAbsBExpr b)
 toAbsStmt (SIf b s1 s2 _) = pure $ A.SIfE (toAbsBExpr b) (toAbsStmt s1) (toAbsStmt s2)
-toAbsStmt (SLetOutput (v, t) o s _) = pure $ A.SLetIn (Ident v) (toAbsType t) (toAbsOExpr o) [s']
-    where 
-        s' = case toAbsStmt s of
-                [x] -> x
-                _ -> error "(toAbsStmt) let output should have a single statement"
-toAbsStmt (SLetBoolean v s _) = pure $ A.SLetBIn (Ident v) [s']
-    where
-        s' = case toAbsStmt s of
-                [x] -> x
-                _ -> error "(toAbsStmt) let boolean should have a single statement"
+toAbsStmt (SLetOutput (v, t) o s _) = pure $ A.SLetIn (Ident v) (toAbsType t) (toAbsOExpr o) (toAbsStmt s)
+toAbsStmt (SLetBoolean v s _) = pure $ A.SLetBIn (Ident v) (toAbsStmt s)
 toAbsStmt (SSetTrue v _) = pure $ A.SLetSetTrue (Ident v)
 toAbsStmt (SFor (i, e, t) v s _) = pure $ A.SFor (Ident i) (Ident e) (toAbsType t) (toAbsOExpr v) (toAbsStmt s)
 toAbsStmt (SSeq ss _) = concatMap toAbsStmt ss
@@ -72,11 +64,7 @@ toAbsOExpr (OList os _) = A.VEListConstr (map toAbsOExpr os)
 toAbsOExpr (ORev o _) = A.VERev (toAbsOExpr o)
 toAbsOExpr (OIndex o p _) = A.VEFunc (Ident "index") [toAbsArgA (o, [p])]
 toAbsOExpr (OApp v os _) = A.VEFunc (Ident v) (map toAbsArgA os)
-toAbsOExpr (OGen s _) = A.VEGen s'
-    where
-        s' = case toAbsStmt s of
-                [x] -> x
-                _ -> error "(toAbsOExpr) generator should have a single statement"
+toAbsOExpr (OGen s _) = A.VEGen (toAbsStmt s)
 
 cexprToString :: CExpr String ValueType -> String
 cexprToString (CChar c _) = [c]
@@ -103,11 +91,7 @@ toAbsBExpr (BComp comp p1 p2 _) = A.BEBinOp (A.VEVal (toAbsPExpr p1))
                                             (toAbsComp comp)
                                             (A.VEVal (toAbsPExpr p2))
 toAbsBExpr (BVar v _) = A.VEVal (Ident v)
-toAbsBExpr (BGen s _) = A.VEGen s'
-    where
-        s' = case toAbsStmt s of
-                [x] -> x
-                _ -> error "(toAbsBExpr) generator should have a single statement"
+toAbsBExpr (BGen s _) = A.VEGen (toAbsStmt s)
 
 
 toAbsArgA :: (OExpr String ValueType, [PExpr String ValueType]) -> A.VEArg

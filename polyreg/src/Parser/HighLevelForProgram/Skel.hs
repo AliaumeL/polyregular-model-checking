@@ -43,7 +43,7 @@ transExpr x = case x of
   Parser.HighLevelForProgram.Abs.VEChar char -> failure x
   Parser.HighLevelForProgram.Abs.VEString string -> failure x
   Parser.HighLevelForProgram.Abs.VEListConstr exprs -> failure x
-  Parser.HighLevelForProgram.Abs.VEGen stmt -> failure x
+  Parser.HighLevelForProgram.Abs.VEGen stmts -> failure x
   Parser.HighLevelForProgram.Abs.VEVal ident -> failure x
   Parser.HighLevelForProgram.Abs.VERev expr -> failure x
   Parser.HighLevelForProgram.Abs.VEFunc ident veargs -> failure x

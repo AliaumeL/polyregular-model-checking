@@ -24,7 +24,7 @@ separator nonempty Stmt "" ;
 VEChar.        Expr3 ::= Char ; 
 VEString.      Expr3 ::= String ;
 VEListConstr.  Expr3 ::= "[" [Expr] "]" ;
-VEGen.         Expr3 ::= "{" Stmt "}" ;
+VEGen.         Expr3 ::= "{" [Stmt] "}" ;
 VEVal.         Expr3 ::= Ident ;
 VERev.         Expr3 ::= "reversed" "(" Expr ")" ;
 VEFunc.        Expr3 ::= Ident "(" [VEArg] ")" ;

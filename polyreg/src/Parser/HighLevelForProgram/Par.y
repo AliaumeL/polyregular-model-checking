@@ -142,7 +142,7 @@ Expr3
   : Char { Parser.HighLevelForProgram.Abs.VEChar $1 }
   | String { Parser.HighLevelForProgram.Abs.VEString $1 }
   | '[' ListExpr ']' { Parser.HighLevelForProgram.Abs.VEListConstr $2 }
-  | '{' Stmt '}' { Parser.HighLevelForProgram.Abs.VEGen $2 }
+  | '{' ListStmt '}' { Parser.HighLevelForProgram.Abs.VEGen $2 }
   | Ident { Parser.HighLevelForProgram.Abs.VEVal $1 }
   | 'reversed' '(' Expr ')' { Parser.HighLevelForProgram.Abs.VERev $3 }
   | Ident '(' ListVEArg ')' { Parser.HighLevelForProgram.Abs.VEFunc $1 $3 }

@@ -70,7 +70,7 @@ All other symbols are terminals.
   | //Expr3// | -> | //Char//
   |  |  **|**  | //String//
   |  |  **|**  | ``[`` //[Expr]// ``]``
-  |  |  **|**  | ``{`` //Stmt// ``}``
+  |  |  **|**  | ``{`` //[Stmt]// ``}``
   |  |  **|**  | //Ident//
   |  |  **|**  | ``reversed`` ``(`` //Expr// ``)``
   |  |  **|**  | //Ident// ``(`` //[VEArg]// ``)``

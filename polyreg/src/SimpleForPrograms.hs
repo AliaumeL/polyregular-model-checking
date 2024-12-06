@@ -56,9 +56,10 @@ data ForProgram = ForProgram [BName] [ForStmt] deriving(Eq, Show)
 
 class (Monad m) => MonadInterpreter m where
     throwWithCtx :: String -> m a
+
     setTrue      :: BName -> m ()
     withBools    :: [BName] -> m a -> m a
-    withPos      :: PName -> Direction -> m a -> m [a]
+    withLoopPos  :: PName -> Direction -> m a -> m [a]
 
     getPos       :: PName -> m Int
     getBool      :: BName -> m Bool
@@ -94,9 +95,11 @@ instance MonadInterpreter InterM where
     throwWithCtx msg = do
         s <- get
         throwError $ InterpreterError msg s
+
     setTrue b = do
         s <- get
         put $ s { booleans = M.insert b True (booleans s) }
+
     withBools bs m = do
         s <- get
         let oldValues = M.fromList $ listOldValues bs (booleans s)
@@ -104,13 +107,14 @@ instance MonadInterpreter InterM where
         r <- m
         modify (\s -> s { booleans = M.union oldValues (booleans s)})
         return r
-    withPos p d m = do
+
+    withLoopPos p d m = do
         input <- gets input
         forM (iterWord d input) $ \(i, c) -> do
             s <- get
             put $ s { positions = M.insert p i (positions s), posChars = M.insert p c (posChars s)}
             r <- m
-            put $ s
+            modify (\s -> s { positions = M.delete p (positions s), posChars = M.delete p (posChars s)})
             return r
 
     getPos p = do
@@ -150,7 +154,7 @@ interpretStmtM (If e t f) = do
     b <- interpretBoolExprM e
     if b then interpretStmtM t else interpretStmtM f
 interpretStmtM (For p d bs stmt) = do
-    strings <- withBools bs (withPos p d (interpretStmtM stmt))
+    strings <- withBools bs (withLoopPos p d (interpretStmtM stmt))
     return . concat $ strings
 interpretStmtM (PrintPos p) = pure <$> getCharAt p
 interpretStmtM (PrintLbl l) = return [l]

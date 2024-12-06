@@ -6,6 +6,8 @@ module ForPrograms where
 import           Data.Set (Set, empty, singleton, union, unions)
 import qualified Data.Set as S
 
+import QuantifierFree
+
 data BOp = And | Or | Impl | Iff 
     deriving (Show, Eq)
 
@@ -29,7 +31,6 @@ data PExpr v t = PVar v t
 
 
 data CExpr v t = CChar Char t
-               | CSep  Int
                | CList [CExpr v t] t
                deriving (Show, Eq, Functor, Foldable, Traversable)
 

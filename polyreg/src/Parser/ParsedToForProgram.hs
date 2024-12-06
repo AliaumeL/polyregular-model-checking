@@ -135,9 +135,9 @@ parsedToBoolExpr :: P.Expr -> M PABExpr
 parsedToBoolExpr (P.VEChar a) = Left "Char in boolean expression"
 parsedToBoolExpr (P.VEString a) = Left "String in boolean expression"
 parsedToBoolExpr (P.VEListConstr a) = Left "List in boolean expression"
-parsedToBoolExpr (P.VEGen stmt) = do 
-    stmt' <- parsedToStmt RBool stmt
-    return $ BGen stmt' (Just P.TBool)
+parsedToBoolExpr (P.VEGen stmts) = do 
+    stmts' <- mapM (parsedToStmt RBool) stmts
+    return $ BGen (SSeq stmts' $ Just P.TBool) (Just P.TBool)
 parsedToBoolExpr (P.VEVal i) = return $ BVar (identToString i) (Just P.TBool)
 parsedToBoolExpr (P.VERev e) = Left "Rev in boolean expression"
 parsedToBoolExpr (P.VEFunc i args) = do 
@@ -174,9 +174,9 @@ parsedToOutputExpr (P.VEString s) = return $ OConst (CList (map (\c -> CChar c (
 parsedToOutputExpr (P.VEListConstr es) = do
     es' <- forM es parsedToOutputExpr
     return $ OList es' Nothing
-parsedToOutputExpr (P.VEGen stmt) = do
-    stmt' <- parsedToStmt RVal stmt
-    return $ OGen stmt' Nothing
+parsedToOutputExpr (P.VEGen stmts) = do
+    stmts' <- mapM (parsedToStmt RVal) stmts
+    return $ OGen (SSeq stmts' Nothing) Nothing
 parsedToOutputExpr (P.VEVal i) = return $ OVar (identToString i) Nothing
 parsedToOutputExpr (P.VERev e) = do
     e' <- parsedToOutputExpr e
