@@ -9,6 +9,16 @@ def getFirstWord (s : [Char]) : [Char] :=
         endif
     done
 
+def concatLists( l1 : [Char], l2 : [Char]) : [Char] :=
+    for (i, v : Char) in l1 do 
+        yield v
+    done
+    for (i, v : Char) in l2 do 
+        yield v
+    done
+
+
+
 def getCurrentWord (s : [Char] with (i)) : [Char] :=
     let mut seen_space : Bool := False in
     for (j, v : Char) in s do 
@@ -110,7 +120,7 @@ def remapAuthor(remapAuthorArg : [[Char]]) : [[Char]] :=
     else
         let last : [Char] := getLastName(remapAuthorArg) in
         let allButLast : [[Char]] := getAllButLastName(remapAuthorArg) in
-        yield addComma(last)
+        yield concatLists(last, ",")
         return allButLast
     endif
 
