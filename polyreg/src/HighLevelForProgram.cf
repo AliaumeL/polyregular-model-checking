@@ -1,5 +1,4 @@
--- Translate to haskell with 
--- `bnfc --haskell -d -p Parser HighLevelForProgram.cf`
+-- Translate to haskell with `bnfc --haskell -d -p Parser HighLevelForProgram.cf`
 -- Remember to remove the Test.hs file, which breaks the build
 
 comment "#" ;
@@ -16,8 +15,8 @@ SIf.  Stmt ::= "if" Expr "then" [Stmt] "endif";
 SIfE. Stmt ::=  "if" Expr "then" [Stmt] "else" [Stmt] "endif" ;
 SYield. Stmt ::= "yield" Expr ;
 SReturn. Stmt ::= "return" Expr ;
-SLetIn.  Stmt ::= "let" Ident ":" Type  ":=" Expr "in" Stmt ;
-SLetBIn. Stmt ::= "let mut" Ident ":" "Bool" ":=" "False" "in" Stmt ;
+SLetIn.  Stmt ::= "let" Ident ":" Type  ":=" Expr "in" [Stmt] ;
+SLetBIn. Stmt ::= "let mut" Ident ":" "Bool" ":=" "False" "in" [Stmt] ;
 SLetSetTrue. Stmt ::= "setTrue" Ident;
 
 separator nonempty Stmt "" ;

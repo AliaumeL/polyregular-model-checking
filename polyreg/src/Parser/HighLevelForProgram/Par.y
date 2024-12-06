@@ -130,8 +130,8 @@ Stmt
   | 'if' Expr 'then' ListStmt 'else' ListStmt 'endif' { Parser.HighLevelForProgram.Abs.SIfE $2 $4 $6 }
   | 'yield' Expr { Parser.HighLevelForProgram.Abs.SYield $2 }
   | 'return' Expr { Parser.HighLevelForProgram.Abs.SReturn $2 }
-  | 'let' Ident ':' Type ':=' Expr 'in' Stmt { Parser.HighLevelForProgram.Abs.SLetIn $2 $4 $6 $8 }
-  | 'let' 'mut' Ident ':' 'Bool' ':=' 'False' 'in' Stmt { Parser.HighLevelForProgram.Abs.SLetBIn $3 $9 }
+  | 'let' Ident ':' Type ':=' Expr 'in' ListStmt { Parser.HighLevelForProgram.Abs.SLetIn $2 $4 $6 $8 }
+  | 'let' 'mut' Ident ':' 'Bool' ':=' 'False' 'in' ListStmt { Parser.HighLevelForProgram.Abs.SLetBIn $3 $9 }
   | 'setTrue' Ident { Parser.HighLevelForProgram.Abs.SLetSetTrue $2 }
 
 ListStmt :: { [Parser.HighLevelForProgram.Abs.Stmt] }

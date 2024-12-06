@@ -62,9 +62,9 @@ def splitOnAnd(words : [[Char]]) : [[[Char]]] :=
         endif
     done
 
-def isSingleAuthor(author : [[Char]]) : Bool :=
+def isSingleAuthor(isSingleAuthorArg : [[Char]]) : Bool :=
     let mut one_name : Bool := False in
-    for (i, name : [Char]) in author do
+    for (i, name : [Char]) in isSingleAuthorArg do
         if one_name then
             return False
         else
@@ -73,18 +73,18 @@ def isSingleAuthor(author : [[Char]]) : Bool :=
     done
     return True
 
-def getLastName(author : [[Char]]) : [Char] :=
+def getLastName(getLastNameArg : [[Char]]) : [Char] :=
     let mut last_name : Bool := False in 
-    for (i, name : [Char]) in reversed(author) do
+    for (i, name : [Char]) in reversed(getLastNameArg) do
         if not last_name then
             return name
         endif
         setTrue last_name
     done
 
-def getAllButFirstName(author : [[Char]]) : [[Char]] :=
+def getAllButFirstName(getAllButFirstNameArg : [[Char]]) : [[Char]] :=
     let mut first_name : Bool := False in 
-    for (i, name : [Char]) in author do
+    for (i, name : [Char]) in getAllButFirstNameArg do
         if not first_name then
             setTrue first_name
         else
@@ -92,43 +92,56 @@ def getAllButFirstName(author : [[Char]]) : [[Char]] :=
         endif
     done
 
-def getAllButLastName(author : [[Char]]) : [[Char]] :=
-    for (i, name : [Char]) in reversed(getAllButFirstName(reversed(author))) do
+def getAllButLastName(getAllButLastNameArg : [[Char]]) : [[Char]] :=
+    for (i, name : [Char]) in reversed(getAllButFirstName(reversed(getAllButLastNameArg))) do
         yield name
     done
 
-def remapAuthor(author : [[Char]]) : [[Char]] := 
-    if isSingleAuthor(author) then
-        return author
+def addComma(author : [Char]) : [Char] :=
+    for (i, c : Char) in author do
+        yield c
+    done
+    yield ','
+
+
+def remapAuthor(remapAuthorArg : [[Char]]) : [[Char]] := 
+    if isSingleAuthor(remapAuthorArg) then
+        return remapAuthorArg
     else
-        let last : [Char] := getLastName(author) in
-        let allButLast : [[Char]] := getAllButLastName(author) in
-        yield last
-        yield ", "
+        let last : [Char] := getLastName(remapAuthorArg) in
+        let allButLast : [[Char]] := getAllButLastName(remapAuthorArg) in
+        yield addComma(last)
         return allButLast
     endif
 
 
 def intersperseAnd(ss : [[[Char]]]) : [[Char]] :=
     let mut started : Bool := False in
-    for (i, author : [[Char]]) in ss do
+    for (i, intersperseAndIter : [[Char]]) in ss do
         if started then
-            yield " and "
+            yield "and"
         endif
-        for (j, name : [Char]) in author do
+        for (j, name : [Char]) in intersperseAndIter do
             yield name
         done
         setTrue started
     done
 
 def concat(ss : [[Char]]) : [Char] :=
+    let mut started : Bool := False in
     for (i, s : [Char]) in ss do
-        yield s
+        if started then
+            yield ' '
+        endif
+        setTrue started
+        for (j, c : Char) in s do
+            yield c
+        done
     done
 
-def mapRemapAuthor(authors : [[[Char]]]) : [[[Char]]] :=
-    for (k, author : [[Char]])  in authors do
-        yield remapAuthor(author)
+def mapRemapAuthor(mapRemapAuthorArg : [[[Char]]]) : [[[Char]]] :=
+    for (k, mapRemapAuthorIter : [[Char]])  in mapRemapAuthorArg do
+        yield remapAuthor(mapRemapAuthorIter)
     done
 
 # This function maps 
@@ -140,4 +153,7 @@ def mapRemapAuthor(authors : [[[Char]]]) : [[[Char]]] :=
 def main (ss : [Char]) : [Char] :=
     let words : [[Char]] := words(ss) in
     let authors : [[[Char]]] := splitOnAnd(words) in
-    return concat(intersperseAnd(mapRemapAuthor(authors)))
+    let mapRemapAuthor : [[[Char]]] := mapRemapAuthor(authors) in
+    let intersperseAnd : [[Char]] := intersperseAnd(mapRemapAuthor) in
+    let concat : [Char] := concat(intersperseAnd) in
+    return concat

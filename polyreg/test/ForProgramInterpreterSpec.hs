@@ -29,9 +29,9 @@ fromRight' _ = error "fromRight'"
 
 spec :: Spec
 spec = do
-    testProgram <- runIO $ parseFromFile "assets/word_split.pr"
-    let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
     describe "We correctly compute reverseOrderOfWords" $ do
+        testProgram <- runIO $ parseFromFile "assets/word_split.pr"
+        let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
         it "works for «go to park»" $ do
             let input = "go to park"
             let expected = reverseOrderOfWords input
@@ -55,5 +55,33 @@ spec = do
         it "works for «       »" $ do
             let input = "       "
             let expected = reverseOrderOfWords input
+            let actual = runProgramString untypedTestProgram input
+            actual `shouldBe` (Right expected)
+    describe "We correctly compute `bibtex`" $ do
+        testProgram <- runIO $ parseFromFile "assets/bibtex.pr"
+        let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
+        it "works for «John»" $ do
+            let input = "John"
+            let expected = "John"
+            let actual = runProgramString untypedTestProgram input
+            actual `shouldBe` (Right expected)
+        it "works for «»" $ do
+            let input = ""
+            let expected = ""
+            let actual = runProgramString untypedTestProgram input
+            actual `shouldBe` (Right expected)
+        it "works for «John Doe»" $ do
+            let input = "John Doe"
+            let expected = "Doe, John"
+            let actual = runProgramString untypedTestProgram input
+            actual `shouldBe` (Right expected)
+        it "works for «John and Jane Doe»" $ do
+            let input = "John and Jane Doe"
+            let expected = "John and Doe, Jane" 
+            let actual = runProgramString untypedTestProgram input
+            actual `shouldBe` (Right expected)
+        it "works for «John F. Kennedy»" $ do
+            let input = "John F. Kennedy"
+            let expected = "Kennedy, John F."
             let actual = runProgramString untypedTestProgram input
             actual `shouldBe` (Right expected)

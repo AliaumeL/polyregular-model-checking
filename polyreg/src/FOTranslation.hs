@@ -232,6 +232,17 @@ quantifyPositions = go 0
         go depth (FCharAt p c) = FCharAt (goPos p depth) c
         go depth (FQuant q t f) = FQuant q t (go (depth + 1) f)
 
+
+
+class (Monad m) => MonadDB m where
+    withMovement :: Movement -> m a -> m a
+    getStatement :: m ForStmtDB
+    getSourcePos :: m SourcePath
+
+    getUsedVars  :: m [BoolDB]
+    getBoolVars  :: m [BoolDB]
+    getPositionVars :: m [PosDB]
+
 {-
 
 -- Transition creates a formula
@@ -371,8 +382,6 @@ toFoInterpretation p = FoInterpretationDB {
     arity         = undefined,
     maxArity      = undefined
 }
-
-
 
 --- Evaluations 
 

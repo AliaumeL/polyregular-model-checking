@@ -41,9 +41,9 @@ spec = do
             (hasLitEq eliminated) `shouldBe` False
         it "The program still works" $ do
             let eliminated = removeBLitEq infered
-            let input = "go to park"
+            let input = "John Doe and Jane and Frank Fabio"
             let expected = runProgramString (untypeProgram infered)    input
-            let actual = runProgramString   (untypeProgram eliminated) input
+            let actual   = runProgramString   (untypeProgram eliminated) input
             actual `shouldBe` expected
 
 

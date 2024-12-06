@@ -88,18 +88,18 @@ parsedToStmt RVal (P.SReturn e) = do
 parsedToStmt RBool (P.SReturn e) = do 
     e' <- parsedToBoolExpr e
     return $ SBReturn e' Nothing
-parsedToStmt ctx (P.SLetIn i t e stmt) = do 
-    stmt' <- parsedToStmt ctx stmt
+parsedToStmt ctx (P.SLetIn i t e stmts) = do 
+    stmt' <- mapM (parsedToStmt ctx) stmts
     case typeToRetContext t of 
         RVal ->   do
             e' <- parsedToOutputExpr e
             let e'' = annotateTypeOExpr e' t
-            return $ SLetOutput (identToString i, Just t) e'' stmt' Nothing
+            return $ SLetOutput (identToString i, Just t) e'' (SSeq stmt' Nothing) Nothing
         RBool -> do
             Left "Boolean non-mut variables not supported"
-parsedToStmt ctx (P.SLetBIn i stmt) = do
-    stmt' <- parsedToStmt ctx stmt
-    return $ SLetBoolean (identToString i) stmt' Nothing
+parsedToStmt ctx (P.SLetBIn i stmts) = do
+    stmt' <- mapM (parsedToStmt ctx) stmts
+    return $ SLetBoolean (identToString i) (SSeq stmt' Nothing) Nothing
 parsedToStmt ctx (P.SLetSetTrue i) = return $ SSetTrue (identToString i) Nothing
 
 binOpPToComp :: P.BinOp -> Comp

@@ -22,8 +22,8 @@ data Stmt
     | SIfE Expr [Stmt] [Stmt]
     | SYield Expr
     | SReturn Expr
-    | SLetIn Ident Type Expr Stmt
-    | SLetBIn Ident Stmt
+    | SLetIn Ident Type Expr [Stmt]
+    | SLetBIn Ident [Stmt]
     | SLetSetTrue Ident
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
