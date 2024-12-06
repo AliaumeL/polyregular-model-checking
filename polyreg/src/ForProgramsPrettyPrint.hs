@@ -1,4 +1,4 @@
-module ForProgramsPrettyPrint (prettyPrintProgram) where
+module ForProgramsPrettyPrint (prettyPrintProgram, prettyPrintProgramWithNls) where
 
 import ForPrograms
 import ForProgramsTyping
@@ -116,3 +116,35 @@ toAbsArgA (c, ps) = A.VEArgWithPoses (toAbsOExpr c) (map toAbsPExpr ps)
 
 prettyPrintProgram :: Program String ValueType -> String
 prettyPrintProgram = printTree . toAbsProgram
+
+prettyPrintStmt :: Stmt String ValueType -> String
+prettyPrintStmt = printTree . toAbsStmt
+
+prettyPrintT :: ValueType -> String
+prettyPrintT = printTree . toAbsType
+
+prettyPrintOExpr :: OExpr String ValueType -> String
+prettyPrintOExpr = printTree . toAbsOExpr
+
+prettyPrintBExpr :: BExpr String ValueType -> String
+prettyPrintBExpr = printTree . toAbsBExpr
+
+--- Here we make another version of pretty printing, that uses indentations and newlines to make the code more readable. 
+--- For now we use the default printing of Expressions. 
+
+indent :: Int -> String
+indent n = replicate (n * 2) ' '
+
+prettyPrintStmtWithNls :: Int -> Stmt String ValueType -> String
+prettyPrintStmtWithNls n (SIf b s1 s2 _) = indent n ++ "if " ++ prettyPrintBExpr b ++ " then\n" ++ prettyPrintStmtWithNls (n + 1) s1 ++ "\n" ++ indent n ++ "else\n" ++ prettyPrintStmtWithNls (n + 1) s2 ++ indent n ++ "\n endif"
+prettyPrintStmtWithNls n (SLetOutput (v, t) o s _) = indent n ++ "let " ++ v ++ " : " ++ prettyPrintT t ++ " := " ++ prettyPrintOExpr o ++ " in\n" ++ prettyPrintStmtWithNls n s
+prettyPrintStmtWithNls n (SLetBoolean v s _) = indent n ++ "let mut " ++ v ++ ": Bool := False in \n" ++ prettyPrintStmtWithNls n s
+prettyPrintStmtWithNls n (SFor (i, e, t) v s _) = indent n ++ "for (" ++ i ++ "," ++ e ++ ":" ++ prettyPrintT t ++ ") in " ++ prettyPrintOExpr v ++ " do\n" ++ prettyPrintStmtWithNls n s ++ "\n" ++ indent n ++  "done"
+prettyPrintStmtWithNls n (SSeq ss _) = unlines $ map (prettyPrintStmtWithNls n) ss
+prettyPrintStmtWithNls n s = indent n ++ prettyPrintStmt s
+
+prettyPrintFunctionWithNls :: StmtFun String ValueType -> String
+prettyPrintFunctionWithNls (StmtFun name args stmt t) = "def " ++ name ++ "(" ++ unwords (map (\(a, t, _) -> a ++ " : " ++ prettyPrintT t) args) ++ " : " ++ prettyPrintT t ++ " = \n" ++ prettyPrintStmtWithNls 1 stmt
+
+prettyPrintProgramWithNls :: Program String ValueType -> String
+prettyPrintProgramWithNls (Program stmts _) = unlines $ map prettyPrintFunctionWithNls stmts
