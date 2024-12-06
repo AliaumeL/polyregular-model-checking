@@ -4,24 +4,20 @@ import Test.Hspec
 
 import SimpleForPrograms
 
-
-data VarP = VarP String deriving(Eq, Show)
-data VarB = VarB String deriving(Eq, Show)
-
 -- | example program
 -- that prints everything and replaces "a" by "b"s 
 --
 -- print ’a’ but with normal quotes: 
-exampleProgram :: ForProgram VarP VarB Char
+exampleProgram :: ForProgram
 exampleProgram = ForProgram []
     [
-        For (VarP "i") LeftToRight [] [
-            If (LabelAt (VarP "i") 'a') [
+        For (PName "i") LeftToRight [] (
+            If (BLabelAt (PName "i") 'a') (
                 PrintLbl 'b'
-            ] [
-                PrintPos (VarP "i")
-            ]
-        ]
+            ) (
+                PrintPos (PName "i")
+            )
+        )
     ]
 
 exampleProgramHandCrafted :: String -> String
@@ -30,29 +26,29 @@ exampleProgramHandCrafted (x:xs) = if x == 'a' then 'b' : exampleProgramHandCraf
 
 
 -- | this program skips the first two letters using booleans
-exampleProgramWithBoolans :: ForProgram VarP VarB Char
-exampleProgramWithBoolans = ForProgram [VarP "seen1", VarP "seen2"] [
-        For (VarP "i") LeftToRight [] [
-            If (Not (BoolVar (VarB "seen1"))) 
-            [
-                SetTrue (VarB "seen1")
-            ]
-            [
-                If (Not (BoolVar (VarB "seen2"))) 
-                    [SetTrue (VarB "seen2")]
-                    [PrintPos (VarP "i")]
-            ]
-        ]
+exampleProgramWithBoolans :: ForProgram
+exampleProgramWithBoolans = ForProgram [BName "seen1", BName "seen2"] [
+        For (PName "i") LeftToRight [] (
+            If (BNot (BVar (BName "seen1"))) 
+            (
+                SetTrue (BName "seen1")
+            )
+            (
+                If (BNot (BVar (BName "seen2"))) 
+                    (SetTrue  (BName "seen2"))
+                    (PrintPos (PName "i"))
+            )
+        )
     ]
 
 exampleProgramWithBoolansHandCrafted :: String -> String
 exampleProgramWithBoolansHandCrafted x = drop 2 x
 
-exampleReverseProgram :: ForProgram VarP VarB Char
+exampleReverseProgram :: ForProgram
 exampleReverseProgram = ForProgram [] [
-        For (VarP "i") RightToLeft [] [
-            PrintPos (VarP "i")
-        ]
+        For (PName "i") RightToLeft [] (
+            PrintPos (PName "i")
+        )
     ]
 
 exampleReverseProgramHandCrafted :: String -> String
@@ -60,28 +56,28 @@ exampleReverseProgramHandCrafted x = reverse x
 
 
 checkEquality :: String -> Bool
-checkEquality s = exampleProgramHandCrafted s == runProgram exampleProgram s
+checkEquality s = (Right $ exampleProgramHandCrafted s) == runProgram exampleProgram s
 
 checkEqualityWithBooleans :: String -> Bool
-checkEqualityWithBooleans s = exampleProgramWithBoolansHandCrafted s == runProgram exampleProgramWithBoolans s
+checkEqualityWithBooleans s = (Right $ exampleProgramWithBoolansHandCrafted s) == runProgram exampleProgramWithBoolans s
 
 checkEqualityReverse :: String -> Bool
-checkEqualityReverse s = exampleReverseProgramHandCrafted s == runProgram exampleReverseProgram s
+checkEqualityReverse s = (Right $ exampleReverseProgramHandCrafted s) == runProgram exampleReverseProgram s
 
 spec :: Spec
 spec = do
     describe "The interpreter for simple for programs (SimpleForProgram.runProgram)" $ do
         it "runs correctly the a program that swaps 'a' for 'b'" $ do 
-            runProgram exampleProgram "abc" `shouldBe` exampleProgramHandCrafted "abc"
-            runProgram exampleProgram "a" `shouldBe` exampleProgramHandCrafted "a"
-            runProgram exampleProgram "b" `shouldBe` exampleProgramHandCrafted "b"
-            runProgram exampleProgram "naruiste nbélopedt bnrest n" `shouldBe` exampleProgramHandCrafted "naruiste nbélopedt bnrest n"
+            runProgram exampleProgram "abc" `shouldBe` (Right $ exampleProgramHandCrafted "abc")
+            runProgram exampleProgram "a" `shouldBe` (Right $ exampleProgramHandCrafted "a")
+            runProgram exampleProgram "b" `shouldBe` (Right $ exampleProgramHandCrafted "b")
+            runProgram exampleProgram "naruiste nbélopedt bnrest n" `shouldBe` (Right $ exampleProgramHandCrafted "naruiste nbélopedt bnrest n")
         it "runs correctly a program with boolean variables" $ do
-            runProgram exampleProgramWithBoolans "ruiste nrest n" `shouldBe` exampleProgramWithBoolansHandCrafted "ruiste nrest n"
-            runProgram exampleProgramWithBoolans "naiste  bnrest n" `shouldBe` exampleProgramWithBoolansHandCrafted "naiste  bnrest n"
-            runProgram exampleProgramWithBoolans "nuiste rest n" `shouldBe` exampleProgramWithBoolansHandCrafted "nuiste rest n"
+            runProgram exampleProgramWithBoolans "ruiste nrest n" `shouldBe` (Right $ exampleProgramWithBoolansHandCrafted "ruiste nrest n")
+            runProgram exampleProgramWithBoolans "naiste  bnrest n" `shouldBe` (Right $ exampleProgramWithBoolansHandCrafted "naiste  bnrest n")
+            runProgram exampleProgramWithBoolans "nuiste rest n" `shouldBe` (Right $ exampleProgramWithBoolansHandCrafted "nuiste rest n")
         it "runs correctly a program that reverses a string" $ do
-            runProgram exampleReverseProgram "abc" `shouldBe` exampleReverseProgramHandCrafted "abc"
-            runProgram exampleReverseProgram "a" `shouldBe` exampleReverseProgramHandCrafted "a"
-            runProgram exampleReverseProgram "b" `shouldBe` exampleReverseProgramHandCrafted "b"
-            runProgram exampleReverseProgram "naruiste nbélopedt bnrest n" `shouldBe` exampleReverseProgramHandCrafted "naruiste nbélopedt bnrest n"
+            runProgram exampleReverseProgram "abc" `shouldBe` (Right $ exampleReverseProgramHandCrafted "abc")
+            runProgram exampleReverseProgram "a" `shouldBe` (Right $ exampleReverseProgramHandCrafted "a")
+            runProgram exampleReverseProgram "b" `shouldBe` (Right $ exampleReverseProgramHandCrafted "b")
+            runProgram exampleReverseProgram "naruiste nbélopedt bnrest n" `shouldBe` (Right $ exampleReverseProgramHandCrafted "naruiste nbélopedt bnrest n")

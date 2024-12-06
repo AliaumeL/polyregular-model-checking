@@ -1,6 +1,7 @@
 module FOTranslation where
 
 import Control.Monad.State
+import qualified SimpleForPrograms as S
 
 --
 -- This module performs the translation 
@@ -42,6 +43,7 @@ data BoolExprDB = BConst   Bool
 
 data Direction = LTR | RTL deriving(Eq,Show)
 
+data ForProgramDB = ForProgram Int [ForStmtDB] deriving (Show, Eq)
 data ForStmtDB = SetTrue Int
                | If BoolExprDB ForStmtDB ForStmtDB
                -- for introduces
@@ -55,6 +57,11 @@ data ForStmtDB = SetTrue Int
                -- Sequence
                | Seq [ForStmtDB]
                deriving (Show, Eq)
+
+
+-- Importing Simple For Programs as
+-- simple for programs using 
+
 
 
 -- How to navigate in a source tree of ForStmtDB
