@@ -30,9 +30,22 @@ def words (ss : [Char]) : [[Char]] :=
         endif 
      done
 
-def main ( w : [Char]) : [Char] := 
-    for (i, word : [Char]) in words(w) do 
-        for (j, v : Char) in reversed(word) do 
+def unwords(ss : [[Char]]) : [Char] :=
+    let mut not_first : Bool := False in
+    for (i, word : [Char]) in ss do 
+        if not_first then 
+            yield ' '
+        endif
+        for (j, v : Char) in word do 
             yield v
         done
+        setTrue not_first
     done
+
+def map_reverse (ss : [[Char]]) : [[Char]] :=
+    for (i, s : [Char]) in ss do 
+        yield reversed(s)
+    done
+
+def main ( w : [Char]) : [Char] := 
+    return unwords(map_reverse(words(w)))

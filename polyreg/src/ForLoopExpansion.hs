@@ -18,21 +18,22 @@ import qualified Data.Map as M
 
 
 
-data StmtZip v t = ZIfL (StmtZip v t )
+data StmtZip v t = 
+                 ZIfL (StmtZip v t )
                | ZIfR (StmtZip v t )
-               | ZLetBoolean (StmtZip v t )
                | ZFor v t (StmtZip v t )
                | ZSeqL Int (StmtZip v t ) 
                | ZBegin
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
 
+-- Comparison of the positions in two zips,
+-- note that "ifs" and "sequences" behave the same.
 compareZip :: t -> StmtZip v t -> StmtZip v t -> BExpr (ExtVars v t) t
 compareZip t (ZIfL a) (ZIfL b) = compareZip t a b
 compareZip t (ZIfR a) (ZIfR b) = compareZip t a b
 compareZip t (ZIfL a) (ZIfR b) = BConst True t
 compareZip t (ZIfR a) (ZIfL b) = BConst False t
-compareZip t (ZLetBoolean a) (ZLetBoolean b) = compareZip t a b
 compareZip t (ZFor v t' a) (ZFor v' t'' b) = BOp And 
                                               (BComp Leq (PVar (OldVar v) t') 
                                                          (PVar (OldVar v') t'') 
@@ -42,6 +43,10 @@ compareZip t (ZFor v t' a) (ZFor v' t'' b) = BOp And
 compareZip t (ZSeqL i a) (ZSeqL j b) | i == j = compareZip t a b
 compareZip t (ZSeqL i a) (ZSeqL j b) | i <  i = BConst True t
 compareZip t (ZSeqL i a) (ZSeqL j b) | i >  i = BConst False t
+compareZip t (ZIfL a) (ZSeqL 0 b) = compareZip t a b
+compareZip t (ZIfR a) (ZSeqL 1 b) = compareZip t a b
+compareZip t (ZSeqL 0 a) (ZIfL b) = compareZip t a b
+compareZip t (ZSeqL 1 a) (ZIfR b) = compareZip t a b
 compareZip t ZBegin ZBegin = BConst True t
 compareZip _ _ _ = error "compareZip: incompatible zips"
 
@@ -91,8 +96,6 @@ substOVarPExpr p (PVar (OldVar v) t) | forDataVar p == v = PVar (AddrVar v (forI
 substOVarPExpr p (PVar v t) = PVar v t
 
 
-
-
 -- subYieldStmt addr i e body statement -> expanded statement
 subYieldStmt :: (Eq v) => StmtZip v t -> v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
 subYieldStmt z v1 v2 s (SYield o t) = substOVarStmt (ForParams v1 v2 o z) s
@@ -103,7 +106,7 @@ subYieldStmt z v1 v2 s (SIf b s1 s2 t) = SIf b (subYieldStmt zleft v1 v2 s s1) (
         zleft  = ZIfL z
         zright = ZIfR z
 subYieldStmt _ _ _ _ (SLetOutput _ _ _ _) = error "SLetOutput in subYield"
-subYieldStmt z v1 v2 s (SLetBoolean v s' t) = SLetBoolean v (subYieldStmt (ZLetBoolean z) v1 v2 s s') t
+subYieldStmt z v1 v2 s (SLetBoolean v s' t) = SLetBoolean v (subYieldStmt z v1 v2 s s') t
 subYieldStmt _ _ _ _ x@(SSetTrue _ _) = x
 subYieldStmt z v1 v2 s (SFor (OldVar i, OldVar e, t) v s' t') = SFor (OldVar i, OldVar e, t) v (subYieldStmt (ZFor i t z) v1 v2 s s') t'
 subYieldStmt z v1 v2 s (SSeq ss t) = SSeq [ subYieldStmt (ZSeqL i z) v1 v2 s s' | (i, s') <- zip [0..] ss ] t
@@ -124,6 +127,39 @@ expandGenStmt (SFor (OldVar i, OldVar e, t) (OGen stmt t'') body t') = expanded
         stmt' = expandGenStmt stmt
         body' = expandGenStmt body
         expanded = subYieldStmt ZBegin i e body' stmt'
+expandGenStmt (SFor (OldVar i, OldVar e, t) (ORev (OGen stmt _) t') body t'') = expanded
+    where
+        stmt' = expandGenStmt stmt
+        body' = expandGenStmt body
+        stmtRevSimpl = reverseAndSimplify stmt' 
+        copyOfI = i -- TODO: make this unique
+        guardedBody = (SIf (BComp Eq (PVar (OldVar i) t) (PVar (OldVar copyOfI) t) t) body' (SSeq [] t'') t'')
+
+        expandRev = subYieldStmt ZBegin copyOfI e guardedBody stmtRevSimpl
+        expanded = subYieldStmt ZBegin i e expandRev stmt'
 expandGenStmt (SFor (OldVar i, OldVar e, t) oexpr body t') = SFor (OldVar i, OldVar e, t) oexpr (expandGenStmt body) t'
 expandGenStmt (SSeq ss t) = SSeq (map expandGenStmt ss) t
 expandGenStmt _ = error "expandGenStmt: invalid statement"
+
+
+-- Reverses all the generators (and checks that they are only on variables)
+-- removes all "letBool" and "setTrue" statements,
+-- and turns `ifs` into sequences.
+reverseAndSimplify :: Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
+reverseAndSimplify (SYield o t) = SYield o t
+reverseAndSimplify (SOReturn _ _) = error "SOReturn in reverseAndSimplify"
+reverseAndSimplify (SBReturn _ _) = error "SBReturn in reverseAndSimplify"
+reverseAndSimplify (SIf b s1 s2 t) = SSeq [reverseAndSimplify s1, reverseAndSimplify s2] t
+reverseAndSimplify (SLetOutput _ _ _ _) = error "SLetOutput in reverseAndSimplify"
+reverseAndSimplify (SLetBoolean _ s t) = reverseAndSimplify s
+reverseAndSimplify (SSetTrue _ t) = SSeq [] t
+reverseAndSimplify (SSeq ss t) = SSeq (map reverseAndSimplify ss) t
+reverseAndSimplify (SFor (OldVar i, OldVar e, t) (OVar v t') body t'') = simplified
+    where
+        body' = reverseAndSimplify body
+        simplified = SFor (OldVar i, OldVar e, t) (ORev (OVar v t') t') body' t''
+reverseAndSimplify (SFor (OldVar i, OldVar e, t) (ORev oexpr t') body t'') = simplified
+    where
+        body' = reverseAndSimplify body
+        simplified = SFor (OldVar i, OldVar e, t) oexpr body' t''
+reverseAndSimplefy (SFor _ _ _ _) = error "SFor in reverseAndSimplify"

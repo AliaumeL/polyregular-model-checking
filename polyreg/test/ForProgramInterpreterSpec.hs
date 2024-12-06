@@ -7,6 +7,9 @@ import ForPrograms
 import ForProgramInterpreter
 import Parser.ParseHighLevel
 
+
+import Control.Monad
+
 dumbWords :: String -> [String]
 dumbWords w = go w []
     where
@@ -23,65 +26,59 @@ dumbUnWords (x:xs) = x ++ " " ++ dumbUnWords xs
 reverseOrderOfWords :: String -> String
 reverseOrderOfWords = dumbUnWords . reverse . dumbWords
 
-fromRight' :: Either a b -> b
+fromRight' :: (Show a, Show b) => Either a b -> b
 fromRight' (Right x) = x
-fromRight' _ = error "fromRight'"
+fromRight' e = error $ "fromRight'" ++ show e
+
+testProgramAgainst :: [String] -> Program String () -> (String -> String) -> Spec
+testProgramAgainst inputs program handCrafted = do
+    forM_ inputs $ \input -> do
+        it ("works for «" ++ input ++ "»") $ do
+            let expected = handCrafted input
+            let actual = runProgramString program input
+            actual `shouldBe` (Right expected)
+
+
+testProgramOn :: [(String, String)] -> Program String () -> Spec
+testProgramOn inputs program = do
+    forM_ inputs $ \(input, expected) -> do
+        it ("works for «" ++ input ++ "»") $ do
+            let actual = runProgramString program input
+            actual `shouldBe` (Right expected)
+
 
 spec :: Spec
 spec = do
     describe "We correctly compute reverseOrderOfWords" $ do
         testProgram <- runIO $ parseFromFile "assets/word_split.pr"
         let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
-        it "works for «go to park»" $ do
-            let input = "go to park"
-            let expected = reverseOrderOfWords input
-            let actual = runProgramString untypedTestProgram input
-            actual `shouldBe` (Right expected)
-        it "works for «»" $ do
-            let input = ""
-            let expected = reverseOrderOfWords input
-            let actual = runProgramString untypedTestProgram input
-            actual `shouldBe` (Right expected)
-        it "works for «one_word»" $ do
-            let input = "one_word"
-            let expected = reverseOrderOfWords input
-            let actual = runProgramString untypedTestProgram input
-            actual `shouldBe` (Right expected)
-        it "works for «a  b»" $ do
-            let input = "a  b"
-            let expected = reverseOrderOfWords input
-            let actual = runProgramString untypedTestProgram input
-            actual `shouldBe` (Right expected)
-        it "works for «       »" $ do
-            let input = "       "
-            let expected = reverseOrderOfWords input
-            let actual = runProgramString untypedTestProgram input
-            actual `shouldBe` (Right expected)
+        testProgramAgainst ["go to park", "", "one_word", "a  b", "       "] 
+                           untypedTestProgram
+                           reverseOrderOfWords
     describe "We correctly compute `bibtex`" $ do
         testProgram <- runIO $ parseFromFile "assets/bibtex.pr"
         let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
-        it "works for «John»" $ do
-            let input = "John"
-            let expected = "John"
-            let actual = runProgramString untypedTestProgram input
-            actual `shouldBe` (Right expected)
-        it "works for «»" $ do
-            let input = ""
-            let expected = ""
-            let actual = runProgramString untypedTestProgram input
-            actual `shouldBe` (Right expected)
-        it "works for «John Doe»" $ do
-            let input = "John Doe"
-            let expected = "Doe, John"
-            let actual = runProgramString untypedTestProgram input
-            actual `shouldBe` (Right expected)
-        it "works for «John and Jane Doe»" $ do
-            let input = "John and Jane Doe"
-            let expected = "John and Doe, Jane" 
-            let actual = runProgramString untypedTestProgram input
-            actual `shouldBe` (Right expected)
-        it "works for «John F. Kennedy»" $ do
-            let input = "John F. Kennedy"
-            let expected = "Kennedy, John F."
-            let actual = runProgramString untypedTestProgram input
-            actual `shouldBe` (Right expected)
+        testProgramOn [("John", "John"), ("", ""), ("John Doe", "Doe, John"), ("John and Jane Doe", "John and Doe, Jane"), ("John F. Kennedy", "Kennedy, John F.")]
+                      untypedTestProgram
+    describe "We correctly compute `reverse`" $ do
+        testProgram <- runIO $ parseFromFile "assets/reverse.pr"
+        let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
+        testProgramAgainst ["", "a", "ab", "abc", "abcd", "abcde", "abcdef", "abcdefg", "abcdefgh"]
+                      untypedTestProgram
+                      reverse
+    describe "We correctly compute `identity`" $ do
+        testProgram <- runIO $ parseFromFile "assets/identity.pr"
+        let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
+        testProgramAgainst ["", "a", "ab", "abc", "abcd", "abcde", "abcdef", "abcdefg", "abcdefgh"]
+                      untypedTestProgram
+                      (\x -> x)
+    describe "We correctly compute `map reverse`" $ do
+        testProgram <- runIO $ parseFromFile "assets/map_reverse.pr"
+        let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
+        testProgramAgainst ["a", "", "a b", "ab abc", "abcd a a abcd", "abc def ghi"]
+                      untypedTestProgram
+                      (dumbUnWords . map reverse . dumbWords)
+                      
+                       
+
+
