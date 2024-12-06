@@ -34,8 +34,8 @@ transStmt x = case x of
   Parser.HighLevelForProgram.Abs.SIfE expr stmts1 stmts2 -> failure x
   Parser.HighLevelForProgram.Abs.SYield expr -> failure x
   Parser.HighLevelForProgram.Abs.SReturn expr -> failure x
-  Parser.HighLevelForProgram.Abs.SLetIn ident type_ expr stmt -> failure x
-  Parser.HighLevelForProgram.Abs.SLetBIn ident stmt -> failure x
+  Parser.HighLevelForProgram.Abs.SLetIn ident type_ expr stmts -> failure x
+  Parser.HighLevelForProgram.Abs.SLetBIn ident stmts -> failure x
   Parser.HighLevelForProgram.Abs.SLetSetTrue ident -> failure x
 
 transExpr :: Parser.HighLevelForProgram.Abs.Expr -> Result

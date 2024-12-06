@@ -51,12 +51,12 @@ toAbsStmt (SYield o _) = pure $ A.SYield (toAbsOExpr o)
 toAbsStmt (SOReturn o _) = pure $ A.SReturn (toAbsOExpr o)
 toAbsStmt (SBReturn b _) = pure $ A.SReturn (toAbsBExpr b)
 toAbsStmt (SIf b s1 s2 _) = pure $ A.SIfE (toAbsBExpr b) (toAbsStmt s1) (toAbsStmt s2)
-toAbsStmt (SLetOutput (v, t) o s _) = pure $ A.SLetIn (Ident v) (toAbsType t) (toAbsOExpr o) s'
+toAbsStmt (SLetOutput (v, t) o s _) = pure $ A.SLetIn (Ident v) (toAbsType t) (toAbsOExpr o) [s']
     where 
         s' = case toAbsStmt s of
                 [x] -> x
                 _ -> error "(toAbsStmt) let output should have a single statement"
-toAbsStmt (SLetBoolean v s _) = pure $ A.SLetBIn (Ident v) s'
+toAbsStmt (SLetBoolean v s _) = pure $ A.SLetBIn (Ident v) [s']
     where
         s' = case toAbsStmt s of
                 [x] -> x

@@ -62,8 +62,8 @@ All other symbols are terminals.
   |  |  **|**  | ``if`` //Expr// ``then`` //[Stmt]// ``else`` //[Stmt]// ``endif``
   |  |  **|**  | ``yield`` //Expr//
   |  |  **|**  | ``return`` //Expr//
-  |  |  **|**  | ``let`` //Ident// ``:`` //Type// ``:=`` //Expr// ``in`` //Stmt//
-  |  |  **|**  | ``let`` ``mut`` //Ident// ``:`` ``Bool`` ``:=`` ``False`` ``in`` //Stmt//
+  |  |  **|**  | ``let`` //Ident// ``:`` //Type// ``:=`` //Expr// ``in`` //[Stmt]//
+  |  |  **|**  | ``let`` ``mut`` //Ident// ``:`` ``Bool`` ``:=`` ``False`` ``in`` //[Stmt]//
   |  |  **|**  | ``setTrue`` //Ident//
   | //[Stmt]// | -> | //Stmt//
   |  |  **|**  | //Stmt// //[Stmt]//

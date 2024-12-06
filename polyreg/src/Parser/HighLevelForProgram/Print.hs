@@ -159,8 +159,8 @@ instance Print Parser.HighLevelForProgram.Abs.Stmt where
     Parser.HighLevelForProgram.Abs.SIfE expr stmts1 stmts2 -> prPrec i 0 (concatD [doc (showString "if"), prt 0 expr, doc (showString "then"), prt 0 stmts1, doc (showString "else"), prt 0 stmts2, doc (showString "endif")])
     Parser.HighLevelForProgram.Abs.SYield expr -> prPrec i 0 (concatD [doc (showString "yield"), prt 0 expr])
     Parser.HighLevelForProgram.Abs.SReturn expr -> prPrec i 0 (concatD [doc (showString "return"), prt 0 expr])
-    Parser.HighLevelForProgram.Abs.SLetIn id_ type_ expr stmt -> prPrec i 0 (concatD [doc (showString "let"), prt 0 id_, doc (showString ":"), prt 0 type_, doc (showString ":="), prt 0 expr, doc (showString "in"), prt 0 stmt])
-    Parser.HighLevelForProgram.Abs.SLetBIn id_ stmt -> prPrec i 0 (concatD [doc (showString "let"), doc (showString "mut"), prt 0 id_, doc (showString ":"), doc (showString "Bool"), doc (showString ":="), doc (showString "False"), doc (showString "in"), prt 0 stmt])
+    Parser.HighLevelForProgram.Abs.SLetIn id_ type_ expr stmts -> prPrec i 0 (concatD [doc (showString "let"), prt 0 id_, doc (showString ":"), prt 0 type_, doc (showString ":="), prt 0 expr, doc (showString "in"), prt 0 stmts])
+    Parser.HighLevelForProgram.Abs.SLetBIn id_ stmts -> prPrec i 0 (concatD [doc (showString "let"), doc (showString "mut"), prt 0 id_, doc (showString ":"), doc (showString "Bool"), doc (showString ":="), doc (showString "False"), doc (showString "in"), prt 0 stmts])
     Parser.HighLevelForProgram.Abs.SLetSetTrue id_ -> prPrec i 0 (concatD [doc (showString "setTrue"), prt 0 id_])
 
 instance Print [Parser.HighLevelForProgram.Abs.Stmt] where

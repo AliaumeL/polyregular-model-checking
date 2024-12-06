@@ -27,7 +27,9 @@ data BExpr v t = BConst Bool t
 data PExpr v t = PVar v t
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
+
 data CExpr v t = CChar Char t
+               | CSep  Int
                | CList [CExpr v t] t
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
@@ -96,7 +98,7 @@ data Program v t = Program [StmtFun v t] v
 type UProgram = Program String ()
 
 
-freeVarsStmt :: (Ord v, Eq v) => Stmt v t -> Set v
+freeVarsStmt :: (Ord v) => Stmt v t -> Set v
 freeVarsStmt (SIf b s1 s2 _) = freeVarsBExpr b `union` freeVarsStmt s1 `union` freeVarsStmt s2
 freeVarsStmt (SYield e _) = freeVarsOExpr e
 freeVarsStmt (SOReturn e _) = freeVarsOExpr e
@@ -107,7 +109,7 @@ freeVarsStmt (SSetTrue _ _) = empty
 freeVarsStmt (SFor (i, v, _) e s _) = freeVarsOExpr e `union` (freeVarsStmt s `S.difference` S.fromList [i, v])
 freeVarsStmt (SSeq ss _) = unions (map freeVarsStmt ss)
 
-freeVarsBExpr :: (Ord v, Eq v) => BExpr v t -> Set v
+freeVarsBExpr :: (Ord v) => BExpr v t -> Set v
 freeVarsBExpr (BConst _ _) = empty
 freeVarsBExpr (BNot b _) = freeVarsBExpr b
 freeVarsBExpr (BOp _ b1 b2 _) = freeVarsBExpr b1 `union` freeVarsBExpr b2
@@ -117,13 +119,13 @@ freeVarsBExpr (BGen s _) = freeVarsStmt s
 freeVarsBExpr (BApp v es _) = singleton v `union` unions (map (freeVarsOExpr . fst) es)
 freeVarsBExpr (BLitEq _ c e _) = freeVarsCExpr c `union` freeVarsOExpr e
 
-freeVarsPExpr :: (Ord v, Eq v) => PExpr v t -> Set v
+freeVarsPExpr :: (Ord v) => PExpr v t -> Set v
 freeVarsPExpr (PVar v _) = singleton v
 
-freeVarsCExpr :: (Ord v, Eq v) => CExpr v t -> Set v
+freeVarsCExpr :: (Ord v) => CExpr v t -> Set v
 freeVarsCExpr _ = empty
 
-freeVarsOExpr :: (Ord v, Eq v) => OExpr v t -> Set v
+freeVarsOExpr :: (Ord v) => OExpr v t -> Set v
 freeVarsOExpr (OVar v _) = singleton v
 freeVarsOExpr (OConst _ _) = empty
 freeVarsOExpr (OList es _) = unions (map freeVarsOExpr es)

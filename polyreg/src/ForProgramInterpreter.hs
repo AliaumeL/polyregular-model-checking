@@ -32,9 +32,9 @@ data InterpreterState = InterpreterState {
     posDict :: M.Map String Int,
     bools :: M.Map String Bool ,
     functions :: M.Map String (StmtFun String ()) 
-} deriving (Show)
+} deriving (Show, Eq)
 
-data InterpretError = InterpretError String deriving (Show, Eq)
+data InterpretError = InterpretError String InterpreterState deriving (Show, Eq)
 
 class (Monad m) => MonadInterpreter m where
     withValue   :: String -> CExpr String () -> m a -> m a
@@ -44,6 +44,7 @@ class (Monad m) => MonadInterpreter m where
     withBoolean :: String -> m a -> m a
     withFunctions :: [StmtFun String ()] -> m a -> m a 
     setTrueBoolean  :: String -> m ()
+    withCleanEnvironment :: m a -> m a
 
     getPos      :: String -> m Int
     getValue    :: String -> m (CExpr String ())
@@ -59,6 +60,12 @@ newtype InterpreterMonad a = InterpretMonad (StateT InterpreterState (Except Int
 
 
 instance MonadInterpreter InterpreterMonad where
+    withCleanEnvironment m = do
+        currentState <- get
+        put (emptyInterpreterState {functions = functions currentState})
+        v <- m
+        put currentState
+        return v
     withPos name pos m = do
         currentState <- get
         let newState = currentState {posDict = M.insert name pos (posDict currentState)}
@@ -128,7 +135,7 @@ instance MonadInterpreter InterpreterMonad where
             Nothing -> throwWithCtx $ "Position " ++ name ++ " not found"
     throwWithCtx msg = do
         currentState <- get
-        throwError $ InterpretError $ msg ++ " in state " ++ show currentState
+        throwError $ InterpretError msg currentState
 
 
 emptyInterpreterState :: InterpreterState
@@ -147,13 +154,17 @@ runProgram :: Program String () -> CExpr String () -> Either InterpretError (CEx
 runProgram p i = runInterpreterMonad $ interpretProgram p i
 
 runProgramString :: Program String () -> String -> Either InterpretError String
-runProgramString p i = do
-    o <- runProgram p (CList (map (\c -> CChar c ()) i) ())
+runProgramString p i = runInterpreterMonad $ runProgramStringM p i
+
+
+runProgramStringM :: (MonadInterpreter m) => Program String () -> String -> m String
+runProgramStringM p i = do
+    o <- interpretProgram p (CList (map (\c -> CChar c ()) i) ())
     case o of
         CList l _ -> forM l $ \x -> case x of
             CChar c _ -> return c
-            CList _ _ -> Left $ InterpretError "Expected list of characters as output of function"
-        _ -> Left $ InterpretError "Expected list of characters as input of function"
+            CList _ _ -> throwWithCtx "Expected list of characters as output of function"
+        _ -> throwWithCtx "Expected list of characters as input of function"
 
 restoreAllExceptBooleans :: InterpreterState -> InterpreterState -> InterpreterState
 restoreAllExceptBooleans old new = old { bools = bools new }
@@ -167,7 +178,7 @@ interpretFunction :: (MonadInterpreter m) => StmtFun String () -> [(CExpr String
 interpretFunction (StmtFun _ args stmt _) args' = do
     let argsO = zip (map fst3 args) (map fst args')
     let argsP = zip (concatMap thd3 args) (concatMap snd args')
-    withValues argsO $ withPositions argsP $ do
+    withCleanEnvironment $ withValues argsO $ withPositions argsP $ do
         outputValue <- interpretStmt stmt
         case outputValue of
             StmtReturn v -> return v
@@ -190,7 +201,7 @@ interpretStmt (SSeq stmts _) = mconcat <$> mapM interpretStmt stmts
 interpretStmt (SFor (i, v, _) e stmt _) = do
     e' <- interpretOExpr e
     case e' of
-        CChar c _ -> throwWithCtx $ "Cannot iterate over character " ++ show e
+        CChar c _ -> throwWithCtx $ "Cannot iterate over character " ++ show e ++ " which is " ++ show c
         CList l _ -> do
             let l' = zip [0..] l
             mconcat <$> (forM l' $ \(index, currentValue) -> do
