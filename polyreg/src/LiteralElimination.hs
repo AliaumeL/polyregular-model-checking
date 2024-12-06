@@ -14,8 +14,8 @@ module LiteralElimination where
 import ForPrograms
 import ForProgramsTyping
 
-eliminateLiteral :: Program v t -> Program v t
-eliminateLiteral (Program funcs main) = Program (map eliminateLiteralFun funcs) main
+eliminateLiterals :: Program v t -> Program v t
+eliminateLiterals (Program funcs main) = Program (map eliminateLiteralFun funcs) main
 
 eliminateLiteralFun :: StmtFun v t -> StmtFun v t
 eliminateLiteralFun (StmtFun name args stmt t) = StmtFun name args (eliminateLiteralStmt stmt) t
