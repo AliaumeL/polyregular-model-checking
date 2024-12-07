@@ -312,14 +312,14 @@ assignNumbersStmtM p (SBReturn b t) = do
     (nb, tb) <- assignNumbersBExprM (PosBRet : p) b
     logConstraint $ C.VarConstraint (nb, C.Equal, n)
     return (n, SBReturn tb n)
-assignNumbersStmtM p (SLetOutput (v, tv) e s ts) = do
+assignNumbersStmtM p (SLetOutput (v, t1) e s t2) = do
     n <- registerPos p
-    addTypeSpec n ts
+    addTypeSpec n t2
     withVar v (PosLetOVar : p) $ do
         nv <- getVar v
-        addTypeSpec nv tv
+        addTypeSpec nv t2
         (ne, te) <- assignNumbersOExprM (PosLetOExpr : p) e
-        logConstraint $ C.VarConstraint (nv, C.Minus, ne)
+        logConstraint $ C.VarConstraint (nv, C.Equal, ne)
         (ns, ts) <- assignNumbersStmtM (PosLetOStmt : p) s
         logConstraint $ C.VarConstraint (ns, C.Equal, n)
         return (n, SLetOutput (v,nv) te ts n)
@@ -514,7 +514,7 @@ assignNumbersFuncsM :: (MonadPos m) => [StmtFun String (Maybe ValueType)] -> m [
 assignNumbersFuncsM [] = return []
 assignNumbersFuncsM (StmtFun f args s t : fs) = do
     -- argument positions
-    let pargs = map (\(i, (v,_,_)) -> [PosFunArg i , PosFun f]) $ zip [0..] args
+    let pargs = map (\i -> [PosFunArg i , PosFun f]) [0..] 
     -- argument names
     let nargs = map (\(v,_,_) -> v) args
     -- assign body things 

@@ -12,7 +12,7 @@ import ForProgramsTyping
 import ForProgramInterpreter
 import Parser.ParseHighLevel
 
-import Debug.Trace
+import ForProgramsPrettyPrint
 
 -- traverse to list
 import Data.Foldable (toList)
@@ -33,6 +33,12 @@ forgetPositionType (TBool) = Just TBool
 forgetPositionType (TConst t) = Just (TOutput t)
 forgetPositionType _ = Nothing
 
+
+prettyPrintProgramWithNlsMaybe :: Program String (Maybe ValueType) -> String
+prettyPrintProgramWithNlsMaybe = prettyPrintProgramWithNls . fmap fakeTypes
+    where
+        fakeTypes (Just t) = t
+        fakeTypes Nothing = TBool
 
 typeProgramBothWays program = case (classicalInference, newInference) of
                                 (Right p1, Right p2) -> do 
