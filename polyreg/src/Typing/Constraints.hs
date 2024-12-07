@@ -17,8 +17,8 @@ data Constraint = Equal | Plus | Minus deriving (Eq, Ord, Show)
 
 updateType :: Constraint -> Type -> Maybe Type
 updateType Equal t = Just t
-updateType Plus (TList n) = Just $ TList (n+1)
-updateType Minus (TList n) = Just $ TList (n-1)
+updateType Minus (TList n) = Just $ TList (n+1)
+updateType Plus (TList n) = Just $ TList (n-1)
 updateType _ _ = Nothing
 
 data ConstraintGraph = ConstraintGraph {
@@ -66,44 +66,55 @@ createGraph specs = ConstraintGraph g const elbl
 -- 2. check that all nodes are covered by the forest
 -- 3. propagate types from the roots of the forests to their leaves
 
+data SolverError = UncoveredNodes [IntSet.IntSet] 
+                 | InvalidConstraint Int Int Constraint Type 
+    deriving (Show)
 
-propagateTreeNode :: M.Map (Int,Int) Constraint -> Int -> Type -> G.Tree Int -> [(Int, Type)]
-propagateTreeNode elbl source tsource (G.Node x ts) = (x, tx) : concatMap (propagateTreeNode elbl x tx) ts
+propagateTreeNode :: M.Map (Int,Int) Constraint -> Int -> Type -> G.Tree Int -> Either SolverError [(Int, Type)]
+propagateTreeNode elbl source tsource (G.Node x ts) = do
+                                                        rtx <- tx 
+                                                        rst <- mapM (propagateTreeNode elbl x rtx) ts
+                                                        return $ (x, rtx) : concat rst
     where
         tx = case M.lookup (source, x) elbl of
             Just c  -> case updateType c tsource of
-                Just t  -> t
-                Nothing -> error $ "Invalid constraint " ++ show source ++ " : " ++ show c ++ " " ++ show tsource ++ " " ++ show x
+                Just t  -> Right t
+                Nothing -> Left $ InvalidConstraint source x c tsource
             Nothing -> error "Unreachable node"
-
-data SolverError = UncoveredNodes [IntSet.IntSet] deriving (Show)
+    
 
 solveConstraints :: ConstraintGraph -> Either SolverError (IntMap.IntMap Type) 
-solveConstraints (ConstraintGraph g c elbl) = if IntSet.null uncoveredNodes then
-                                                  Left (UncoveredNodes err)
-                                              else
-                                                  Right (IntMap.fromList $ propagateAllTrees)
+solveConstraints (ConstraintGraph g c elbl) = do
+                                                allTrees <- propagateAllTrees
+                                                uncov    <- uncoveredNodes
+                                                error    <- err
+                                                case IntSet.null uncov of
+                                                    True  -> return $ IntMap.fromList allTrees
+                                                    False -> Left $ UncoveredNodes error
     where
         forest :: G.Forest Int
         forest = G.dfs g $ IntMap.keys c
 
-        propagateTree :: G.Tree Int -> [(Int, Type)]
+        propagateTree :: G.Tree Int -> Either SolverError [(Int, Type)]
         propagateTree (G.Node x xs) = case IntMap.lookup x c of
-            Just t  -> concatMap (propagateTreeNode elbl x t) xs
+            Just t  -> concat <$> mapM (propagateTreeNode elbl x t) xs
             Nothing -> error "Invalid node"
 
-        propagateAllTrees :: [(Int, Type)]
-        propagateAllTrees = concatMap propagateTree forest
+        propagateAllTrees :: Either SolverError [(Int, Type)]
+        propagateAllTrees = concat <$> mapM propagateTree forest
 
-        uncoveredNodes :: IntSet.IntSet
-        uncoveredNodes = IntSet.difference allNodes $ IntSet.fromList $ map fst propagateAllTrees
-            where
-                allNodes = IntSet.fromList $ G.vertices g
+        uncoveredNodes :: Either SolverError IntSet.IntSet
+        uncoveredNodes = do
+                            let allNodes   = IntSet.fromList $ G.vertices g
+                            let allTouched = IntSet.fromList . concatMap (toList) $ forest
+                            return $ IntSet.difference allNodes allTouched
 
-        errTrees :: G.Forest Int
-        errTrees = G.dfs g $ IntSet.toList uncoveredNodes
+        errTrees :: Either SolverError (G.Forest Int)
+        errTrees = do 
+                    nodes <- uncoveredNodes
+                    return $ G.dfs g (IntSet.toList nodes)
 
-        err :: [IntSet.IntSet]
-        err = map (IntSet.fromList . toList) errTrees
+        err :: Either SolverError [IntSet.IntSet]
+        err = map (IntSet.fromList . toList) <$> errTrees
 
 

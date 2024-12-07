@@ -2,6 +2,7 @@
 module Typing.Inference where
 
 import qualified Data.Map as M
+import qualified Data.IntSet as IntSet
 import qualified Data.IntMap as IntMap
 
 import qualified Typing.Constraints as C
@@ -11,6 +12,8 @@ import QuantifierFree
 
 import Control.Monad
 import Control.Monad.State
+
+import Debug.Trace
 
 
 -- | Collect constraints from a program.
@@ -110,6 +113,7 @@ outputTypeDepth TOChar = 0
 outputTypeDepth (TOList t) = 1 + outputTypeDepth t
 
 depthToType :: Int -> OutputType
+depthToType n | n < 0 = error "Invalid depth"
 depthToType 0 = TOChar
 depthToType n = TOList $ depthToType (n-1)
 
@@ -178,16 +182,22 @@ data PosCoding = PosCoding (M.Map Pos Int) (IntMap.IntMap Pos)
 insertCoding :: Pos -> Int -> PosCoding -> PosCoding
 insertCoding p i (PosCoding m1 m2) = PosCoding (M.insert p i m1) (IntMap.insert i p m2)
 
-readPosCoding :: Pos -> PosCoding -> Int
-readPosCoding p (PosCoding m _) = m M.! p
+insertCodings :: [(Pos, Int)] -> PosCoding -> PosCoding
+insertCodings ps (PosCoding m1 m2) = PosCoding (M.union newMap m1) (IntMap.union newMap' m2)
+    where
+        newMap  = M.fromList ps
+        newMap' = IntMap.fromList $ map (\(p, i) -> (i, p)) ps
 
-readIntCoding :: Int -> PosCoding -> Pos
-readIntCoding i (PosCoding _ m) = m IntMap.! i
+readPosCoding :: PosCoding -> Pos -> Int
+readPosCoding (PosCoding m _) p = m M.! p
+
+readIntCoding :: PosCoding -> Int -> Pos
+readIntCoding (PosCoding _ m) i = m IntMap.! i
 
 
 class (Monad m) => MonadPos m where
-    withVar        :: String   -> m a -> m a
-    withVars       :: [String] -> m a -> m a
+    withVar        :: String -> [PosMove] -> m a -> m a
+    withVars       :: [(String, [PosMove])] -> m a -> m a
     getVar         :: String -> m Int
 
     registerPos    :: [PosMove]  -> m Int
@@ -214,23 +224,29 @@ newtype PosStateM a = PosStateM { runPosStateM :: State PosState a }
 
 
 runPosState :: PosStateM a -> a
-runPosState (PosStateM m) = evalState m $ PosState 0 (PosCoding M.empty IntMap.empty) M.empty []
+runPosState (PosStateM m) = evalState m $ PosState (-1) (PosCoding M.empty IntMap.empty) M.empty []
 
 instance MonadPos PosStateM where
-    withVar v m = do
+    withVar v p m = do
         counter <- gets counter
         oldVars <- gets vars
         let newCounter = counter + 1
-        modify $ \s -> s { counter = newCounter, vars = M.insert v newCounter (vars s) }
+        let pos = Pos (reverse p)
+        modify $ \s -> s { counter = newCounter,
+                           vars = M.insert v newCounter (vars s), 
+                           coding = insertCoding pos newCounter (coding s) }
         a <- m
         modify $ \s -> s { vars = oldVars }
         return a
 
-    withVars vs m = do
+    withVars vps m = do
         counter <- gets counter
         oldVars <- gets vars
-        let newCounter = counter + length vs + 1
-        modify $ \s -> s { counter = newCounter, vars = M.union (M.fromList $ zip vs [counter+1..]) (vars s) } 
+        let newCounter = counter + length vps
+        let poss = map (Pos . reverse . snd) vps
+        modify $ \s -> s { counter = newCounter, 
+                           vars = M.union (M.fromList $ zip (map fst vps) [counter+1..]) (vars s),
+                           coding = insertCodings (zip poss [counter+1..]) (coding s) }
         a <- m
         modify $ \s -> s { vars = oldVars }
         return a
@@ -245,15 +261,15 @@ instance MonadPos PosStateM where
         i <- gets counter
         let pos = Pos (reverse p)
         modify $ \s -> s { counter = i + 1, coding = insertCoding pos (i+1) (coding s) }
-        return i
+        return (i+1)
 
     readPosition p = do
         coding <- gets coding
-        return $ readPosCoding p coding
+        return $ readPosCoding coding p
 
     readCodePoint i = do
         coding <- gets coding
-        return $ readIntCoding i coding
+        return $ readIntCoding coding i
 
     logConstraint c = modify $ \s -> s { constraints = c : constraints s }
     getConstraints = gets constraints
@@ -299,10 +315,10 @@ assignNumbersStmtM p (SBReturn b t) = do
 assignNumbersStmtM p (SLetOutput (v, tv) e s ts) = do
     n <- registerPos p
     addTypeSpec n ts
-    withVar v $ do
+    withVar v (PosLetOVar : p) $ do
         nv <- getVar v
         addTypeSpec nv tv
-        (ne, te) <- assignNumbersOExprM (PosLetOVar : p) e
+        (ne, te) <- assignNumbersOExprM (PosLetOExpr : p) e
         logConstraint $ C.VarConstraint (nv, C.Minus, ne)
         (ns, ts) <- assignNumbersStmtM (PosLetOStmt : p) s
         logConstraint $ C.VarConstraint (ns, C.Equal, n)
@@ -310,7 +326,7 @@ assignNumbersStmtM p (SLetOutput (v, tv) e s ts) = do
 assignNumbersStmtM p (SLetBoolean v s t) = do
     n <- registerPos p
     addTypeSpec n t
-    withVar v $ do
+    withVar v (PosLetBoolVar : p) $ do
         nv <- getVar v
         addTypeSpec nv (Just TBool)
         (ns, ts) <- assignNumbersStmtM (PosLetBoolStmt : p) s
@@ -320,12 +336,12 @@ assignNumbersStmtM p (SSetTrue v t) = do
     n <- registerPos p
     addTypeSpec n t
     nv <- getVar v
-    logConstraint $ C.VarConstraint (nv, C.Equal, n)
+    addTypeSpec nv (Just TBool)
     return (n, SSetTrue v n)
 assignNumbersStmtM p (SFor (i, v, tv) e s ts) = do
     n <- registerPos p
     addTypeSpec n ts
-    withVar v $ do
+    withVar v (PosForVar : p) $ do
         nv <- getVar v
         addTypeSpec nv tv
         (ne, te) <- assignNumbersOExprM (PosForVar : p) e
@@ -353,12 +369,14 @@ assignNumbersBExprM p (BConst b t) = do
     return (n, BConst b n)
 assignNumbersBExprM p (BNot b t) = do
     n <- registerPos p
+    addTypeSpec n (Just TBool)
     addTypeSpec n t
     (nb, tb) <- assignNumbersBExprM (PosBNot : p) b
     logConstraint $ C.VarConstraint (nb, C.Equal, n)
     return (n, BNot tb n)
 assignNumbersBExprM p (BOp op e1 e2 t) = do
     n <- registerPos p
+    addTypeSpec n (Just TBool)
     addTypeSpec n t
     (ne1, te1) <- assignNumbersBExprM (PosBOpL : p) e1
     (ne2, te2) <- assignNumbersBExprM (PosBOpR : p) e2
@@ -368,23 +386,27 @@ assignNumbersBExprM p (BOp op e1 e2 t) = do
 assignNumbersBExprM p (BComp op e1 e2 t) = do
     n <- registerPos p
     addTypeSpec n t
+    addTypeSpec n (Just TBool)
     let te1 = fmap (const (-1)) e1
     let te2 = fmap (const (-1)) e2
     return (n, BComp op te1 te2 n)
 assignNumbersBExprM p (BVar v t) = do
     n <- registerPos p
+    addTypeSpec n (Just TBool)
     addTypeSpec n t
     nv <- getVar v
     logConstraint $ C.VarConstraint (nv, C.Equal, n)
     return (n, BVar v n)
 assignNumbersBExprM p (BGen s t) = do
     n <- registerPos p
+    addTypeSpec n (Just TBool)
     addTypeSpec n t
     (ns, ts) <- assignNumbersStmtM (PosBGen : p) s
     logConstraint $ C.VarConstraint (ns, C.Equal, n)
     return (n, BGen ts n)
 assignNumbersBExprM p (BApp v es t) = do
     n <- registerPos p
+    addTypeSpec n (Just TBool)
     addTypeSpec n t
     ms <- mapM (\(i, (e, _)) -> assignNumbersOExprM (PosBAppArg i : p) e) $ zip [0..] es
     argv <- forM [0..length ms] $ \i -> do
@@ -397,6 +419,7 @@ assignNumbersBExprM p (BApp v es t) = do
 assignNumbersBExprM p (BLitEq t1 c e t2) = do
     n <- registerPos p
     addTypeSpec n t2
+    addTypeSpec n (Just TBool)
     (nc, tc) <- assignNumbersCExprM (PosBLitEqL : p) c
     (ne, te) <- assignNumbersOExprM (PosBLitEqR : p) e
     logConstraint $ C.VarConstraint (nc, C.Equal, ne)
@@ -405,12 +428,14 @@ assignNumbersBExprM p (BLitEq t1 c e t2) = do
     return (n, BLitEq nc tc te n)
 
 
+
 assignNumbersOExprM :: (MonadPos m) => [PosMove] -> OExpr String (Maybe ValueType) -> m (Int, OExpr String Int)
 assignNumbersOExprM p (OVar v t) = do
     n <- registerPos p
     addTypeSpec n t
     nv <- getVar v
     logConstraint $ C.VarConstraint (nv, C.Equal, n)
+    constraints <- getConstraints
     return (n, OVar v n)
 assignNumbersOExprM p (OConst c t) = do
     n <- registerPos p
@@ -488,16 +513,21 @@ assignNumbersProgramM (Program funcs main) = do
 assignNumbersFuncsM :: (MonadPos m) => [StmtFun String (Maybe ValueType)] -> m [StmtFun String Int]
 assignNumbersFuncsM [] = return []
 assignNumbersFuncsM (StmtFun f args s t : fs) = do
-    -- assign a number to the arguments
-    iargs <- mapM (\(i,_) -> registerPos [PosFunArg i, PosFun f]) $ zip [0..] args
-    -- add constraints for the arguments
-    mapM_ (\(i, (_, t, _)) -> addTypeSpec i t) $ zip iargs args
-    -- assign body things
-    (nbody, tbody) <- (withVars (map (\(v,_,_) -> v) args) $ do
-        forM_ (zip args iargs) ( \((v,_,_), i) -> do
+    -- argument positions
+    let pargs = map (\(i, (v,_,_)) -> [PosFunArg i , PosFun f]) $ zip [0..] args
+    -- argument names
+    let nargs = map (\(v,_,_) -> v) args
+    -- assign body things 
+    (iargs, nbody, tbody) <- withVars (zip nargs pargs) $ do
+        -- first we collect potential type constraints
+        -- on the function’s arguments
+        iargs <- forM args $ \(v, t, _) -> do
             nv <- getVar v
-            logConstraint $ C.VarConstraint (nv, C.Equal, i))
-        assignNumbersStmtM [PosFunBody, PosFun f] s)
+            addTypeSpec nv t
+            return nv
+        -- then we assign numbers to the body
+        (nbody, tbody) <- assignNumbersStmtM [PosFunBody, PosFun f] s
+        return (iargs, nbody, tbody)
     addTypeSpec nbody t
     -- continue with the rest of the functions
     newfs <- assignNumbersFuncsM fs
@@ -521,11 +551,25 @@ resolveType m i = case IntMap.lookup i m of
     Just t -> Just $ cTypeToValueType t
     Nothing -> Nothing
 
+displayUncoveredSingleNode:: PosCoding -> Int -> String
+displayUncoveredSingleNode (PosCoding _ b) i = case IntMap.lookup i b of
+    Just p  -> "Node " ++ show i ++ " at " ++ show p
+    Nothing -> "Node " ++ show i ++ " not found"
+
+displayUncoveredNodesBag :: PosCoding -> IntSet.IntSet -> String
+displayUncoveredNodesBag coding ns = unlines . map (displayUncoveredSingleNode coding ) $ l
+    where
+        l = IntSet.toList ns
+
+displayUncoveredNodes :: PosCoding -> [IntSet.IntSet] -> String
+displayUncoveredNodes (PosCoding _ b) ns = show (IntMap.keys b)  ++ " ; " ++ unlines (map (displayUncoveredNodesBag (PosCoding M.empty b)) ns)
+
 inferTypes :: Program String (Maybe ValueType) -> Either (InferError) (Program String (Maybe ValueType))
 inferTypes p = runInfer p
     where
         runInfer p = do
-            let (prog, _, cgraph) = runPosState $ computeNumbersAndConstraints p
+            let (prog, coding, cgraph) = runPosState $ computeNumbersAndConstraints p
             case C.solveConstraints cgraph of
-                Left e -> Left $ InferError (show e)
+                Left (C.UncoveredNodes ns) -> Left $ InferError $ "Uncovered nodes: " ++ show (C.const cgraph) ++ displayUncoveredNodes coding ns 
+                Left (C.InvalidConstraint x y c t) -> Left $ InferError $ "Invalid constraint: " ++ show x ++ ":" ++ show (readIntCoding coding x) ++ " " ++ show y ++ ":" ++ show (readIntCoding coding y) ++ " " ++ show c ++ " " ++ show t
                 Right intToType -> Right $ fmap (resolveType intToType) prog
