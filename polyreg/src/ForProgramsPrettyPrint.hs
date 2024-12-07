@@ -113,6 +113,15 @@ prettyPrintOExpr = printTree . toAbsOExpr
 prettyPrintBExpr :: BExpr String ValueType -> String
 prettyPrintBExpr = printTree . toAbsBExpr
 
+prettyPrintComp :: Comp -> String
+prettyPrintComp = printTree . toAbsComp
+
+prettyPrintCExpr :: CExpr String ValueType -> String
+prettyPrintCExpr = printTree . toAbsCExpr
+
+prettyPrintPExpr :: PExpr String ValueType -> String
+prettyPrintPExpr = printTree . toAbsPExpr
+
 --- Here we make another version of pretty printing, that uses indentations and newlines to make the code more readable. 
 --- For now we use the default printing of Expressions. 
 
@@ -123,14 +132,53 @@ stripFinalNewLine :: String -> String
 stripFinalNewLine [] = []
 stripFinalNewLine x = if last x == '\n' then init x else x
 
+prettyPrintOExprWithNls :: Int -> OExpr String ValueType -> String
+prettyPrintOExprWithNls indent (OVar v t) = v
+prettyPrintOExprWithNls indent (OConst c t) = prettyPrintCExpr c
+prettyPrintOExprWithNls indent (OList os t) = "[" ++ unwords (map (\o -> prettyPrintOExprWithNls indent o) os) ++ "]"
+prettyPrintOExprWithNls indent (ORev o t) = "rev(" ++ prettyPrintOExprWithNls indent o ++ ")"
+prettyPrintOExprWithNls indent (OIndex o p t) = prettyPrintOExprWithNls indent o ++ "[" ++ prettyPrintPExpr p ++ "]"
+prettyPrintOExprWithNls indent (OApp v os t) = v ++ "(" ++ unwords (map (\(o, ps) -> prettyPrintOExprWithNls indent o ++ unwords (map prettyPrintPExpr ps)) os) ++ ")"
+prettyPrintOExprWithNls i (OGen s t) = "{\n" ++ prettyPrintStmtWithNls (i + 1) s ++ "\n" ++ indent i  ++ "}"
+
+condParens :: Bool -> String -> String 
+condParens True s = "(" ++ s ++ ")"
+condParens False s = s
+
+
+prettyPrintBExprWithNls :: Int -> Int -> BExpr String ValueType -> String
+prettyPrintBExprWithNls indent priority (BConst b t) = show b
+prettyPrintBExprWithNls indent priority (BNot (BVar v _) _) = "!" ++ v
+prettyPrintBExprWithNls indent priority (BNot b t) = "!(" ++ prettyPrintBExprWithNls indent 0 b ++ ")"
+prettyPrintBExprWithNls indent priority (BOp And b1 b2 t) = if priority > 1 then "(" ++ b1' ++ " and " ++ b2' ++ ")" else b1' ++ " and " ++ b2'
+    where b1' = prettyPrintBExprWithNls indent 1 b1
+          b2' = prettyPrintBExprWithNls indent 1 b2
+prettyPrintBExprWithNls indent priority (BOp Or b1 b2 t) = if priority > 0 then "(" ++ b1' ++ " or " ++ b2' ++ ")" else b1' ++ " or " ++ b2'
+    where b1' = prettyPrintBExprWithNls indent 0 b1
+          b2' = prettyPrintBExprWithNls indent 0 b2
+prettyPrintBExprWithNls indent priority (BOp Impl b1 b2 t) = if priority > 0 then "(" ++ b1' ++ " => " ++ b2' ++ ")" else b1' ++ " => " ++ b2'
+    where b1' = prettyPrintBExprWithNls indent 0 b1
+          b2' = prettyPrintBExprWithNls indent 0 b2
+prettyPrintBExprWithNls indent priority (BOp Iff b1 b2 t) = if priority > 0 then "(" ++ b1' ++ " <=> " ++ b2' ++ ")" else b1' ++ " <=> " ++ b2'
+    where b1' = prettyPrintBExprWithNls indent 0 b1
+          b2' = prettyPrintBExprWithNls indent 0 b2
+prettyPrintBExprWithNls indent priority (BComp comp p1 p2 t) = prettyPrintPExpr p1 ++ " " ++ prettyPrintComp comp ++ " " ++ prettyPrintPExpr p2
+prettyPrintBExprWithNls indent priority (BVar v t) = v
+prettyPrintBExprWithNls i priority (BGen s t) = "{\n" ++ prettyPrintStmtWithNls (i + 1) s ++ "\n" ++ indent i ++ "}"
+prettyPrintBExprWithNls i priority (BApp v es t) = v ++ "(" ++ unwords (map (\(e, ps) -> prettyPrintOExpr e ++ unwords (map prettyPrintPExpr ps)) es) ++ ")"
+prettyPrintBExprWithNls i priority (BLitEq t c e _) = prettyPrintOExpr e ++ " === " ++ prettyPrintCExpr c
+
 prettyPrintStmtWithNls :: Int -> Stmt String ValueType -> String
-prettyPrintStmtWithNls n (SIf b s1 (SSeq [] _) _) = indent n ++ "if " ++ prettyPrintBExpr b ++ " then\n" ++ prettyPrintStmtWithNls (n + 1) s1 ++ "\n" ++ indent n ++ "endif"
-prettyPrintStmtWithNls n (SIf b s1 s2 _) = indent n ++ "if " ++ prettyPrintBExpr b ++ " then\n" ++ prettyPrintStmtWithNls (n + 1) s1 ++ "\n" ++ indent n ++ "else\n" ++ prettyPrintStmtWithNls (n + 1) s2 ++ "\n" ++ indent n ++ "endif"
-prettyPrintStmtWithNls n (SLetOutput (v, t) o s _) = indent n ++ "let " ++ v ++ " : " ++ prettyPrintT t ++ " := " ++ prettyPrintOExpr o ++ " in\n" ++ prettyPrintStmtWithNls n s
+prettyPrintStmtWithNls n (SIf b s1 (SSeq [] _) _) = indent n ++ "if " ++ prettyPrintBExprWithNls n 0 b ++ " then\n" ++ prettyPrintStmtWithNls (n + 1) s1 ++ "\n" ++ indent n ++ "endif"
+prettyPrintStmtWithNls n (SIf b s1 s2 _) = indent n ++ "if " ++ prettyPrintBExprWithNls n 0 b ++ " then\n" ++ prettyPrintStmtWithNls (n + 1) s1 ++ "\n" ++ indent n ++ "else\n" ++ prettyPrintStmtWithNls (n + 1) s2 ++ "\n" ++ indent n ++ "endif"
+prettyPrintStmtWithNls n (SLetOutput (v, t) o s _) = indent n ++ "let " ++ v ++ " : " ++ prettyPrintT t ++ " := " ++ prettyPrintOExprWithNls n o ++ " in\n" ++ prettyPrintStmtWithNls n s
 prettyPrintStmtWithNls n (SLetBoolean v s _) = indent n ++ "let mut " ++ v ++ ": Bool := False in \n" ++ prettyPrintStmtWithNls n s
-prettyPrintStmtWithNls n (SFor (i, e, t) v s _) = indent n ++ "for (" ++ i ++ "," ++ e ++ ":" ++ prettyPrintT t ++ ") in " ++ prettyPrintOExpr v ++ " do\n" ++ prettyPrintStmtWithNls (n + 1) s ++ "\n" ++ indent n ++  "done"
+prettyPrintStmtWithNls n (SFor (i, e, t) v s _) = indent n ++ "for (" ++ i ++ ", " ++ e ++ " : " ++ prettyPrintT t ++ ") in " ++ prettyPrintOExprWithNls n v ++ " do\n" ++ prettyPrintStmtWithNls (n + 1) s ++ "\n" ++ indent n ++  "done"
 prettyPrintStmtWithNls n (SSeq ss _) = stripFinalNewLine $ unlines $ map (prettyPrintStmtWithNls n) ss
-prettyPrintStmtWithNls n s = indent n ++ prettyPrintStmt s
+prettyPrintStmtWithNls n (SYield o _) = indent n ++ "yield " ++ prettyPrintOExprWithNls n o
+prettyPrintStmtWithNls n (SOReturn o _) = indent n ++ "return " ++ prettyPrintOExprWithNls n o
+prettyPrintStmtWithNls n (SBReturn b _) = indent n ++ "return " ++ prettyPrintBExprWithNls n 0 b
+prettyPrintStmtWithNls n (SSetTrue v _) = indent n ++ "setTrue " ++ v
 
 prettyPrintFunctionWithNls :: StmtFun String ValueType -> String
 prettyPrintFunctionWithNls (StmtFun name args stmt t) = "def " ++ name ++ "(" ++ unwords (map (\(a, t, _) -> a ++ " : " ++ prettyPrintT t) args) ++ " : " ++ prettyPrintT t ++ " = \n" ++ prettyPrintStmtWithNls 1 stmt ++ "\n"
