@@ -12,6 +12,8 @@ import ForProgramsTyping
 import ForProgramInterpreter
 import Parser.ParseHighLevel
 
+import ForProgramsPrettyPrint
+
 -- traverse to list
 import Data.Foldable (toList)
 
@@ -32,10 +34,17 @@ forgetPositionType (TConst t) = Just (TOutput t)
 forgetPositionType _ = Nothing
 
 
+prettyPrintProgramWithNlsMaybe :: Program String (Maybe ValueType) -> String
+prettyPrintProgramWithNlsMaybe = prettyPrintProgramWithNls . fmap fakeTypes
+    where
+        fakeTypes (Just t) = t
+        fakeTypes Nothing = TBool
+
 typeProgramBothWays program = case (classicalInference, newInference) of
                                 (Right p1, Right p2) -> do 
                                     (fmap forgetPositionType p1) `shouldBe` p2
-                                (_, _) -> error "Failed to type program"
+                                (_, Left e) -> error $ "Failed to type program" ++ show e
+                                (Left e, _) -> error $ "Failed to type program" ++ show e
     where
         classicalInference = inferProgram program
         newInference = I.inferTypes program
@@ -43,7 +52,7 @@ typeProgramBothWays program = case (classicalInference, newInference) of
 spec :: Spec
 spec = do
     describe "We can infer types for usual programs" $ do
-        forM_ ["assets/word_split.pr", "assets/bibtex.pr", "assets/identity.pr", "assets/reverse.pr", "assets/map_reverse.pr"] $ \path -> do
+        forM_ ["assets/word_split.pr", "assets/boolean_funcs.pr", "assets/bibtex.pr", "assets/identity.pr", "assets/reverse.pr", "assets/map_reverse.pr"] $ \path -> do
             program <- runIO (getProgram path)
             it ("works for «" ++ path ++ "»") $ do
                 typeProgramBothWays program
