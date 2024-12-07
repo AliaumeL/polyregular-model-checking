@@ -1,6 +1,6 @@
-def getFirstWord (s : [Char]) : [Char] :=
+def getFirstWord (sa : [Char]) : [Char] :=
     let mut seen_space : Bool := False in
-    for (i, v : Char) in s do 
+    for (i, v : Char) in sa do 
         if not seen_space and not (v =Char= ' ') then 
             yield v
         endif
@@ -19,9 +19,9 @@ def concatLists( l1 : [Char], l2 : [Char]) : [Char] :=
 
 
 
-def getCurrentWord (s : [Char] with (i)) : [Char] :=
+def getCurrentWord (sb : [Char] with (i)) : [Char] :=
     let mut seen_space : Bool := False in
-    for (j, v : Char) in s do 
+    for (j, v : Char) in sb do 
        if j > i then 
            if v =Char= ' ' then 
                setTrue seen_space
@@ -40,9 +40,9 @@ def words (ss : [Char]) : [[Char]] :=
         endif 
      done
 
-def getFirstAnd(words : [[Char]]) : [[Char]] :=
+def getFirstAnd(wordsl : [[Char]]) : [[Char]] :=
     let mut seen_and : Bool := False in
-    for (i, w : [Char]) in words do 
+    for (i, w : [Char]) in wordsl do 
         if w =[Char]= "and" then
             setTrue seen_and
         endif
@@ -51,9 +51,9 @@ def getFirstAnd(words : [[Char]]) : [[Char]] :=
         endif
     done
 
-def getCurrentAnd (words : [[Char]] with (i)) : [[Char]] :=
+def getCurrentAnd (wordsc : [[Char]] with (i)) : [[Char]] :=
     let mut seen_and : Bool := False in
-    for (j, w : [Char]) in words do 
+    for (j, w : [Char]) in wordsc do 
         if j > i then 
             if w =[Char]= "and" then
                 setTrue seen_and
@@ -64,11 +64,11 @@ def getCurrentAnd (words : [[Char]] with (i)) : [[Char]] :=
         endif
     done
 
-def splitOnAnd(words : [[Char]]) : [[[Char]]] :=
-    yield getFirstAnd(words)
-    for (i, w : [Char]) in words do 
+def splitOnAnd(wordsd : [[Char]]) : [[[Char]]] :=
+    yield getFirstAnd(wordsd)
+    for (i, w : [Char]) in wordsd do 
         if w =[Char]= "and" then
-            yield getCurrentAnd(words with (i))
+            yield getCurrentAnd(wordsd with (i))
         endif
     done
 
@@ -125,9 +125,9 @@ def remapAuthor(remapAuthorArg : [[Char]]) : [[Char]] :=
     endif
 
 
-def intersperseAnd(ss : [[[Char]]]) : [[Char]] :=
+def intersperseAnd(sss : [[[Char]]]) : [[Char]] :=
     let mut started : Bool := False in
-    for (i, intersperseAndIter : [[Char]]) in ss do
+    for (i, intersperseAndIter : [[Char]]) in sss do
         if started then
             yield "and"
         endif
@@ -160,10 +160,10 @@ def mapRemapAuthor(mapRemapAuthorArg : [[[Char]]]) : [[[Char]]] :=
 # doe, jack and jones
 # 
 # etc.
-def main (ss : [Char]) : [Char] :=
-    let words : [[Char]] := words(ss) in
+def main (ssmain : [Char]) : [Char] :=
+    let words : [[Char]] := words(ssmain) in
     let authors : [[[Char]]] := splitOnAnd(words) in
-    let mapRemapAuthor : [[[Char]]] := mapRemapAuthor(authors) in
-    let intersperseAnd : [[Char]] := intersperseAnd(mapRemapAuthor) in
+    let mapRemapAuthorV : [[[Char]]] := mapRemapAuthor(authors) in
+    let intersperseAnd : [[Char]] := intersperseAnd(mapRemapAuthorV) in
     let concat : [Char] := concat(intersperseAnd) in
     return concat
