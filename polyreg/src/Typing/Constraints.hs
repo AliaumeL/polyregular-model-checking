@@ -79,8 +79,9 @@ createGraph specs = ConstraintGraph g const elbl
 -- 2. check that all nodes are covered by the forest
 -- 3. propagate types from the roots of the forests to their leaves
 
-data SolverError = UncoveredNodes [IntSet.IntSet] 
-                 | InvalidConstraint Int Int Constraint Type 
+data SolverError = UncoveredNodes [IntSet.IntSet]                 -- Some nodes cannot be inferred
+                 | InvalidConstraint Int Int Constraint Type      -- The inference failed 
+                 | InconsistentGraph Int Int Constraint Type Type -- There is a type inconsistency in the resulting graph
     deriving (Show)
 
 propagateTreeNode :: M.Map (Int,Int) Constraint -> Int -> Type -> G.Tree Int -> Either SolverError [(Int, Type)]
@@ -102,7 +103,7 @@ solveConstraints (ConstraintGraph g c elbl) = do
                                                 uncov    <- uncoveredNodes
                                                 error    <- err
                                                 case IntSet.null uncov of
-                                                    True  -> return $ IntMap.fromList allTrees
+                                                    True  -> return $ IntMap.fromList (IntMap.toList c ++ allTrees)
                                                     False -> Left $ UncoveredNodes error
     where
         forest :: G.Forest Int
@@ -131,3 +132,23 @@ solveConstraints (ConstraintGraph g c elbl) = do
         err = map (IntSet.fromList . toList) <$> errTrees
 
 
+
+-- Verifies that all edges in the constraint graph are 
+-- satisfied.
+verifyConstraints :: IntMap.IntMap Type -> ConstraintGraph -> Either SolverError ()
+verifyConstraints types (ConstraintGraph _ _ elbl) = mapM_ verifyEdge $ M.toList elbl
+    where
+        verifyEdge :: ((Int, Int), Constraint) -> Either SolverError ()
+        verifyEdge ((x, y), c) = case (IntMap.lookup x types, IntMap.lookup y types) of
+            (Just tx, Just ty) -> case c of
+                Equal -> if tx == ty then Right () else Left $ InconsistentGraph x y Equal tx ty
+                Plus  -> if updateType Plus tx == Just ty then Right () else Left $ InconsistentGraph x y Plus tx ty
+                Minus -> if updateType Minus tx == Just ty then Right () else Left $ InconsistentGraph x y Minus tx ty
+            _ -> error "Invalid nodes"
+
+
+verifyAndSolve :: ConstraintGraph -> Either SolverError (IntMap.IntMap Type)
+verifyAndSolve graph = do
+            t <- solveConstraints graph
+            verifyConstraints t graph
+            return t

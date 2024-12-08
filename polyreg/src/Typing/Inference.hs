@@ -60,6 +60,11 @@ import Debug.Trace
 -- This respects variables in the original program, meaning 
 -- that a variable "v" is mapped to the same int regardless of its position
 -- (unless it is shadowed by a new variable with the same name).
+--
+-- FIXME: also add position types to the program
+--  - p1 === p2 => types are equal
+--  (i, v) in e ... => i has type TPos (erase e)
+--
 
 data PosMove = PosIfL 
              | PosIfR 
@@ -564,12 +569,22 @@ displayUncoveredNodesBag coding ns = unlines . map (displayUncoveredSingleNode c
 displayUncoveredNodes :: PosCoding -> [IntSet.IntSet] -> String
 displayUncoveredNodes (PosCoding _ b) ns = show (IntMap.keys b)  ++ " ; " ++ unlines (map (displayUncoveredNodesBag (PosCoding M.empty b)) ns)
 
+
+displayNodeOrType :: PosCoding -> C.ConstraintGraph -> Int -> String
+displayNodeOrType (PosCoding _ b) cgraph  i = case IntMap.lookup i b of
+    Just p  -> "Node " ++ show i ++ " at " ++ show p
+    Nothing -> case IntMap.lookup i (C.const cgraph) of
+        Just t  -> "Constant Type " ++ show i ++ " : " ++ show t
+        Nothing -> error "Node not found"
+
+
 inferTypes :: Program String (Maybe ValueType) -> Either (InferError) (Program String (Maybe ValueType))
 inferTypes p = runInfer p
     where
         runInfer p = do
             let (prog, coding, cgraph) = runPosState $ computeNumbersAndConstraints p
-            case C.solveConstraints cgraph of
+            case C.verifyAndSolve cgraph of
                 Left (C.UncoveredNodes ns) -> Left $ InferError $ "Uncovered nodes: " ++ show (C.const cgraph) ++ displayUncoveredNodes coding ns 
                 Left (C.InvalidConstraint x y c t) -> Left $ InferError $ "Invalid constraint: " ++ show x ++ ":" ++ show (readIntCoding coding x) ++ " " ++ show y ++ ":" ++ show (readIntCoding coding y) ++ " " ++ show c ++ " " ++ show t
+                Left (C.InconsistentGraph x y c tx ty) -> Left $ InferError $ "Inconsistent graph: " ++ (displayNodeOrType coding cgraph x) ++ " " ++ (displayNodeOrType coding cgraph y) ++ " " ++ show c ++ " " ++ show tx ++ " " ++ show ty
                 Right intToType -> Right $ fmap (resolveType intToType) prog
