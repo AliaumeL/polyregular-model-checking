@@ -30,7 +30,7 @@ dependencies:
 
 build-tools:
   - alex
-  - happy 
+  - happy
 
 ghc-options:
   - -Wall
@@ -57,6 +57,7 @@ executables:
       - -with-rtsopts=-N
     dependencies:
       - polyreg
+      - optparse-applicative
 
 tests:
   polyreg-test:
