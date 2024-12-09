@@ -5,6 +5,7 @@ import Control.Monad
 import qualified Parser.HighLevelForProgram.Abs as P
 import qualified ForProgramsTyping as T
 import ForPrograms 
+import QuantifierFree
 
 import Control.Monad.Except
 
@@ -102,12 +103,12 @@ parsedToStmt ctx (P.SLetBIn i stmts) = do
     return $ SLetBoolean (identToString i) (SSeq stmt' Nothing) Nothing
 parsedToStmt ctx (P.SLetSetTrue i) = return $ SSetTrue (identToString i) Nothing
 
-binOpPToComp :: P.BinOp -> Comp
+binOpPToComp :: P.BinOp -> TestOp
 binOpPToComp P.BinOpEq = Eq
 binOpPToComp P.BinOpNeq = Neq
-binOpPToComp P.BinOpLeq = Leq
+binOpPToComp P.BinOpLeq = Le
 binOpPToComp P.BinOpLt = Lt
-binOpPToComp P.BinOpGeq = Geq
+binOpPToComp P.BinOpGeq = Ge
 binOpPToComp P.BinOpGt = Gt
 binOpPToComp _ = error "Not a comparison operator"
 
@@ -162,11 +163,11 @@ parsedToBoolExpr (P.BEBinOp e1 op e2) =
 parsedToBoolExpr (P.BEAnd e1 e2) = do 
     e1' <- parsedToBoolExpr e1
     e2' <- parsedToBoolExpr e2
-    return $ BOp And e1' e2' (Just P.TBool)
+    return $ BOp Conj e1' e2' (Just P.TBool)
 parsedToBoolExpr (P.BEOr e1 e2) = do
     e1' <- parsedToBoolExpr e1
     e2' <- parsedToBoolExpr e2
-    return $ BOp Or e1' e2' (Just P.TBool)
+    return $ BOp Disj e1' e2' (Just P.TBool)
 
 parsedToOutputExpr :: P.Expr -> M PAOExpr
 parsedToOutputExpr (P.VEChar c) = return $ OConst (CChar c (Just P.TChar)) (Just P.TChar)

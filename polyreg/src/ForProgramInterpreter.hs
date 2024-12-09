@@ -7,6 +7,7 @@ import Control.Monad.Except
 import qualified Data.Map as M
 import Data.Tuple.Extra
 
+import QuantifierFree
 import ForPrograms 
 
 data Value = VBool Bool | VOutput (CExpr String ()) deriving (Show, Eq)
@@ -210,14 +211,14 @@ interpretStmt (SFor (i, v, _) e stmt _) = do
 interpretBExpr :: (MonadInterpreter m) => BExpr String () -> m Bool
 interpretBExpr (BConst b _) = return b
 interpretBExpr (BNot b _) = not <$> interpretBExpr b
-interpretBExpr (BOp And b1 b2 _) = (&&) <$> interpretBExpr b1 <*> interpretBExpr b2
-interpretBExpr (BOp Or b1 b2 _) = (||) <$> interpretBExpr b1 <*> interpretBExpr b2
+interpretBExpr (BOp Conj b1 b2 _) = (&&) <$> interpretBExpr b1 <*> interpretBExpr b2
+interpretBExpr (BOp Disj b1 b2 _) = (||) <$> interpretBExpr b1 <*> interpretBExpr b2
 interpretBExpr (BComp Eq p1 p2 _) = (==) <$> interpretPExpr p1 <*> interpretPExpr p2
 interpretBExpr (BComp Neq p1 p2 _) = (/=) <$> interpretPExpr p1 <*> interpretPExpr p2
 interpretBExpr (BComp Lt p1 p2 _) = (<) <$> interpretPExpr p1 <*> interpretPExpr p2
 interpretBExpr (BComp Gt p1 p2 _) = (>) <$> interpretPExpr p1 <*> interpretPExpr p2
-interpretBExpr (BComp Leq p1 p2 _) = (<=) <$> interpretPExpr p1 <*> interpretPExpr p2
-interpretBExpr (BComp Geq p1 p2 _) = (>=) <$> interpretPExpr p1 <*> interpretPExpr p2
+interpretBExpr (BComp Le p1 p2 _) = (<=) <$> interpretPExpr p1 <*> interpretPExpr p2
+interpretBExpr (BComp Ge p1 p2 _) = (>=) <$> interpretPExpr p1 <*> interpretPExpr p2
 interpretBExpr (BVar v _) = getBoolean v
 interpretBExpr (BGen stmt _) = do 
     v <- interpretStmt stmt

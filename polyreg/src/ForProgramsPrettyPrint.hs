@@ -1,10 +1,12 @@
-module ForProgramsPrettyPrint (prettyPrintProgram, prettyPrintProgramWithNls) where
+module ForProgramsPrettyPrint (prettyPrintProgram, prettyPrintProgramWithNls, prettyPrintStmtWithNls) where
 
 import ForPrograms
 import ForProgramsTyping
 import Parser.HighLevelForProgram.Print (printTree)
 import qualified Parser.HighLevelForProgram.Abs as A
 import Parser.HighLevelForProgram.Abs (Ident(..))
+
+import QuantifierFree
 
 -- To pretty print, we convert the program to 
 -- an abstract syntax tree and then print it
@@ -19,13 +21,13 @@ toAbsType (TPos _) = error "Positional types should not appear in the abstract s
 
 
 
-toAbsComp :: Comp -> A.BinOp
+toAbsComp :: TestOp -> A.BinOp
 toAbsComp Eq = A.BinOpEq
 toAbsComp Neq = A.BinOpNeq
 toAbsComp Lt = A.BinOpLt
 toAbsComp Gt = A.BinOpGt
-toAbsComp Leq = A.BinOpLeq
-toAbsComp Geq = A.BinOpGeq
+toAbsComp Le = A.BinOpLeq
+toAbsComp Ge = A.BinOpGeq
 
 toAbsOutputType :: OutputType -> A.Type
 toAbsOutputType (TOList t) = A.TList (toAbsOutputType t)
@@ -83,10 +85,10 @@ toAbsBExpr (BApp v os _) = A.VEFunc (Ident v) (map toAbsArgA os)
 toAbsBExpr (BLitEq t c o _) = A.VEFunc (Ident "lit_eq") (map toAbsArgA [(OConst c t, []), (o, [])])
 toAbsBExpr (BConst b _) = if b then A.BETrue else A.BEFalse
 toAbsBExpr (BNot b _) = A.BENot (toAbsBExpr b)
-toAbsBExpr (BOp And b1 b2 _) = A.BEAnd (toAbsBExpr b1) (toAbsBExpr b2)
-toAbsBExpr (BOp Or b1 b2 _) = A.BEOr (toAbsBExpr b1) (toAbsBExpr b2)
+toAbsBExpr (BOp Conj b1 b2 _) = A.BEAnd (toAbsBExpr b1) (toAbsBExpr b2)
+toAbsBExpr (BOp Disj b1 b2 _) = A.BEOr (toAbsBExpr b1) (toAbsBExpr b2)
 toAbsBExpr (BOp Impl b1 b2 _) = A.BEOr (A.BENot (toAbsBExpr b1)) (toAbsBExpr b2)
-toAbsBExpr (BOp Iff b1 b2 _) = A.BEAnd (A.BEOr (A.BENot (toAbsBExpr b1)) (toAbsBExpr b2)) (A.BEOr (toAbsBExpr b1) (A.BENot (toAbsBExpr b2)))
+toAbsBExpr (BOp Equiv b1 b2 _) = A.BEAnd (A.BEOr (A.BENot (toAbsBExpr b1)) (toAbsBExpr b2)) (A.BEOr (toAbsBExpr b1) (A.BENot (toAbsBExpr b2)))
 toAbsBExpr (BComp comp p1 p2 _) = A.BEBinOp (A.VEVal (toAbsPExpr p1))
                                             (toAbsComp comp)
                                             (A.VEVal (toAbsPExpr p2))
@@ -113,7 +115,7 @@ prettyPrintOExpr = printTree . toAbsOExpr
 prettyPrintBExpr :: BExpr String ValueType -> String
 prettyPrintBExpr = printTree . toAbsBExpr
 
-prettyPrintComp :: Comp -> String
+prettyPrintComp :: TestOp -> String
 prettyPrintComp = printTree . toAbsComp
 
 prettyPrintCExpr :: CExpr String ValueType -> String
@@ -150,16 +152,16 @@ prettyPrintBExprWithNls :: Int -> Int -> BExpr String ValueType -> String
 prettyPrintBExprWithNls indent priority (BConst b t) = show b
 prettyPrintBExprWithNls indent priority (BNot (BVar v _) _) = "!" ++ v
 prettyPrintBExprWithNls indent priority (BNot b t) = "!(" ++ prettyPrintBExprWithNls indent 0 b ++ ")"
-prettyPrintBExprWithNls indent priority (BOp And b1 b2 t) = if priority > 1 then "(" ++ b1' ++ " and " ++ b2' ++ ")" else b1' ++ " and " ++ b2'
+prettyPrintBExprWithNls indent priority (BOp Conj b1 b2 t) = if priority > 1 then "(" ++ b1' ++ " and " ++ b2' ++ ")" else b1' ++ " and " ++ b2'
     where b1' = prettyPrintBExprWithNls indent 1 b1
           b2' = prettyPrintBExprWithNls indent 1 b2
-prettyPrintBExprWithNls indent priority (BOp Or b1 b2 t) = if priority > 0 then "(" ++ b1' ++ " or " ++ b2' ++ ")" else b1' ++ " or " ++ b2'
+prettyPrintBExprWithNls indent priority (BOp Disj b1 b2 t) = if priority > 0 then "(" ++ b1' ++ " or " ++ b2' ++ ")" else b1' ++ " or " ++ b2'
     where b1' = prettyPrintBExprWithNls indent 0 b1
           b2' = prettyPrintBExprWithNls indent 0 b2
 prettyPrintBExprWithNls indent priority (BOp Impl b1 b2 t) = if priority > 0 then "(" ++ b1' ++ " => " ++ b2' ++ ")" else b1' ++ " => " ++ b2'
     where b1' = prettyPrintBExprWithNls indent 0 b1
           b2' = prettyPrintBExprWithNls indent 0 b2
-prettyPrintBExprWithNls indent priority (BOp Iff b1 b2 t) = if priority > 0 then "(" ++ b1' ++ " <=> " ++ b2' ++ ")" else b1' ++ " <=> " ++ b2'
+prettyPrintBExprWithNls indent priority (BOp Equiv b1 b2 t) = if priority > 0 then "(" ++ b1' ++ " <=> " ++ b2' ++ ")" else b1' ++ " <=> " ++ b2'
     where b1' = prettyPrintBExprWithNls indent 0 b1
           b2' = prettyPrintBExprWithNls indent 0 b2
 prettyPrintBExprWithNls indent priority (BComp comp p1 p2 t) = prettyPrintPExpr p1 ++ " " ++ prettyPrintComp comp ++ " " ++ prettyPrintPExpr p2
@@ -181,7 +183,7 @@ prettyPrintStmtWithNls n (SBReturn b _) = indent n ++ "return " ++ prettyPrintBE
 prettyPrintStmtWithNls n (SSetTrue v _) = indent n ++ "setTrue " ++ v
 
 prettyPrintFunctionWithNls :: StmtFun String ValueType -> String
-prettyPrintFunctionWithNls (StmtFun name args stmt t) = "def " ++ name ++ "(" ++ unwords (map (\(a, t, _) -> a ++ " : " ++ prettyPrintT t) args) ++ " : " ++ prettyPrintT t ++ " = \n" ++ prettyPrintStmtWithNls 1 stmt ++ "\n"
+prettyPrintFunctionWithNls (StmtFun name args stmt t) = "def " ++ name ++ "(" ++ unwords (map (\(a, t, _) -> a ++ " : " ++ prettyPrintT t) args) ++ ") : " ++ prettyPrintT t ++ " := \n" ++ prettyPrintStmtWithNls 1 stmt ++ "\n"
 
 prettyPrintProgramWithNls :: Program String ValueType -> String
 prettyPrintProgramWithNls (Program stmts _) = stripFinalNewLine $ stripFinalNewLine $ unlines $ map prettyPrintFunctionWithNls stmts

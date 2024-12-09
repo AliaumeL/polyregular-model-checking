@@ -1,8 +1,9 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Typing.Constraints where
 
-
+import qualified ForPrograms as FP
 import qualified Data.Map as M
+import qualified Data.Set    as S
 
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
@@ -12,8 +13,7 @@ import qualified Data.Graph as G
 import Data.Foldable (toList)
 
 
-data Type  = TBool | TList Int deriving (Eq, Ord, Show)
-data Label = Var Int | Const Type deriving (Eq, Ord, Show)
+data Type       = TBool | TList Int deriving (Eq, Ord, Show)
 data Constraint = Equal | Plus | Minus deriving (Eq, Ord, Show)
 
 updateType :: Constraint -> Type -> Maybe Type
@@ -23,14 +23,11 @@ updateType Plus (TList n) = Just $ TList (n-1)
 updateType _ _ = Nothing
 
 data ConstraintGraph = ConstraintGraph {
-    graph :: G.Graph,  -- the graph of constraints
-    const :: IntMap.IntMap Type,
+    graph :: G.Graph,                    -- the graph of constraints
+    const :: IntMap.IntMap Type,         -- "sink" / "constant" nodes
     elbl  :: M.Map (Int, Int) Constraint -- edge labels
 } deriving (Show, Eq)
 
-
--- | Create a constraint graph from a list of constraints
--- of the form "[x] = y" ; "x = y" or "x = Type"
 
 data GraphSpec = VarConstraint (Int, Constraint, Int)
                | VarType (Int, Type)
@@ -40,22 +37,17 @@ createGraph :: [GraphSpec] -> ConstraintGraph
 createGraph specs = ConstraintGraph g const elbl
     where
         nodeMax     = maximum [max x y | VarConstraint (x, _, y) <- specs]
-        constVals   = IntSet.fromList [x | VarType (_, (TList x)) <- specs]
+        constTypes  = S.fromList [t | VarType (_, t) <- specs]
 
-        boolNode :: G.Vertex
-        boolNode = nodeMax + 1
-
-        -- maps the values (TList x) to node numbers
-        constNodes :: IntMap.IntMap G.Vertex
-        constNodes = IntMap.fromList $ zip (IntSet.toList constVals) [nodeMax+2..]
+        constNodes :: M.Map Type G.Vertex
+        constNodes = M.fromList $ zip (S.toList constTypes) [nodeMax+1..]
 
         numberNodes :: Int
-        numberNodes = nodeMax + 1 + IntMap.size constNodes
+        numberNodes = nodeMax + M.size constNodes
 
         cstrToLbl :: GraphSpec -> ((G.Vertex, G.Vertex), Constraint)
         cstrToLbl (VarConstraint (x, c, y)) = ((x, y), c)
-        cstrToLbl (VarType (x, TBool))      = ((x, boolNode), Equal)
-        cstrToLbl (VarType (x, (TList y)))  = case IntMap.lookup y constNodes of
+        cstrToLbl (VarType (x, t))          = case M.lookup t constNodes of
             Just n  -> ((x, n), Equal)
             Nothing -> error "Invalid type"
 
@@ -64,7 +56,7 @@ createGraph specs = ConstraintGraph g const elbl
         g          = G.buildG (0, numberNodes) $ M.keys elbl
 
         const :: IntMap.IntMap Type
-        const = IntMap.fromList $ (boolNode, TBool) : [(y, TList x) | (x, y) <- IntMap.toList constNodes]
+        const = IntMap.fromList $ map (\(t,n) -> (n, t)) $ M.toList constNodes
 
         undirected :: ((Int, Int), Constraint) -> [((Int, Int), Constraint)]
         undirected ((x, y), Equal) = [((x, y), Equal), ((y, x), Equal)]

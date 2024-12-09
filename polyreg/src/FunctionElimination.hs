@@ -452,4 +452,10 @@ elimProgramM (Program funcs m) = do
     return $ Program newFuncs m
 
 eliminateFunctionCalls :: TProgram -> TProgram
-eliminateFunctionCalls p = runElimM $ elimProgramM p
+eliminateFunctionCalls p = Program mainFunc main
+    where
+        (Program funcs main) = runElimM $ elimProgramM p
+        mainFunc = do 
+            StmtFun f args stmt t <- funcs
+            guard (f == main)
+            return $ StmtFun f args stmt t

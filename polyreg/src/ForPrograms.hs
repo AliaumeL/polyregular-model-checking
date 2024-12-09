@@ -8,17 +8,11 @@ import qualified Data.Set as S
 
 import QuantifierFree
 
-data BOp = And | Or | Impl | Iff 
-    deriving (Show, Eq)
-
-data Comp = Eq | Neq | Lt | Gt | Leq | Geq
-    deriving (Show, Eq)
-
 -- | we add a type parameter "t" for decorating the AST with types later on
 data BExpr v t = BConst Bool t
                | BNot (BExpr v t) t
-               | BOp BOp (BExpr v t) (BExpr v t) t
-               | BComp Comp (PExpr v t) (PExpr v t) t
+               | BOp BinOp (BExpr v t) (BExpr v t) t
+               | BComp TestOp (PExpr v t) (PExpr v t) t
                | BVar v t
                | BGen (Stmt v t) t
                -- tests
@@ -134,3 +128,57 @@ freeVarsOExpr (ORev e _) = freeVarsOExpr e
 freeVarsOExpr (OIndex e p _) = freeVarsOExpr e `union` freeVarsPExpr p
 freeVarsOExpr (OApp v es _) = singleton v `union` unions (map (freeVarsOExpr . fst) es)
 freeVarsOExpr (OGen s _) = freeVarsStmt s
+
+
+--- Mapping variable names
+
+
+mapVarsProgram :: (va -> vb) -> Program va t -> Program vb t
+mapVarsProgram f (Program fs m) = Program (map (mapVarsFun f) fs) (f m)
+
+mapVarsFun :: (va -> vb) -> StmtFun va t -> StmtFun vb t
+mapVarsFun f (StmtFun v args s t) = StmtFun (f v) newargs (mapVarsStmt f s) t
+    where
+        newargs = [ (f v, t, map f x) | (v, t, x) <- args ]
+
+mapVarsStmt :: (va -> vb) -> Stmt va t -> Stmt vb t
+mapVarsStmt f (SYield o t) = SYield (mapVarsOExpr f o) t
+mapVarsStmt f (SOReturn o t) = SOReturn (mapVarsOExpr f o) t
+mapVarsStmt f (SBReturn b t) = SBReturn (mapVarsBExpr f b) t
+mapVarsStmt f (SIf b s1 s2 t) = SIf (mapVarsBExpr f b) (mapVarsStmt f s1) (mapVarsStmt f s2) t
+mapVarsStmt f (SLetOutput (v, t) o s t') = SLetOutput (f v, t) (mapVarsOExpr f o) (mapVarsStmt f s) t'
+mapVarsStmt f (SLetBoolean v s t) = SLetBoolean (f v) (mapVarsStmt f s) t
+mapVarsStmt f (SSetTrue v t) = SSetTrue (f v) t
+mapVarsStmt f (SFor (v, t, t'') o s t') = SFor (f v, f t, t'') (mapVarsOExpr f o) (mapVarsStmt f s) t'
+mapVarsStmt f (SSeq ss t) = SSeq (map (mapVarsStmt f) ss) t
+    
+mapVarsOExpr :: (va -> vb) -> OExpr va t -> OExpr vb t
+mapVarsOExpr f (OVar v t) = OVar (f v) t
+mapVarsOExpr f (OConst c t) = OConst (mapVarsCExpr f c) t
+mapVarsOExpr f (OList os t) = OList (map (mapVarsOExpr f) os) t
+mapVarsOExpr f (ORev o t) = ORev (mapVarsOExpr f o) t
+mapVarsOExpr f (OIndex o p t) = OIndex (mapVarsOExpr f o) (mapVarsPExpr f p) t
+mapVarsOExpr f (OApp v os t) = OApp (f v) (mapVarsArgs f os) t
+mapVarsOExpr f (OGen s t) = OGen (mapVarsStmt f s) t
+    
+mapVarsBExpr :: (va -> vb) -> BExpr va t -> BExpr vb t
+mapVarsBExpr f (BConst b t) = BConst b t
+mapVarsBExpr f (BNot b t) = BNot (mapVarsBExpr f b) t
+mapVarsBExpr f (BOp op b1 b2 t) = BOp op (mapVarsBExpr f b1) (mapVarsBExpr f b2) t
+mapVarsBExpr f (BComp comp p1 p2 t) = BComp comp (mapVarsPExpr f p1) (mapVarsPExpr f p2) t
+mapVarsBExpr f (BVar v t) = BVar (f v) t
+mapVarsBExpr f (BGen s t) = BGen (mapVarsStmt f s) t
+mapVarsBExpr f (BApp v os t) = BApp (f v) (mapVarsArgs f os) t
+mapVarsBExpr f (BLitEq t c o t') = BLitEq t (mapVarsCExpr f c) (mapVarsOExpr f o) t'
+
+mapVarsPExpr :: (va -> vb) -> PExpr va t -> PExpr vb t
+mapVarsPExpr f (PVar v t) = PVar (f v) t
+
+mapVarsCExpr :: (va -> vb) -> CExpr va t -> CExpr vb t
+mapVarsCExpr f (CChar c t) = CChar c t
+mapVarsCExpr f (CList cs t) = CList (map (mapVarsCExpr f) cs) t
+
+mapVarsArgs :: (va -> vb) -> [(OExpr va t, [PExpr va t])] -> [(OExpr vb t, [PExpr vb t])]
+mapVarsArgs f = map (\(o, ps) -> (mapVarsOExpr f o, map (mapVarsPExpr f) ps))
+
+
