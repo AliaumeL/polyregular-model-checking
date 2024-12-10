@@ -22,9 +22,6 @@ def getCurrentWord (s : [Char] with (i)) : [Char] :=
        endif
      done 
 
-def charToList (c : Char) : [Char] :=
-    yield c
-
 def words (s : [Char]) : [[Char]] :=
     yield getFirstWord(s)
     for (i, v : Char) in s do 

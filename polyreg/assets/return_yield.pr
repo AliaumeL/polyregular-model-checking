@@ -1,0 +1,17 @@
+def first_a ( w : [Char]) : Char := 
+    for (i,v : Char) in w do 
+        if v =Char= 'a' then
+            return 'a'
+        endif
+    done
+
+def second_a ( w : [Char]) : [Char] := 
+    for (i,v : Char) in w do 
+        if v =Char= 'a' then
+            return "found a"
+        endif
+    done
+
+def main ( w : [Char]) : [Char] := 
+    yield first_a(w)
+    return second_a(w)

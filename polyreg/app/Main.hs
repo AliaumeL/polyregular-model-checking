@@ -9,6 +9,7 @@ import FunctionElimination (eliminateFunctionCalls)
 import LiteralElimination (eliminateLiterals)
 import LetElimination (eliminateLetProgram)
 import ForLoopExpansion (forLoopExpansion)
+import ReturnElimination (retElimProgram)
 import ReductionLitEq (removeBLitEq)
 import ForProgramsPrettyPrint
 import Parser.ParseHighLevel (parseHighLevel)
@@ -33,9 +34,10 @@ import Options.Applicative
 
 data Transformation = LitEqElimination
                     | FunctionElimination
-                    | BooleanElimination
-                    | LetOutputElimination
                     | LiteralElimination    -- litteral to generators
+                    | BooleanElimination
+                    | ReturnElimination
+                    | LetOutputElimination
                     | ForLoopExpansion
                     deriving (Eq,Show,Read,Ord,Enum)
 
@@ -49,6 +51,7 @@ applyTransform FunctionElimination p = eliminateFunctionCalls p
 applyTransform LiteralElimination p = eliminateLiterals p
 applyTransform LitEqElimination p = removeBLitEq p
 applyTransform LetOutputElimination p = eliminateLetProgram p
+applyTransform ReturnElimination p = retElimProgram p
 applyTransform ForLoopExpansion p = case forLoopExpansion p of  
     Left err -> error $ "Error in for loop expansion: " ++ show err
     Right p' -> p'
