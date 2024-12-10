@@ -10,7 +10,7 @@ module ForLoopExpansion where
 import QuantifierFree
 import ForPrograms
 import ForProgramsTyping (ValueType(..))
-import ForProgramsPrettyPrint (prettyPrintStmtWithNls)
+import ForProgramsPrettyPrint (prettyPrintStmtWithNls, prettyPrintProgramWithNls)
 
 import Control.Monad
 import Control.Monad.State
@@ -19,7 +19,7 @@ import Control.Monad.Except
 import Data.Map (Map)
 import qualified Data.Map as M
 
-import AddrVarElimination (StmtZip(..), ExtVars(..), eliminateExtVarsProg)
+import AddrVarElimination (StmtZip(..), ExtVars(..), eliminateExtVarsProg, reverseStmtZip)
 
 import Debug.Trace
 
@@ -47,8 +47,9 @@ reverseAndSimplify (SFor _ _ _ _) = error "SFor in reverseAndSimplify"
 
 
 forLoopExpansion :: Program String ValueType -> Either ForElimError (Program String ValueType)
-forLoopExpansion = fmap eliminateExtVarsProg . forLoopExpansionProg . mapVarsProgram OldVar
-
+forLoopExpansion x = let z = (forLoopExpansionProg  (mapVarsProgram OldVar x)) in
+                     let z' = (fmap (mapVarsProgram show)) z in  
+                     trace (either show prettyPrintProgramWithNls z') $ fmap eliminateExtVarsProg z
 forLoopExpansionProg :: Program (ExtVars String ValueType) ValueType -> Either ForElimError (Program (ExtVars String ValueType) ValueType)
 forLoopExpansionProg p = runForElim (forLoopExpansionProgM p)
 
@@ -156,6 +157,8 @@ forLoopExpansionStmtM (SSetTrue (OldVar v) t) = do
 forLoopExpansionStmtM (SFor (OldVar i, OldVar e, _) (OGen stmt _) body _) = do
     body' <- forLoopExpansionStmtM body
     stmt' <- forLoopExpansionStmtM stmt
+    --traceM $ "Expanding for loop. Generator stmt:\n " ++ prettyPrintStmtWithNls 0 (mapVarsStmt show stmt') 
+    --traceM $ "Expanding for loop. Body stmt:\n " ++ prettyPrintStmtWithNls 0 (mapVarsStmt show body')
     let expansion = substituteYieldStmts i e body' stmt'
     return expansion
 forLoopExpansionStmtM (SFor (OldVar i, OldVar e, _) (ORev (OGen stmt _) _) body t) = do
@@ -238,7 +241,7 @@ substituteYieldStmts i e body statement = subYieldStmt ZBegin i e body statement
 
 -- subYieldStmt addr i e body statement -> expanded statement
 subYieldStmt :: (Show v, Show t, Eq v, Eq t) => StmtZip v t -> v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
-subYieldStmt z v1 v2 s (SYield o t) = substOVarStmt (ForParams v1 v2 o z) s
+subYieldStmt z v1 v2 s (SYield o t) = substOVarStmt (ForParams v1 v2 o (reverseStmtZip z)) s
 subYieldStmt _ _ _ _   (SOReturn o t) = error "SOReturn in subYield"
 subYieldStmt _ _ _ _   (SBReturn b t) = error "SBReturn in subYield"
 subYieldStmt z v1 v2 s (SIf b s1 s2 t) = SIf b (subYieldStmt zleft v1 v2 s s1) (subYieldStmt zright v1 v2 s s2) t

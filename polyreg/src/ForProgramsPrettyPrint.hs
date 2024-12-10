@@ -152,10 +152,12 @@ prettyPrintBExprWithNls :: Int -> Int -> BExpr String ValueType -> String
 prettyPrintBExprWithNls indent priority (BConst b t) = show b
 prettyPrintBExprWithNls indent priority (BNot (BVar v _) _) = "!" ++ v
 prettyPrintBExprWithNls indent priority (BNot b t) = "!(" ++ prettyPrintBExprWithNls indent 0 b ++ ")"
-prettyPrintBExprWithNls indent priority (BOp Conj b1 b2 t) = if priority > 1 then "(" ++ b1' ++ " and " ++ b2' ++ ")" else b1' ++ " and " ++ b2'
+prettyPrintBExprWithNls indent priority (BOp Conj b1 b2 t) = "(" ++ b1' ++ " and " ++ b2' ++ ")" 
+    --if priority > 1 then "(" ++ b1' ++ " and " ++ b2' ++ ")" else b1' ++ " and " ++ b2'
     where b1' = prettyPrintBExprWithNls indent 1 b1
           b2' = prettyPrintBExprWithNls indent 1 b2
-prettyPrintBExprWithNls indent priority (BOp Disj b1 b2 t) = if priority > 0 then "(" ++ b1' ++ " or " ++ b2' ++ ")" else b1' ++ " or " ++ b2'
+prettyPrintBExprWithNls indent priority (BOp Disj b1 b2 t) = "(" ++ b1' ++ " or " ++ b2' ++ ")"
+    -- if priority > 0 then "(" ++ b1' ++ " or " ++ b2' ++ ")" else b1' ++ " or " ++ b2'
     where b1' = prettyPrintBExprWithNls indent 0 b1
           b2' = prettyPrintBExprWithNls indent 0 b2
 prettyPrintBExprWithNls indent priority (BOp Impl b1 b2 t) = if priority > 0 then "(" ++ b1' ++ " => " ++ b2' ++ ")" else b1' ++ " => " ++ b2'

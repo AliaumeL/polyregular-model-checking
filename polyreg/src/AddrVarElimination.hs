@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveTraversable #-}
-module AddrVarElimination (StmtZip(..), ExtVars(..), eliminateExtVarsProg)
+module AddrVarElimination --(StmtZip(..), ExtVars(..), eliminateExtVarsProg)
 where
 
 -- In this module, we expand for loops
@@ -21,6 +21,16 @@ data StmtZip v t =
                | ZBegin
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
+reverseStmtZip :: StmtZip v t -> StmtZip v t
+reverseStmtZip x = reverseStmtZip' x ZBegin
+ where 
+    reverseStmtZip' :: StmtZip v t -> StmtZip v t -> StmtZip v t
+    reverseStmtZip' (ZIfL a) b = reverseStmtZip' a (ZIfL b)
+    reverseStmtZip' (ZIfR a) b = reverseStmtZip' a (ZIfR b)
+    reverseStmtZip' (ZFor v t a) b = reverseStmtZip' a (ZFor v t b)
+    reverseStmtZip' (ZSeq i a) b = reverseStmtZip' a (ZSeq i b)
+    reverseStmtZip' ZBegin b = b
+    
 data ExtVars v t = OldVar v | AddrVar v (StmtZip v t) 
     deriving (Show, Eq, Functor, Foldable, Traversable)
 
