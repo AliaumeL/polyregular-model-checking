@@ -1,0 +1,22 @@
+
+def duplicate (word : [Char]) : [Char] := 
+    for (i, c : Char) in word do
+        yield c
+    done
+    yield '#'
+    for (j, c : Char) in word do
+        yield c
+    done
+
+def square (word : [Char] ) : [Char] := 
+    for (k, c : Char) in word do
+        for (l, d : Char) in word do
+            if k > l then
+                yield d
+            endif
+        done
+        yield '$'
+    done
+
+def main (word : [Char]) : [Char] := 
+    return square(duplicate(word))
