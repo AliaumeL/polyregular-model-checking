@@ -84,16 +84,23 @@ ifHasNotReturnedRet has_returned s = SIf (BNot (BVar has_returned TBool) TBool)
 retElimStmt :: (MonadFresh m) => Stmt String ValueType -> m (Stmt String ValueType)
 retElimStmt s@(SYield (OConst _ _) _) = pure s
 retElimStmt s@(SYield (OVar _ _) _) = pure s
-retElimStmt (SYield (OGen s t) (TOutput TOChar)) = do 
+retElimStmt (SYield (OGen s (TOutput TOChar)) t) = do 
     has_returned <- fresh "has_returned"
     return $ SLetBoolean has_returned (updateReturnsChar has_returned s) t
-retElimStmt (SYield (OGen s t) (TOutput (TOList _))) = do
+retElimStmt (SYield (OGen s (TOutput (TOList _))) t) = do
     has_returned <- fresh "has_returned"
     updated <- updateReturnsList has_returned s
     return $ SLetBoolean has_returned updated t
-retElimStmt (SYield x _) = error $ "Invalid type for yield" ++ show x
+retElimStmt (SYield (ORev o t@(TOutput (TOList tinside))) _) = do
+    i  <- fresh "i"
+    v  <- fresh "v"
+    o' <- retElimOExpr o
+    let it = TOutput tinside
+    let s = SFor (i, v, it) (ORev o' it) (SYield (OVar v it) t) t
+    retElimStmt s
+retElimStmt (SYield x _) = error $ "(retElimStmt)qInvalid type for yield" ++ show x
 retElimStmt (SIf b s1 s2 t) = SIf b <$> (retElimStmt s1) <*> (retElimStmt s2) <*> pure t
-retElimStmt (SOReturn x t) = SOReturn <$> (retElimOExpr x) <*> pure t
+retElimStmt (SOReturn x t) = error $ "SOReturn ret" ++ show x --  SOReturn <$> (retElimOExpr x) <*> pure t
 retElimStmt (SBReturn x t) = pure $ SBReturn x t
 retElimStmt (SLetOutput v x s t) = SLetOutput v <$> (retElimOExpr x) <*> (retElimStmt s) <*> pure t
 retElimStmt (SLetBoolean x s t) = SLetBoolean x <$> (retElimStmt s) <*> pure t
@@ -120,6 +127,7 @@ retElimOExpr (OGen s (TOutput (TOList t))) = do
     stmt'' <- retElimStmt stmt'
     let new_stmt = SLetBoolean has_returned stmt'' (TOutput (TOList t))
     return $ OGen new_stmt (TOutput (TOList t))
+retElimOExpr (OGen s t) = error $ "Invalid type for generator" ++ show s ++ " " ++ show t
 
 
 -- this function substitutes the return statements with the appropriate
@@ -133,6 +141,7 @@ updateReturnsChar has_returned (SLetBoolean v s t) = SLetBoolean v (updateReturn
 updateReturnsChar has_returned (SSetTrue v t) = SSetTrue v t
 updateReturnsChar has_returned (SFor (v1, v2, t) x s t') = SFor (v1, v2, t) x (updateReturnsChar has_returned s) t'
 updateReturnsChar has_returned (SSeq ss t) = SSeq (map (updateReturnsChar has_returned) ss) t
+updateReturnsChar has_returned (SBReturn x t) = SBReturn x t
 
 
 updateReturnsList :: (MonadFresh m) => String -> Stmt String ValueType -> m (Stmt String ValueType)
@@ -143,7 +152,8 @@ updateReturnsList has_returned (SOReturn o t@(TOutput (TOList tinside))) = do
     let it = TOutput tinside
     let s = SFor (i, v, it) o (SYield (OVar v it) t) t
     pure $ ifHasNotReturnedRet has_returned s
-updateReturnsList has_returned (SOReturn o t) = SOReturn <$> (retElimOExpr o) <*> pure t
+updateReturnsList has_returned (SOReturn o t) = error $ "SO return List " ++ show o 
+updateReturnsList has_returned (SBReturn x t) = pure $ SBReturn x t
 updateReturnsList has_returned (SIf b s1 s2 t) = SIf b <$> (updateReturnsList has_returned s1) <*> (updateReturnsList has_returned s2) <*> pure t
 updateReturnsList has_returned (SLetOutput v x s t) = SLetOutput v x <$> (updateReturnsList has_returned s) <*> pure t
 updateReturnsList has_returned (SLetBoolean v s t) = SLetBoolean v <$> (updateReturnsList has_returned s) <*> pure t
