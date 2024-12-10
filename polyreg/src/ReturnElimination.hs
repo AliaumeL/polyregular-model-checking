@@ -96,7 +96,7 @@ retElimStmt (SYield (ORev o t@(TOutput (TOList tinside))) _) = do
     v  <- fresh "v"
     o' <- retElimOExpr o
     let it = TOutput tinside
-    let s = SFor (i, v, it) (ORev o' it) (SYield (OVar v it) t) t
+    let s = SFor (i, v, it) (ORev o' t) (SYield (OVar v it) t) t
     retElimStmt s
 retElimStmt (SYield x _) = error $ "(retElimStmt)qInvalid type for yield" ++ show x
 retElimStmt (SIf b s1 s2 t) = SIf b <$> (retElimStmt s1) <*> (retElimStmt s2) <*> pure t
