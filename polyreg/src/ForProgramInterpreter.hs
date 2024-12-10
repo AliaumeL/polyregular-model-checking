@@ -199,6 +199,14 @@ interpretStmt (SYield e _) = StmtYield . VOutput . (flip CList ()) . pure <$> in
 interpretStmt (SOReturn e _) = StmtReturn . VOutput <$> interpretOExpr e
 interpretStmt (SBReturn b _) = StmtReturn . VBool <$> interpretBExpr b
 interpretStmt (SSeq stmts _) = mconcat <$> mapM interpretStmt stmts
+interpretStmt (SFor (i, v, _) (ORev e _) stmt _) = do
+    e' <- interpretOExpr e
+    case e' of
+        CChar c _ -> throwWithCtx $ "Cannot iterate over character " ++ show e ++ " which is " ++ show c
+        CList l _ -> do
+            let l' = reverse $ zip [0..] l
+            mconcat <$> (forM l' $ \(index, currentValue) -> do
+                withValue v currentValue $ withPos i index $ interpretStmt stmt)
 interpretStmt (SFor (i, v, _) e stmt _) = do
     e' <- interpretOExpr e
     case e' of

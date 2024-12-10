@@ -44,7 +44,7 @@ eliminateLiteralCExpr (CList cs t) = SSeq (map (\c -> SYield (OConst c t) t) cs)
 
 eliminateLiteralOExpr :: OExpr v t -> OExpr v t
 eliminateLiteralOExpr (OVar v t) = OVar v t
-eliminateLiteralOExpr (OConst (CChar c t') t) = error "OConst in eliminateLiteralOExpr"
+eliminateLiteralOExpr (OConst (CChar c t') t) = OConst (CChar c t') t
 eliminateLiteralOExpr (OConst c t) = OGen (eliminateLiteralCExpr c) t
 eliminateLiteralOExpr (OList os t) = OGen (SSeq subexprs t) t
     where
@@ -59,10 +59,10 @@ eliminateLiteralOExpr (OGen s t) = OGen (eliminateLiteralStmt s) t
 
 eliminateLiteralStmt :: Stmt v t -> Stmt v t
 eliminateLiteralStmt (SIf b s1 s2 t) = SIf (eliminateLiteralBExpr b) (eliminateLiteralStmt s1) (eliminateLiteralStmt s2) t
-eliminateLiteralStmt (SYield o t) = SYield o t
-eliminateLiteralStmt (SOReturn o t) = error "SOReturn in eliminateLiteralStmt"
-eliminateLiteralStmt (SBReturn b t) =  error "SBReturn in eliminateLiteralStmt"
-eliminateLiteralStmt (SLetOutput _ _ _ _) = error "SLetOutput in eliminateLiteralStmt"
+eliminateLiteralStmt (SYield o t) = SYield (eliminateLiteralOExpr o) t
+eliminateLiteralStmt (SOReturn o t) = SOReturn (eliminateLiteralOExpr o) t
+eliminateLiteralStmt (SBReturn b t) =  SBReturn (eliminateLiteralBExpr b) t
+eliminateLiteralStmt (SLetOutput (v, t1) e s t2) = SLetOutput (v, t1) (eliminateLiteralOExpr e) (eliminateLiteralStmt s) t2
 eliminateLiteralStmt (SLetBoolean b s t)  = SLetBoolean b (eliminateLiteralStmt s) t
 eliminateLiteralStmt (SSetTrue b t) = SSetTrue b t
 eliminateLiteralStmt (SFor (i, e, t) v s t') = SFor (i, e, t) (eliminateLiteralOExpr v) (eliminateLiteralStmt s) t'

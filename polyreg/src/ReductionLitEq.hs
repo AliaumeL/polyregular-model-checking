@@ -59,11 +59,19 @@ class (Monad m) => MonadFresh m where
 
 type FreshM = State Int
 
+
+-- replaceHashPart "a#..." 13 = "a#13"
+-- replaceHashPart "abc" 123 = "abc#123"
+replaceHashPart :: Int -> String -> String
+replaceHashPart i s = case break (=='#') s of
+    (a, '#':b) -> a ++ "#" ++ show i
+    (a, b)     -> a ++ "#" ++ show i
+
 instance MonadFresh FreshM where
     fresh s = do
         i <- get
         put (i + 1)
-        return $ s ++ "#" ++ show i
+        return . replaceHashPart i $ s
 
 unlitEq :: (MonadFresh m) => (CExpr String ValueType) -> (OExpr String ValueType) -> m (BExpr String ValueType)
 unlitEq (CChar c t) v = pure $ BLitEq t (CChar c t) v TBool

@@ -43,7 +43,7 @@ reverseAndSimplify (SFor (OldVar i, OldVar e, t) (ORev oexpr t') body t'') = sim
     where
         body' = reverseAndSimplify body
         simplified = SFor (OldVar i, OldVar e, t) oexpr body' t''
-reverseAndSimplefy (SFor _ _ _ _) = error "SFor in reverseAndSimplify"
+reverseAndSimplify (SFor _ _ _ _) = error "SFor in reverseAndSimplify"
 
 
 forLoopExpansion :: Program String ValueType -> Either ForElimError (Program String ValueType)
@@ -82,8 +82,8 @@ runForElim (ForElim m) = evalState (runExceptT m) (ForElimState M.empty 0)
 -- replaceHashPart "abc" 123 = "abc#123"
 replaceHashPart :: Int -> String -> String
 replaceHashPart i s = case break (=='#') s of
-    (a, '#':b) -> a ++ "#" ++ show i
-    (a, b)     -> a ++ "#" ++ show i
+    (a, '#':b) -> a ++ "#for-exp#" ++ s ++ "#" ++ show i
+    (a, b)     -> a ++ "#for-exp#" ++ s ++ "#" ++ show i
 
 
 instance MonadForElim ForElim where
@@ -106,7 +106,7 @@ instance MonadForElim ForElim where
     freshVar v = do
         count <- gets counter
         modify $ \s -> s { counter = count + 1 }
-        return $ replaceHashPart (count+1) v
+        return $ replaceHashPart count v
 
     throwWithCtx s   = throwError $ ForElimError s
     guardOrThrow b s = unless b $ throwWithCtx s
@@ -137,11 +137,14 @@ forLoopExpansionStmtM (SYield o t) = do
 forLoopExpansionStmtM (SOReturn o t) = do
     o' <- forLoopExpansionOExprM o
     return $ SOReturn o' t
-forLoopExpansionStmtM (SBReturn _ _) = throwWithCtx "SBReturn in forLoopExpansionStmtM"
+forLoopExpansionStmtM (SBReturn b t) = do
+    b' <- forLoopExpansionBExprM b
+    return $ SBReturn b' t
 forLoopExpansionStmtM (SIf b s1 s2 t) = do
+    b'  <- forLoopExpansionBExprM b
     s1' <- forLoopExpansionStmtM s1
     s2' <- forLoopExpansionStmtM s2
-    return $ SIf b s1' s2' t
+    return $ SIf b' s1' s2' t
 forLoopExpansionStmtM (SLetOutput _ _ _ _) = throwWithCtx "SLetOutput in forLoopExpansionStmtM"
 forLoopExpansionStmtM (SLetBoolean (OldVar v) s t) = withVar v $ do
     newNameV <- getVar v
@@ -206,7 +209,29 @@ forLoopExpansionOExprM (OGen s t) = do
     s' <- forLoopExpansionStmtM s
     return $ OGen s' t
 
-
+forLoopExpansionBExprM :: (MonadForElim m) =>
+                         BExpr (ExtVars String ValueType) ValueType ->
+                         m (BExpr (ExtVars String ValueType) ValueType)
+forLoopExpansionBExprM (BConst b t) = return $ BConst b t
+forLoopExpansionBExprM (BNot b t) = do
+    b' <- forLoopExpansionBExprM b
+    return $ BNot b' t
+forLoopExpansionBExprM (BOp op b1 b2 t) = do
+    b1' <- forLoopExpansionBExprM b1
+    b2' <- forLoopExpansionBExprM b2
+    return $ BOp op b1' b2' t
+forLoopExpansionBExprM (BComp op e1 e2 t) = return $ BComp op e1 e2 t
+forLoopExpansionBExprM (BVar (OldVar v) t) = do
+    v' <- getVar v
+    return $ BVar v' t
+forLoopExpansionBExprM (BVar v t) = error $ "BVar in forLoopExpansionBExprM " ++ show v
+forLoopExpansionBExprM (BGen s t) = do
+    s' <- forLoopExpansionStmtM s
+    return $ BGen s' t
+forLoopExpansionBExprM (BApp _ _ _) = throwWithCtx "BApp in forLoopExpansionBExprM"
+forLoopExpansionBExprM (BLitEq t c o t') = do
+    o' <- forLoopExpansionOExprM o
+    return $ BLitEq t c o' t'
 
 substituteYieldStmts :: (Show v, Show t, Eq v, Eq t) =>  v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
 substituteYieldStmts i e body statement = subYieldStmt ZBegin i e body statement
@@ -266,6 +291,8 @@ substOVarBExpr p (BOp op b1 b2 t) = BOp op (substOVarBExpr p b1) (substOVarBExpr
 substOVarBExpr p (BComp comp p1 p2 t) = BComp comp (substOVarPExpr p p1) (substOVarPExpr p p2) t
 substOVarBExpr p (BVar v' t) = BVar v' t
 substOVarBExpr p (BGen s t) = BGen (substOVarStmt p s) t
+substOVarBExpr p (BApp _ _ _) = error "BApp in substOVarBExpr"
+substOVarBExpr p (BLitEq t c o t') = BLitEq t c (substOVarOExpr p o) t'
 
 substOVarPExpr :: (Eq v) => ForParams v t -> PExpr (ExtVars v t) t -> PExpr (ExtVars v t) t
 substOVarPExpr p (PVar (OldVar v) t) | forIndexVar p == v = PVar (AddrVar v (forIndexAddr p)) t
@@ -329,6 +356,7 @@ refreshForLoopsBExpr (BComp comp p1 p2 t) = BComp comp <$> refreshForLoopsPExpr 
 refreshForLoopsBExpr (BVar v t) = return $ BVar v t
 refreshForLoopsBExpr (BGen s t) = BGen <$> refreshForLoopsStmt s <*> pure t
 refreshForLoopsBExpr (BApp _ _ _) = throwWithCtx "BApp in refreshForLoopsBExpr"
+refreshForLoopsBExpr (BLitEq t c o t') = BLitEq t c <$> refreshForLoopsOExpr o <*> pure t'
 
 refreshForLoopsPExpr :: (MonadForElim m) => PExpr ExStr ValueType -> m (PExpr ExStr ValueType)
 refreshForLoopsPExpr (PVar v t) = return $ PVar v t

@@ -79,11 +79,21 @@ class (Monad m) => MonadFresh m where
 newtype FreshM a = FreshM (State Int a)
     deriving (Functor, Applicative, Monad)
 
+
+
+-- replaceHashPart "a#..." 13 = "a#13"
+-- replaceHashPart "abc" 123 = "abc#123"
+replaceHashPart :: Int -> String -> String
+replaceHashPart i s = case break (=='#') s of
+    (a, '#':b) -> a ++ "#" ++ show i
+    (a, b)     -> a ++ "#" ++ show i
+
+
 instance MonadFresh FreshM where
     fresh s = FreshM $ do
         i <- get
         put (i + 1)
-        return $ s ++ "#" ++ show i
+        return . replaceHashPart i $ s
 
 runFreshM :: FreshM a -> a
 runFreshM (FreshM m) = evalState m 0

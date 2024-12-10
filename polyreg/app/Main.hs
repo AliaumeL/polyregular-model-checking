@@ -3,11 +3,11 @@ module Main (main) where
 
 import ForPrograms
 import ForProgramsTyping
-import ForProgramInterpreter
+import ForProgramInterpreter (runProgramString)
 import BooleanElimination (removeBooleanGen)
 import FunctionElimination (eliminateFunctionCalls)
 import LiteralElimination (eliminateLiterals)
-import LetOutputElim (eliminateLetOutput)
+import LetElimination (eliminateLetProgram)
 import ForLoopExpansion (forLoopExpansion)
 import ReductionLitEq (removeBLitEq)
 import ForProgramsPrettyPrint
@@ -31,39 +31,45 @@ import Options.Applicative
 -- -l --list: list all the transformations
 
 
-data Transformation = BooleanElimination
-                    | LetOutputElimination
+data Transformation = LitEqElimination
                     | FunctionElimination
-                    | LiteralElimination
-                    | LitEqElimination
+                    | BooleanElimination
+                    | LetOutputElimination
+                    | LiteralElimination    -- litteral to generators
                     | ForLoopExpansion
-                    deriving (Eq,Show,Read)
+                    deriving (Eq,Show,Read,Ord,Enum)
+
+transformationsInOrder :: [Transformation]
+transformationsInOrder = [LitEqElimination .. ForLoopExpansion]
+
 
 applyTransform :: Transformation -> Program String ValueType -> Program String ValueType
 applyTransform BooleanElimination p = removeBooleanGen p
 applyTransform FunctionElimination p = eliminateFunctionCalls p
 applyTransform LiteralElimination p = eliminateLiterals p
 applyTransform LitEqElimination p = removeBLitEq p
-applyTransform LetOutputElimination p = case eliminateLetOutput p of
-    Left err -> error $ "Error in let output elimination: " ++ show err
-    Right p' -> p'
+applyTransform LetOutputElimination p = eliminateLetProgram p
 applyTransform ForLoopExpansion p = case forLoopExpansion p of  
     Left err -> error $ "Error in for loop expansion: " ++ show err
     Right p' -> p'
 
 
 data Options = Options
-    { optInput :: Maybe FilePath
-    , optTransformations :: [Transformation]
-    , optOutput :: Maybe FilePath
+    { optInputProg :: Maybe FilePath
+    , optInputWord :: Maybe String
+    , optTransformations :: Maybe Int
+    , optOutputProg :: Maybe FilePath
+    , optOutputWord :: Maybe String
     , optList :: Bool
     } deriving (Eq,Show)
 
 options :: Parser Options
 options = Options
-    <$> optional (strOption (long "input" <> short 'i' <> metavar "FILE" <> help "The input file"))
-    <*> many (option auto (long "transformation" <> short 't' <> metavar "TRANSFORMATION" <> help "The transformations to apply"))
+    <$> optional (strOption (long "input-prog" <> short 'i' <> metavar "FILE" <> help "The input file"))
+    <*> optional (strOption (long "input-word" <> short 'w' <> metavar "WORD" <> help "The input word"))
+    <*> optional (option auto (long "transformation" <> short 't' <> metavar "TRANSFORMATION" <> help "The transformation to apply"))
     <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE" <> help "The output file"))
+    <*> optional (strOption (long "output-word" <> short 'W' <> metavar "WORD" <> help "The output word"))
     <*> switch (long "list" <> short 'l' <> help "List all the transformations")
 
 
@@ -84,7 +90,8 @@ writeOutputFile (Just file) = writeFile file
 main :: IO ()
 main = do
     opts <- execParser cmdParser
-    progString <- readInputFile (optInput opts)
+    progString <- readInputFile (optInputProg opts)
+    let word = optInputWord opts
     let parsedProgOrErr  = parseHighLevel progString 
     case parsedProgOrErr of
         Left err -> putStrLn . show $ err
@@ -93,7 +100,21 @@ main = do
             case typedProg of
                 Left err -> putStrLn . show $ err
                 Right prog -> do
-                    let transformations = optTransformations opts
+                    let transformationSize = case optTransformations opts of
+                                                Nothing -> length transformationsInOrder
+                                                Just n -> n
+                    let transformations = take transformationSize transformationsInOrder
+                    putStrLn $ "Applying transformations: " ++ show transformations
                     let transformedProg = foldl (flip applyTransform) prog transformations
-                    writeOutputFile (optOutput opts) (prettyPrintProgramWithNls transformedProg)
-                    return ()
+                    writeOutputFile (optOutputProg opts) (prettyPrintProgramWithNls prog)
+                    writeOutputFile (optOutputProg opts) (replicate 80 '-')
+                    writeOutputFile (optOutputProg opts) (prettyPrintProgramWithNls transformedProg)
+                    case word of
+                        Nothing -> return ()
+                        Just w -> do
+                            let wordBefore = runProgramString (fmap (const ()) prog) w
+                            let wordAfter  = runProgramString (fmap (const ()) transformedProg) w
+                            writeOutputFile (optOutputWord opts) (replicate 80 '-')
+                            writeOutputFile (optOutputWord opts) w
+                            writeOutputFile (optOutputWord opts) (show wordBefore)
+                            writeOutputFile (optOutputWord opts) (show wordAfter)

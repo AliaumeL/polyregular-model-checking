@@ -33,6 +33,9 @@ instance LetEliminationMonad LetEliminationM where
 runLetEliminationM :: LetEliminationM a -> a
 runLetEliminationM (LetEliminationM m)= runReader m (LetEliminationState M.empty)
 
+eliminateLetProgram :: Program String ValueType -> Program String ValueType
+eliminateLetProgram p = runLetEliminationM $ eliminateLetProgramM p
+
 eliminateLetProgramM :: (LetEliminationMonad m) =>  Program String ValueType -> m (Program String ValueType)
 eliminateLetProgramM (Program funcs n) = do
     funcs' <- mapM eliminateLetFuncM funcs
@@ -62,7 +65,7 @@ eliminateLetStmtM (SLetOutput (v, t1) e s t2) = do
     e' <- eliminateLetOexprM e
     withVarVal v e' $ do
         s' <- eliminateLetStmtM s
-        return $ SLetOutput (v, t1) e' s' t2
+        return $ s'
 eliminateLetStmtM (SLetBoolean v s t) = do
     s' <- eliminateLetStmtM s
     return $ SLetBoolean v s' t

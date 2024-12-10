@@ -98,6 +98,14 @@ runElimM (ElimM m) = case runExcept (runStateT m (ElimState 0 M.empty M.empty)) 
     Left e -> error $ show e
     Right (a, _) -> a
 
+-- replaceHashPart "a#..." 13 = "a#13"
+-- replaceHashPart "abc" 123 = "abc#123"
+replaceHashPart :: Int -> String -> String
+replaceHashPart i s = case break (=='#') s of
+    (a, '#':b) -> a ++ "#" ++ show i
+    (a, b)     -> a ++ "#" ++ show i
+
+
 instance MonadElim ElimM where
     withLocalVars ss m = do
         let names = zip ss ss
@@ -109,7 +117,7 @@ instance MonadElim ElimM where
         
     withFreshVar s m = do
         c <- gets counter
-        let name = s ++ "#" ++ show c
+        let name = replaceHashPart c s
         modify (\st -> st { counter = c + 1, varMap = M.insert s name (varMap st) })
         a <- m
         modify (\st -> st { varMap = M.delete s (varMap st) })
@@ -117,7 +125,7 @@ instance MonadElim ElimM where
 
     withFreshVars ss m = do
         c <- gets counter
-        let names = zipWith (\s i -> s ++ "#" ++ show i) ss [c..]
+        let names = zipWith replaceHashPart [c..] ss
         modify (\st -> st { counter = c + length ss, varMap = M.union (M.fromList $ zip ss names) (varMap st) })
         a <- m
         modify (\st -> st { varMap = foldr M.delete (varMap st) ss })
