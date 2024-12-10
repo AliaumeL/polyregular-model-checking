@@ -7,97 +7,227 @@ module ForLoopExpansion where
 -- on generators, so that the *only* for loops
 -- that exist are on variables or reverse variables.
 
+import QuantifierFree
 import ForPrograms
-import ForProgramsTyping
+import ForProgramsTyping (ValueType(..))
+import ForProgramsPrettyPrint (prettyPrintStmtWithNls)
 
 import Control.Monad
+import Control.Monad.State
 import Control.Monad.Except
 
 import Data.Map (Map)
 import qualified Data.Map as M
 
-mapVarsProgram :: (va -> vb) -> Program va t -> Program vb t
-mapVarsProgram f (Program fs m) = Program (map (mapVarsFun f) fs) (f m)
+import AddrVarElimination (StmtZip(..), ExtVars(..), eliminateExtVarsProg)
 
-mapVarsFun :: (va -> vb) -> StmtFun va t -> StmtFun vb t
-mapVarsFun f (StmtFun v args s t) = StmtFun (f v) newargs (mapVars f s) t
+import Debug.Trace
+
+-- Reverses all the generators (and checks that they are only on variables)
+-- removes all "letBool" and "setTrue" statements,
+-- and turns `ifs` into sequences.
+reverseAndSimplify :: Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
+reverseAndSimplify (SYield o t) = SYield o t
+reverseAndSimplify (SOReturn _ _) = error "SOReturn in reverseAndSimplify"
+reverseAndSimplify (SBReturn _ _) = error "SBReturn in reverseAndSimplify"
+reverseAndSimplify (SIf _ s1 s2 t) = SSeq [reverseAndSimplify s1, reverseAndSimplify s2] t
+reverseAndSimplify (SLetOutput _ _ _ _) = error "SLetOutput in reverseAndSimplify"
+reverseAndSimplify (SLetBoolean _ s t) = reverseAndSimplify s
+reverseAndSimplify (SSetTrue _ t) = SSeq [] t
+reverseAndSimplify (SSeq ss t) = SSeq (map reverseAndSimplify ss) t
+reverseAndSimplify (SFor (OldVar i, OldVar e, t) (OVar v t') body t'') = simplified
     where
-        newargs = [ (f v, t, map f x) | (v, t, x) <- args ]
-
-mapVars :: (va -> vb) -> Stmt va t -> Stmt vb t
-mapVars f (SYield o t) = SYield (mapVarsOExpr f o) t
-mapVars f (SOReturn o t) = SOReturn (mapVarsOExpr f o) t
-mapVars f (SBReturn b t) = SBReturn (mapVarsBExpr f b) t
-mapVars f (SIf b s1 s2 t) = SIf (mapVarsBExpr f b) (mapVars f s1) (mapVars f s2) t
-mapVars f (SLetOutput (v, t) o s t') = SLetOutput (f v, t) (mapVarsOExpr f o) (mapVars f s) t'
-mapVars f (SLetBoolean v s t) = SLetBoolean (f v) (mapVars f s) t
-mapVars f (SSetTrue v t) = SSetTrue (f v) t
-mapVars f (SFor (v, t, t'') o s t') = SFor (f v, f t, t'') (mapVarsOExpr f o) (mapVars f s) t'
-mapVars f (SSeq ss t) = SSeq (map (mapVars f) ss) t
-    
-mapVarsOExpr :: (va -> vb) -> OExpr va t -> OExpr vb t
-mapVarsOExpr f (OVar v t) = OVar (f v) t
-mapVarsOExpr f (OConst c t) = OConst (mapVarsCExpr f c) t
-mapVarsOExpr f (OList os t) = OList (map (mapVarsOExpr f) os) t
-mapVarsOExpr f (ORev o t) = ORev (mapVarsOExpr f o) t
-mapVarsOExpr f (OIndex o p t) = OIndex (mapVarsOExpr f o) (mapVarsPExpr f p) t
-mapVarsOExpr f (OApp v os t) = OApp (f v) (mapVarsArgs f os) t
-mapVarsOExpr f (OGen s t) = OGen (mapVars f s) t
-    
-mapVarsBExpr :: (va -> vb) -> BExpr va t -> BExpr vb t
-mapVarsBExpr f (BConst b t) = BConst b t
-mapVarsBExpr f (BNot b t) = BNot (mapVarsBExpr f b) t
-mapVarsBExpr f (BOp op b1 b2 t) = BOp op (mapVarsBExpr f b1) (mapVarsBExpr f b2) t
-mapVarsBExpr f (BComp comp p1 p2 t) = BComp comp (mapVarsPExpr f p1) (mapVarsPExpr f p2) t
-mapVarsBExpr f (BVar v t) = BVar (f v) t
-mapVarsBExpr f (BGen s t) = BGen (mapVars f s) t
-
-mapVarsPExpr :: (va -> vb) -> PExpr va t -> PExpr vb t
-mapVarsPExpr f (PVar v t) = PVar (f v) t
-
-mapVarsCExpr :: (va -> vb) -> CExpr va t -> CExpr vb t
-mapVarsCExpr f (CChar c t) = CChar c t
-mapVarsCExpr f (CList cs t) = CList (map (mapVarsCExpr f) cs) t
-
-mapVarsArgs :: (va -> vb) -> [(OExpr va t, [PExpr va t])] -> [(OExpr vb t, [PExpr vb t])]
-mapVarsArgs f = map (\(o, ps) -> (mapVarsOExpr f o, map (mapVarsPExpr f) ps))
+        body' = reverseAndSimplify body
+        simplified = SFor (OldVar i, OldVar e, t) (ORev (OVar v t') t') body' t''
+reverseAndSimplify (SFor (OldVar i, OldVar e, t) (ORev oexpr t') body t'') = simplified
+    where
+        body' = reverseAndSimplify body
+        simplified = SFor (OldVar i, OldVar e, t) oexpr body' t''
+reverseAndSimplefy (SFor _ _ _ _) = error "SFor in reverseAndSimplify"
 
 
-data StmtZip v t = 
-                 ZIfL (StmtZip v t )
-               | ZIfR (StmtZip v t )
-               | ZFor v t (StmtZip v t )
-               | ZSeqL Int (StmtZip v t ) 
-               | ZBegin
-               deriving (Show, Eq, Functor, Foldable, Traversable)
+forLoopExpansion :: Program String ValueType -> Either ForElimError (Program String ValueType)
+forLoopExpansion = fmap eliminateExtVarsProg . forLoopExpansionProg . mapVarsProgram OldVar
+
+forLoopExpansionProg :: Program (ExtVars String ValueType) ValueType -> Either ForElimError (Program (ExtVars String ValueType) ValueType)
+forLoopExpansionProg p = runForElim (forLoopExpansionProgM p)
 
 
--- Comparison of the positions in two zips,
--- note that "ifs" and "sequences" behave the same.
-compareZip :: t -> StmtZip v t -> StmtZip v t -> BExpr (ExtVars v t) t
-compareZip t (ZIfL a) (ZIfL b) = compareZip t a b
-compareZip t (ZIfR a) (ZIfR b) = compareZip t a b
-compareZip t (ZIfL a) (ZIfR b) = BConst True t
-compareZip t (ZIfR a) (ZIfL b) = BConst False t
-compareZip t (ZFor v t' a) (ZFor v' t'' b) = BOp And 
-                                              (BComp Leq (PVar (OldVar v) t') 
-                                                         (PVar (OldVar v') t'') 
-                                                      t)
-                                              (compareZip t a b)
-                                              t
-compareZip t (ZSeqL i a) (ZSeqL j b) | i == j = compareZip t a b
-compareZip t (ZSeqL i a) (ZSeqL j b) | i <  i = BConst True t
-compareZip t (ZSeqL i a) (ZSeqL j b) | i >  i = BConst False t
-compareZip t (ZIfL a) (ZSeqL 0 b) = compareZip t a b
-compareZip t (ZIfR a) (ZSeqL 1 b) = compareZip t a b
-compareZip t (ZSeqL 0 a) (ZIfL b) = compareZip t a b
-compareZip t (ZSeqL 1 a) (ZIfR b) = compareZip t a b
-compareZip t ZBegin ZBegin = BConst True t
-compareZip _ _ _ = error "compareZip: incompatible zips"
+class Monad m => MonadForElim m where
+    withVar       :: String -> m a -> m a
+    getVar        :: String -> m (ExtVars String ValueType)
+    getVarMaybe   :: String -> m (Maybe (ExtVars String ValueType))
+    freshVar      :: String -> m String
+
+    throwWithCtx  :: String -> m a
+    guardOrThrow  :: Bool   -> String -> m ()
+
+data ForElimState = ForElimState {
+    varMap   :: Map String String,        -- remapping of variables
+    counter  :: Int                       -- unique counter
+} deriving (Eq, Show)
+
+data ForElimError = ForElimError String
+    deriving (Eq, Show)
 
 
-data ExtVars v t = OldVar v | AddrVar v (StmtZip v t) 
-    deriving (Show, Eq, Functor, Foldable, Traversable)
+newtype ForElim a = ForElim (ExceptT ForElimError (State ForElimState) a)
+    deriving (Functor, Applicative, Monad, MonadError ForElimError, MonadState ForElimState)
+
+runForElim :: ForElim a -> Either ForElimError a
+runForElim (ForElim m) = evalState (runExceptT m) (ForElimState M.empty 0)
+
+
+-- replaceHashPart "a#..." 13 = "a#13"
+-- replaceHashPart "abc" 123 = "abc#123"
+replaceHashPart :: Int -> String -> String
+replaceHashPart i s = case break (=='#') s of
+    (a, '#':b) -> a ++ "#" ++ show i
+    (a, b)     -> a ++ "#" ++ show i
+
+
+instance MonadForElim ForElim where
+    withVar v m = do
+        count  <- gets counter
+        oldMap <- gets varMap
+        modify $ \s -> s { counter = count + 1 , varMap = M.insert v (replaceHashPart count v) oldMap }
+        result <- m
+        modify $ \s -> s { varMap = oldMap }
+        return result
+    getVarMaybe v = do
+        m <- gets varMap
+        return . fmap OldVar $ M.lookup v m
+    getVar v = do
+        m <- gets varMap
+        case M.lookup v m of
+            Just v' -> return $ OldVar v'
+            Nothing -> throwWithCtx $ "getVar: variable not found " ++ v
+
+    freshVar v = do
+        count <- gets counter
+        modify $ \s -> s { counter = count + 1 }
+        return $ replaceHashPart (count+1) v
+
+    throwWithCtx s   = throwError $ ForElimError s
+    guardOrThrow b s = unless b $ throwWithCtx s
+
+
+
+forLoopExpansionProgM :: (MonadForElim m) =>
+                         Program (ExtVars String ValueType) ValueType ->
+                         m (Program (ExtVars String ValueType) ValueType)
+forLoopExpansionProgM (Program fs m) = do
+    fs' <- mapM forLoopExpansionFunM fs
+    return $ Program fs' m
+
+forLoopExpansionFunM :: (MonadForElim m) =>
+                        StmtFun (ExtVars String ValueType) ValueType ->
+                        m (StmtFun (ExtVars String ValueType) ValueType)
+forLoopExpansionFunM (StmtFun v args s t) = do
+    s' <- forLoopExpansionStmtM s
+    return $ StmtFun v args s' t
+
+
+forLoopExpansionStmtM :: (MonadForElim m) =>
+                         Stmt (ExtVars String ValueType) ValueType ->
+                         m (Stmt (ExtVars String ValueType) ValueType)
+forLoopExpansionStmtM (SYield o t) = do
+    o' <- forLoopExpansionOExprM o
+    return $ SYield o' t
+forLoopExpansionStmtM (SOReturn o t) = do
+    o' <- forLoopExpansionOExprM o
+    return $ SOReturn o' t
+forLoopExpansionStmtM (SBReturn _ _) = throwWithCtx "SBReturn in forLoopExpansionStmtM"
+forLoopExpansionStmtM (SIf b s1 s2 t) = do
+    s1' <- forLoopExpansionStmtM s1
+    s2' <- forLoopExpansionStmtM s2
+    return $ SIf b s1' s2' t
+forLoopExpansionStmtM (SLetOutput _ _ _ _) = throwWithCtx "SLetOutput in forLoopExpansionStmtM"
+forLoopExpansionStmtM (SLetBoolean (OldVar v) s t) = withVar v $ do
+    newNameV <- getVar v
+    s' <- forLoopExpansionStmtM s
+    return $ SLetBoolean newNameV s' t
+forLoopExpansionStmtM (SSetTrue (OldVar v) t) = do
+    v' <- getVar v
+    return $ SSetTrue v' t
+forLoopExpansionStmtM (SFor (OldVar i, OldVar e, _) (OGen stmt _) body _) = do
+    body' <- forLoopExpansionStmtM body
+    stmt' <- forLoopExpansionStmtM stmt
+    let expansion = substituteYieldStmts i e body' stmt'
+    return expansion
+forLoopExpansionStmtM (SFor (OldVar i, OldVar e, _) (ORev (OGen stmt _) _) body t) = do
+    body'  <- forLoopExpansionStmtM body
+    stmt'  <- forLoopExpansionStmtM stmt
+    newVar <- freshVar i
+    let stmtRevSimpl = reverseAndSimplify stmt' 
+    stmtRevSimpl' <- refreshForLoopsStmt stmtRevSimpl
+    trace ("Variables " ++ show [i,e,newVar]) $
+        trace (prettyPrintStmtWithNls 0 (mapVarsStmt show stmt')) $ 
+            trace (prettyPrintStmtWithNls 0 (mapVarsStmt show stmtRevSimpl')) $ do
+                let guardedBody = (SIf (BComp Eq (PVar (OldVar i) t)
+                                                 (PVar (OldVar newVar) t) t)
+                                        body' 
+                                        (SSeq [] t) t)
+                let expanded    = substituteYieldStmts i       e guardedBody stmt'
+                let expandedRev = substituteYieldStmts newVar  e expanded    stmtRevSimpl'
+                trace (prettyPrintStmtWithNls 0 (mapVarsStmt show expandedRev)) $
+                    return expandedRev
+forLoopExpansionStmtM (SFor (OldVar i, OldVar e, t) (OVar v t') body t'') = do
+    body' <- forLoopExpansionStmtM body
+    return $ SFor (OldVar i, OldVar e, t) (OVar v t') body' t''
+forLoopExpansionStmtM (SFor (OldVar i, OldVar e, t) (ORev (OVar v t') t'') body t''') = do
+    body' <- forLoopExpansionStmtM body
+    return $ SFor (OldVar i, OldVar e, t) (ORev (OVar v t') t'') body' t'''
+forLoopExpansionStmtM (SFor (OldVar i, OldVar e, t) (ORev (ORev o _) _) body t') = do
+    body' <- forLoopExpansionStmtM body
+    return $ SFor (OldVar i, OldVar e, t) o body' t'
+forLoopExpansionStmtM (SSeq ss t) = do
+    ss' <- mapM forLoopExpansionStmtM ss
+    return $ SSeq ss' t
+forLoopExpansionStmtM x = throwWithCtx $ "invalid statement in forLoopExpansionStmtM " ++ show x
+
+
+forLoopExpansionOExprM :: (MonadForElim m) =>
+                          OExpr (ExtVars String ValueType) ValueType ->
+                          m (OExpr (ExtVars String ValueType) ValueType)
+forLoopExpansionOExprM o@(OVar _ _)   = return o
+forLoopExpansionOExprM c@(OConst _ _) = return c
+forLoopExpansionOExprM (OList os t) = do
+    os' <- mapM forLoopExpansionOExprM os
+    return $ OList os' t
+forLoopExpansionOExprM (ORev o t) = do
+    o' <- forLoopExpansionOExprM o
+    return $ ORev o' t
+forLoopExpansionOExprM (OIndex o p t) = do
+    o' <- forLoopExpansionOExprM o
+    return $ OIndex o' p t
+forLoopExpansionOExprM (OApp _ _ _) = throwWithCtx "OApp in forLoopExpansionOExprM"
+forLoopExpansionOExprM (OGen s t) = do
+    s' <- forLoopExpansionStmtM s
+    return $ OGen s' t
+
+
+
+substituteYieldStmts :: (Show v, Show t, Eq v, Eq t) =>  v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
+substituteYieldStmts i e body statement = subYieldStmt ZBegin i e body statement
+
+-- subYieldStmt addr i e body statement -> expanded statement
+subYieldStmt :: (Show v, Show t, Eq v, Eq t) => StmtZip v t -> v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
+subYieldStmt z v1 v2 s (SYield o t) = substOVarStmt (ForParams v1 v2 o z) s
+subYieldStmt _ _ _ _   (SOReturn o t) = error "SOReturn in subYield"
+subYieldStmt _ _ _ _   (SBReturn b t) = error "SBReturn in subYield"
+subYieldStmt z v1 v2 s (SIf b s1 s2 t) = SIf b (subYieldStmt zleft v1 v2 s s1) (subYieldStmt zright v1 v2 s s2) t
+    where
+        zleft  = ZIfL z
+        zright = ZIfR z
+subYieldStmt _ _ _ _   (SLetOutput _ _ _ _) = error "SLetOutput in subYield"
+subYieldStmt z v1 v2 s (SLetBoolean v s' t) = SLetBoolean v (subYieldStmt z v1 v2 s s') t
+subYieldStmt _ _ _ _ x@(SSetTrue _ _) = x
+subYieldStmt z v1 v2 s (SFor (OldVar i, OldVar e, t) v s' t') = SFor (OldVar i, OldVar e, t) v (subYieldStmt (ZFor i t z) v1 v2 s s') t'
+subYieldStmt z v1 v2 s (SSeq ss t) = SSeq [ subYieldStmt (ZSeq i z) v1 v2 s s' | (i, s') <- zip [0..] ss ] t
+subYieldStmt _ _ _ _ _ = error "subYieldStmt: invalid statement"
+
+
 
 data ForParams v t = ForParams {
     forIndexVar  :: v,
@@ -105,6 +235,7 @@ data ForParams v t = ForParams {
     forDataExpr  :: OExpr (ExtVars v t) t,
     forIndexAddr :: StmtZip v t
 } deriving (Eq,Show)
+
 
 substOVarStmt :: (Eq v) => ForParams v t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
 substOVarStmt p (SYield o' t) = SYield (substOVarOExpr p o') t
@@ -121,7 +252,7 @@ substOVarStmt p (SSeq ss t) = SSeq (map (substOVarStmt p) ss) t
 substOVarOExpr :: (Eq v) => ForParams v t -> OExpr (ExtVars v t) t -> OExpr (ExtVars v t) t
 substOVarOExpr p (OVar (OldVar v') t) | forDataVar p == v' = forDataExpr p
 substOVarOExpr p (OVar v' t) = OVar v' t
-substOVarOExpr _ (OConst _ _) = error "OConst in substOVarOExpr"
+substOVarOExpr _ (OConst c t) = OConst c t
 substOVarOExpr _ (OList _ _) = error "OList in substOVarOExpr"
 substOVarOExpr p (ORev o t) = ORev (substOVarOExpr p o) t
 substOVarOExpr _ (OIndex _ _ _) = error "OIndex in substOVarOExpr"
@@ -137,74 +268,71 @@ substOVarBExpr p (BVar v' t) = BVar v' t
 substOVarBExpr p (BGen s t) = BGen (substOVarStmt p s) t
 
 substOVarPExpr :: (Eq v) => ForParams v t -> PExpr (ExtVars v t) t -> PExpr (ExtVars v t) t
-substOVarPExpr p (PVar (OldVar v) t) | forDataVar p == v = PVar (AddrVar v (forIndexAddr p)) t
+substOVarPExpr p (PVar (OldVar v) t) | forIndexVar p == v = PVar (AddrVar v (forIndexAddr p)) t
 substOVarPExpr p (PVar v t) = PVar v t
 
 
--- subYieldStmt addr i e body statement -> expanded statement
-subYieldStmt :: (Eq v) => StmtZip v t -> v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
-subYieldStmt z v1 v2 s (SYield o t) = substOVarStmt (ForParams v1 v2 o z) s
-subYieldStmt _ _ _ _   (SOReturn o t) = error "SOReturn in subYield"
-subYieldStmt _ _ _ _   (SBReturn b t) = error "SBReturn in subYield"
-subYieldStmt z v1 v2 s (SIf b s1 s2 t) = SIf b (subYieldStmt zleft v1 v2 s s1) (subYieldStmt zright v1 v2 s s2) t
+
+remapVariable :: (Eq v, Eq t) => v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
+remapVariable old new s = mapVarsStmt f s
     where
-        zleft  = ZIfL z
-        zright = ZIfR z
-subYieldStmt _ _ _ _ (SLetOutput _ _ _ _) = error "SLetOutput in subYield"
-subYieldStmt z v1 v2 s (SLetBoolean v s' t) = SLetBoolean v (subYieldStmt z v1 v2 s s') t
-subYieldStmt _ _ _ _ x@(SSetTrue _ _) = x
-subYieldStmt z v1 v2 s (SFor (OldVar i, OldVar e, t) v s' t') = SFor (OldVar i, OldVar e, t) v (subYieldStmt (ZFor i t z) v1 v2 s s') t'
-subYieldStmt z v1 v2 s (SSeq ss t) = SSeq [ subYieldStmt (ZSeqL i z) v1 v2 s s' | (i, s') <- zip [0..] ss ] t
-subYieldStmt _ _ _ _ _ = error "subYieldStmt: invalid statement"
+        f v | v == (OldVar old)  = (OldVar new)
+            | otherwise = v
 
 
+type ExStr = ExtVars String ValueType
 
-expandGenStmt :: (Eq v) => Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
-expandGenStmt (SYield o t)   = SYield o t
-expandGenStmt (SOReturn _ _) = error $ "SOReturn in expandGenStmt"
-expandGenStmt (SBReturn _ _) = error $ "SBReturn in expandGenStmt"
-expandGenStmt (SIf b s1 s2 t) = SIf b (expandGenStmt s1) (expandGenStmt s2) t
-expandGenStmt (SLetOutput _ _ _ _) = error $ "SLetOutput in expandGenStmt"
-expandGenStmt (SLetBoolean v s t) = SLetBoolean v (expandGenStmt s) t
-expandGenStmt (SSetTrue v t) = SSetTrue v t
-expandGenStmt (SFor (OldVar i, OldVar e, t) (OGen stmt t'') body t') = expanded
-    where
-        stmt' = expandGenStmt stmt
-        body' = expandGenStmt body
-        expanded = subYieldStmt ZBegin i e body' stmt'
-expandGenStmt (SFor (OldVar i, OldVar e, t) (ORev (OGen stmt _) t') body t'') = expanded
-    where
-        stmt' = expandGenStmt stmt
-        body' = expandGenStmt body
-        stmtRevSimpl = reverseAndSimplify stmt' 
-        copyOfI = i -- TODO: make this unique
-        guardedBody = (SIf (BComp Eq (PVar (OldVar i) t) (PVar (OldVar copyOfI) t) t) body' (SSeq [] t'') t'')
+refreshForLoopsStmt :: (MonadForElim m) => Stmt ExStr ValueType -> m (Stmt ExStr ValueType)
+refreshForLoopsStmt (SYield o t)   = SYield <$> (refreshForLoopsOExpr o)   <*> pure t
+refreshForLoopsStmt (SOReturn o t) = SOReturn <$> (refreshForLoopsOExpr o) <*> pure t
+refreshForLoopsStmt (SBReturn b t) = SBReturn <$> (refreshForLoopsBExpr b) <*> pure t
+refreshForLoopsStmt (SIf b s1 s2 t) = SIf <$> (refreshForLoopsBExpr b)
+                                          <*> (refreshForLoopsStmt s1)
+                                          <*> (refreshForLoopsStmt s2)
+                                          <*> (pure t)
+refreshForLoopsStmt (SLetOutput v o s t) = SLetOutput v <$> (refreshForLoopsOExpr o) 
+                                                        <*> (refreshForLoopsStmt s)
+                                                        <*> (pure t)
+refreshForLoopsStmt (SLetBoolean v s t) = SLetBoolean v <$> (refreshForLoopsStmt s) 
+                                                        <*> (pure t)
+refreshForLoopsStmt (SSetTrue v t) = return $ SSetTrue v t
+refreshForLoopsStmt (SFor (OldVar i, OldVar e, t) o s t') = do
+    withVar i $ do
+        withVar e $ do
+            i' <- getVar i
+            e' <- getVar e
+            o' <- refreshForLoopsOExpr o
+            s' <- refreshForLoopsStmt s
+            return $ SFor (i', e', t) o' s' t'
+refreshForLoopsStmt (SSeq ss t) = SSeq <$> mapM refreshForLoopsStmt ss <*> pure t
+refreshForLoopsStmt x = error $ "invalid statement in refreshForLoopsStmt " ++ show x
 
-        expandRev = subYieldStmt ZBegin copyOfI e guardedBody stmtRevSimpl
-        expanded = subYieldStmt ZBegin i e expandRev stmt'
-expandGenStmt (SFor (OldVar i, OldVar e, t) oexpr body t') = SFor (OldVar i, OldVar e, t) oexpr (expandGenStmt body) t'
-expandGenStmt (SSeq ss t) = SSeq (map expandGenStmt ss) t
-expandGenStmt _ = error "expandGenStmt: invalid statement"
+refreshForLoopsOExpr :: (MonadForElim m) => OExpr ExStr ValueType -> m (OExpr ExStr ValueType)
+refreshForLoopsOExpr (OVar (OldVar v) t) = do
+    v' <- getVarMaybe v
+    case v' of 
+        Nothing  -> return (OVar (OldVar v) t)
+        Just v'' -> return (OVar v'' t)
+refreshForLoopsOExpr (OVar v t) = return $ OVar v t
+refreshForLoopsOExpr (OConst c t) = return $ OConst c t
+refreshForLoopsOExpr (OList os t) = OList <$> mapM refreshForLoopsOExpr os <*> pure t
+refreshForLoopsOExpr (ORev o t) = ORev <$> refreshForLoopsOExpr o <*> pure t
+refreshForLoopsOExpr (OIndex o p t) = OIndex <$> refreshForLoopsOExpr o <*> pure p <*> pure t
+refreshForLoopsOExpr (OApp _ _ _) = throwWithCtx "OApp in refreshForLoopsOExpr"
+refreshForLoopsOExpr (OGen s t) = OGen <$> refreshForLoopsStmt s <*> pure t
+
+refreshForLoopsBExpr :: (MonadForElim m) => BExpr ExStr ValueType -> m (BExpr ExStr ValueType)
+refreshForLoopsBExpr (BConst b t) = return $ BConst b t
+refreshForLoopsBExpr (BNot b t) = BNot <$> refreshForLoopsBExpr b <*> pure t
+refreshForLoopsBExpr (BOp op b1 b2 t) = BOp op <$> refreshForLoopsBExpr b1 <*> refreshForLoopsBExpr b2 <*> pure t
+refreshForLoopsBExpr (BComp comp p1 p2 t) = BComp comp <$> refreshForLoopsPExpr p1 <*> refreshForLoopsPExpr p2 <*> pure t
+refreshForLoopsBExpr (BVar v t) = return $ BVar v t
+refreshForLoopsBExpr (BGen s t) = BGen <$> refreshForLoopsStmt s <*> pure t
+refreshForLoopsBExpr (BApp _ _ _) = throwWithCtx "BApp in refreshForLoopsBExpr"
+
+refreshForLoopsPExpr :: (MonadForElim m) => PExpr ExStr ValueType -> m (PExpr ExStr ValueType)
+refreshForLoopsPExpr (PVar v t) = return $ PVar v t
 
 
--- Reverses all the generators (and checks that they are only on variables)
--- removes all "letBool" and "setTrue" statements,
--- and turns `ifs` into sequences.
-reverseAndSimplify :: Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
-reverseAndSimplify (SYield o t) = SYield o t
-reverseAndSimplify (SOReturn _ _) = error "SOReturn in reverseAndSimplify"
-reverseAndSimplify (SBReturn _ _) = error "SBReturn in reverseAndSimplify"
-reverseAndSimplify (SIf b s1 s2 t) = SSeq [reverseAndSimplify s1, reverseAndSimplify s2] t
-reverseAndSimplify (SLetOutput _ _ _ _) = error "SLetOutput in reverseAndSimplify"
-reverseAndSimplify (SLetBoolean _ s t) = reverseAndSimplify s
-reverseAndSimplify (SSetTrue _ t) = SSeq [] t
-reverseAndSimplify (SSeq ss t) = SSeq (map reverseAndSimplify ss) t
-reverseAndSimplify (SFor (OldVar i, OldVar e, t) (OVar v t') body t'') = simplified
-    where
-        body' = reverseAndSimplify body
-        simplified = SFor (OldVar i, OldVar e, t) (ORev (OVar v t') t') body' t''
-reverseAndSimplify (SFor (OldVar i, OldVar e, t) (ORev oexpr t') body t'') = simplified
-    where
-        body' = reverseAndSimplify body
-        simplified = SFor (OldVar i, OldVar e, t) oexpr body' t''
-reverseAndSimplefy (SFor _ _ _ _) = error "SFor in reverseAndSimplify"
+    
+

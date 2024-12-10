@@ -7,15 +7,13 @@ import ForProgramInterpreter
 import BooleanElimination (removeBooleanGen)
 import FunctionElimination (eliminateFunctionCalls)
 import LiteralElimination (eliminateLiterals)
-import ForLoopExpansion (expandGenStmt, ExtVars(..), mapVarsProgram, mapVars)
+import LetOutputElim (eliminateLetOutput)
+import ForLoopExpansion (forLoopExpansion)
 import ReductionLitEq (removeBLitEq)
 import ForProgramsPrettyPrint
 import Parser.ParseHighLevel (parseHighLevel)
 
 import Options.Applicative
-
-import Control.Monad
-import Control.Applicative
 
 -- use optparse-applicative for the command line arguments
 -- use the following options:
@@ -34,9 +32,10 @@ import Control.Applicative
 
 
 data Transformation = BooleanElimination
+                    | LetOutputElimination
                     | FunctionElimination
                     | LiteralElimination
-                    | ReductionLitEq
+                    | LitEqElimination
                     | ForLoopExpansion
                     deriving (Eq,Show,Read)
 
@@ -44,15 +43,13 @@ applyTransform :: Transformation -> Program String ValueType -> Program String V
 applyTransform BooleanElimination p = removeBooleanGen p
 applyTransform FunctionElimination p = eliminateFunctionCalls p
 applyTransform LiteralElimination p = eliminateLiterals p
-applyTransform ReductionLitEq p = removeBLitEq p
-applyTransform ForLoopExpansion (Program funcs main) = newProgClassicalVars
-    where
-        (StmtFun v args body t) = last funcs
-        noGenerators = expandGenStmt (mapVars OldVar body)
-        newArgs = map (\(n, t, ps) -> (OldVar n, t, map OldVar ps)) args
-        newName = OldVar v
-        newProg = Program [StmtFun newName newArgs noGenerators t] newName
-        newProgClassicalVars = mapVarsProgram (\(OldVar v) -> v) newProg
+applyTransform LitEqElimination p = removeBLitEq p
+applyTransform LetOutputElimination p = case eliminateLetOutput p of
+    Left err -> error $ "Error in let output elimination: " ++ show err
+    Right p' -> p'
+applyTransform ForLoopExpansion p = case forLoopExpansion p of  
+    Left err -> error $ "Error in for loop expansion: " ++ show err
+    Right p' -> p'
 
 
 data Options = Options
