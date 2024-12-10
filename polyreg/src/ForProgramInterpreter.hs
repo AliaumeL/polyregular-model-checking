@@ -164,8 +164,8 @@ runProgramStringM p i = do
     case o of
         CList l _ -> forM l $ \x -> case x of
             CChar c _ -> return c
-            CList _ _ -> throwWithCtx "Expected list of characters as output of function"
-        _ -> throwWithCtx "Expected list of characters as input of function"
+            CList _ _ -> throwWithCtx $ "Expected list of characters as output of function" ++ show o
+        _ -> throwWithCtx $ "Expected list of characters as input of function" ++ show o
 
 restoreAllExceptBooleans :: InterpreterState -> InterpreterState -> InterpreterState
 restoreAllExceptBooleans old new = old { bools = bools new }

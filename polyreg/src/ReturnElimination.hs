@@ -108,7 +108,18 @@ retElimOExpr (OList xs t) = OList <$> (mapM retElimOExpr xs) <*> pure t
 retElimOExpr (ORev x t) = ORev <$> (retElimOExpr x) <*> pure t
 retElimOExpr (OIndex x i t) = OIndex <$> (retElimOExpr x) <*> pure i <*> pure t
 retElimOExpr (OApp x xs t) = OApp x <$> (mapM (\(x, ys) -> (,) <$> (retElimOExpr x) <*> pure ys) xs) <*> pure t
-retElimOExpr (OGen s t) = OGen <$> (retElimStmt s) <*> pure t
+retElimOExpr (OGen s (TOutput TOChar)) = do
+    has_returned <- fresh "g-has_returned"
+    let stmt' = updateReturnsChar has_returned s
+    stmt'' <- retElimStmt stmt'
+    let new_stmt = SLetBoolean has_returned stmt'' (TOutput TOChar)
+    return $ OGen new_stmt (TOutput TOChar)
+retElimOExpr (OGen s (TOutput (TOList t))) = do
+    has_returned <- fresh "g-has_returned"
+    stmt' <- updateReturnsList has_returned s
+    stmt'' <- retElimStmt stmt'
+    let new_stmt = SLetBoolean has_returned stmt'' (TOutput (TOList t))
+    return $ OGen new_stmt (TOutput (TOList t))
 
 
 -- this function substitutes the return statements with the appropriate
