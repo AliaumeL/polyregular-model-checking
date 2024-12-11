@@ -5,6 +5,7 @@ import Test.Hspec
 import ForPrograms
 import ForProgramInterpreter
 import ForProgramsTyping
+import Typing.Inference (inferAndCheckProgram)
 import Parser.ParseHighLevel
 import ReductionLitEq
 
@@ -19,7 +20,7 @@ spec :: Spec
 spec = do 
     describe "We actually remove literal tests calls on `litteral_test`" $ do
         testProgram <- runIO $ parseFromFile "assets/litteral_test.pr"
-        let infered = fromRight' (inferProgram (fromRight' testProgram))
+        let infered = fromRight' (inferAndCheckProgram (fromRight' testProgram))
         it "Starts with a program with some BLitEq calls" $ do 
             (hasLitEq infered) `shouldBe` True
         it "Ends with a program without function calls" $ do
@@ -33,7 +34,7 @@ spec = do
             actual `shouldBe` expected
     describe "We actually remove literal tests calls on `bibtex`" $ do
         testProgram <- runIO $ parseFromFile "assets/bibtex.pr"
-        let infered = fromRight' (inferProgram (fromRight' testProgram))
+        let infered = fromRight' (inferAndCheckProgram (fromRight' testProgram))
         it "Starts with a program with some BLitEq calls" $ do 
             (hasLitEq infered) `shouldBe` True
         it "Ends with a program without function calls" $ do

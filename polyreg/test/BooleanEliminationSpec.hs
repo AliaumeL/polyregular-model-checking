@@ -6,6 +6,7 @@ import ForPrograms
 import ForProgramInterpreter
 import ForProgramsTyping
 import Parser.ParseHighLevel
+import Typing.Inference (inferAndCheckProgram)
 import FunctionElimination (eliminateFunctionCalls)
 import BooleanElimination (hasBooleanGen, removeBooleanGen)
 
@@ -19,7 +20,7 @@ untypeProgram = fmap (const ())
 spec :: Spec
 spec = do 
     testProgram <- runIO $ parseFromFile "assets/boolean_funcs.pr"
-    let infered = fromRight' (inferProgram (fromRight' testProgram))
+    let infered = fromRight' (inferAndCheckProgram (fromRight' testProgram))
     let elim    = eliminateFunctionCalls infered
     describe "We actually remove boolean generators" $ do
         it "Starts with a program with some generators calls" $ do 

@@ -6,6 +6,7 @@ import ForPrograms
 import ForProgramsTyping
 import Parser.ParseHighLevel
 import ForProgramInterpreter
+import Typing.Inference (inferAndCheckProgram)
 
 import BooleanElimination
 import FunctionElimination
@@ -40,7 +41,7 @@ testProgramOn inputs program = do
 getProgram :: String -> IO (Program String ValueType)
 getProgram file = do 
     testProgram <- parseFromFile file
-    let typedProgram = fromRight' . inferProgram $ fromRight' testProgram
+    let typedProgram = fromRight' . inferAndCheckProgram $ fromRight' testProgram
     let noLitEq = removeBLitEq typedProgram
     let noFunctions = eliminateFunctionCalls typedProgram
     let noBools     = removeBooleanGen noFunctions

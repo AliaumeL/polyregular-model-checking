@@ -8,6 +8,7 @@ import qualified Data.Map as M
 import QuantifierFree
 import ForPrograms
 import ForProgramInterpreter
+import Typing.Inference (inferAndCheckProgram)
 import ForProgramsTyping
 import Parser.ParseHighLevel
 import FunctionElimination
@@ -73,7 +74,7 @@ spec = do
             substStmt map body `shouldBe` body
     describe "We actually remove function calls in `word_split.pr`" $ do
         testProgram <- runIO $ parseFromFile "assets/word_split.pr"
-        let infered = fromRight' (inferProgram (fromRight' testProgram))
+        let infered = fromRight' (inferAndCheckProgram (fromRight' testProgram))
         it "Starts with a program with function calls" $ do 
             (hasFunctionCall infered) `shouldBe` True
         it "Ends with a program without function calls" $ do
@@ -87,7 +88,7 @@ spec = do
             actual `shouldBe` expected
     describe "We actually remove function calls in `boolean_funcs.pr`" $ do
         testProgram <- runIO $ parseFromFile "assets/boolean_funcs.pr"
-        let infered = fromRight' (inferProgram (fromRight' testProgram))
+        let infered = fromRight' (inferAndCheckProgram (fromRight' testProgram))
         it "Starts with a program with function calls" $ do 
             (hasFunctionCall infered) `shouldBe` True
         it "Ends with a program without function calls" $ do
