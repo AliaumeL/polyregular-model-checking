@@ -13,7 +13,7 @@ import qualified Data.Graph as G
 import Data.Foldable (toList)
 
 
-data Type       = TBool | TList Int deriving (Eq, Ord, Show)
+data Type       = TBool | TList Int | TPos (FP.OExpr String ()) deriving (Eq, Ord, Show)
 data Constraint = Equal | Plus | Minus deriving (Eq, Ord, Show)
 
 updateType :: Constraint -> Type -> Maybe Type

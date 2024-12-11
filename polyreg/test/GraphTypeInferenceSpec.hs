@@ -26,14 +26,6 @@ getProgram path = do
     program <- parseFromFile path
     return $ fromRight' program
 
--- forgets positions and remaps types to be able to compare
-forgetPositionType :: ValueType -> Maybe ValueType
-forgetPositionType (TOutput t) = Just (TOutput t)
-forgetPositionType (TBool) = Just TBool
-forgetPositionType (TConst t) = Just (TOutput t)
-forgetPositionType _ = Nothing
-
-
 prettyPrintProgramWithNlsMaybe :: Program String (Maybe ValueType) -> String
 prettyPrintProgramWithNlsMaybe = prettyPrintProgramWithNls . fmap fakeTypes
     where
@@ -42,7 +34,7 @@ prettyPrintProgramWithNlsMaybe = prettyPrintProgramWithNls . fmap fakeTypes
 
 typeProgramBothWays program = case (classicalInference, newInference) of
                                 (Right p1, Right p2) -> do 
-                                    (fmap forgetPositionType p1) `shouldBe` p2
+                                    (fmap Just p1) `shouldBe` p2
                                 (_, Left e) -> error $ "Failed to type program" ++ show e
                                 (Left e, _) -> error $ "Failed to type program" ++ show e
     where

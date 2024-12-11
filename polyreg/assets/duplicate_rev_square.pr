@@ -7,12 +7,6 @@ def duplicate (word : [Char]) : [Char] :=
         yield d
     done
 
-def add_hash (word : [Char]) : [Char] := 
-    for (i, c : Char) in word do
-        yield c
-    done
-    yield '#'
-
 def square (word : [Char] ) : [Char] := 
     for (k, c : Char) in word do
         for (l, d : Char) in word do
@@ -23,5 +17,10 @@ def square (word : [Char] ) : [Char] :=
         yield '$'
     done
 
+def my_rev(word : [Char]) : [Char] := 
+    for (i, c : Char) in reversed(word) do
+        yield c
+    done
+
 def main (word : [Char]) : [Char] := 
-    return add_hash(reversed(add_hash(word)))
+    return square(my_rev(word))

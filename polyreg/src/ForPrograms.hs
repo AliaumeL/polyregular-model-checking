@@ -18,15 +18,15 @@ data BExpr v t = BConst Bool t
                -- tests
                | BApp v [(OExpr v t, [PExpr v t])] t
                | BLitEq t (CExpr v t) (OExpr v t) t
-               deriving (Show, Eq, Functor, Foldable, Traversable)
+               deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
 
 data PExpr v t = PVar v t
-               deriving (Show, Eq, Functor, Foldable, Traversable)
+               deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
 
 
 data CExpr v t = CChar Char t
                | CList [CExpr v t] t
-               deriving (Show, Eq, Functor, Foldable, Traversable)
+               deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
 
 instance Semigroup (CExpr v t) where
     CList xs t <> CList ys _ = CList (xs ++ ys) t
@@ -39,7 +39,7 @@ data OExpr v t = OVar v t
                | OIndex (OExpr v t) (PExpr v t) t
                | OApp v [(OExpr v t, [PExpr v t])] t
                | OGen (Stmt v t) t -- generator expression
-               deriving (Show, Eq, Functor, Foldable, Traversable)
+               deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
 
 -- For statements:
 -- 1. Function declarations
@@ -54,7 +54,7 @@ data Stmt v t = SIf (BExpr v t) (Stmt v t) (Stmt v t) t
               | SSetTrue v t
               | SFor (v, v, t) (OExpr v t) (Stmt v t) t
               | SSeq [Stmt v t] t
-               deriving (Show, Eq, Functor, Foldable, Traversable)
+               deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
 
 
 oExprType :: OExpr v t -> t
@@ -79,7 +79,7 @@ letOutputs t ((v, e) : es) block = SLetOutput (v, oExprType e) e (letOutputs t e
 
 -- | declares a function with a given type and a block of statements
 data StmtFun v t = StmtFun v [(v, t, [v])] (Stmt v t) t
-    deriving (Show, Eq, Functor, Foldable, Traversable)
+    deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
 
 funName :: StmtFun v t -> v
 funName (StmtFun v _ _ _) = v
@@ -87,7 +87,7 @@ funName (StmtFun v _ _ _) = v
 
 -- | A program is a list of functions together with a "main" entrypoint
 data Program v t = Program [StmtFun v t] v
-    deriving (Show, Eq, Traversable, Functor, Foldable)
+    deriving (Show, Eq, Ord, Traversable, Functor, Foldable)
 
 -- | A program without type annotations
 type UProgram = Program String ()

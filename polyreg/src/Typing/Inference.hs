@@ -7,7 +7,7 @@ import qualified Data.IntMap as IntMap
 
 import qualified Typing.Constraints as C
 import ForPrograms
-import ForProgramsTyping (ValueType(..), OutputType(..))
+import ForProgramsTyping (ValueType(..), OutputType(..), Position(..))
 import QuantifierFree
 
 import Control.Monad
@@ -66,6 +66,11 @@ import Debug.Trace
 --  (i, v) in e ... => i has type TPos (erase e)
 --
 
+computePositionType :: OExpr String t -> ValueType
+computePositionType (ORev e _) = TPos $ Position (fmap (const ()) e)
+computePositionType x = TPos $ Position (fmap (const ()) x)
+
+
 data PosMove = PosIfL 
              | PosIfR 
              | PosIfB 
@@ -79,13 +84,15 @@ data PosMove = PosIfL
              | PosLetBoolVar 
              | PosLetBoolStmt 
              | PosForVar 
+             | PosForIndex
              | PosForExpr 
              | PosForStmt 
              | PosSeq Int 
              | PosBNot 
              | PosBOpL | PosBOpR 
              | PosBGen 
-             | PosBAppArg Int
+             | PosBCompL
+             | PosBCompR
              | PosBLitEqL 
              | PosBLitEqR 
              | PosOGen 
@@ -93,12 +100,15 @@ data PosMove = PosIfL
              | PosOList Int
              | PosORev
              | PosOIndexL
-             | PosOAppArg Int
+             | PosOIndexR
              | PosOExprRoot
              | PosCList Int
+             | PosAppArg Int
+             | PosAppArgPos Int Int
              | PosFun String
              | PosFunBody 
              | PosFunArg  Int
+             | PosFunArgPos Int Int
              deriving (Show, Eq, Ord)
 
 newtype Pos = Pos [PosMove] deriving (Show, Eq, Ord)
@@ -125,12 +135,13 @@ depthToType n = TOList $ depthToType (n-1)
 cTypeToValueType :: C.Type -> ValueType
 cTypeToValueType C.TBool = TBool
 cTypeToValueType (C.TList n) = TOutput . depthToType $ n
+cTypeToValueType (C.TPos t) = TPos $ Position t
 
 valueTypeToCType :: ValueType -> C.Type
 valueTypeToCType TBool = C.TBool
 valueTypeToCType (TOutput t) = C.TList $ outputTypeDepth t
 valueTypeToCType (TConst t) = C.TList $ outputTypeDepth t
-valueTypeToCType (TPos _) = error $ "Cannot convert TPos to CType"
+valueTypeToCType (TPos (Position t)) = C.TPos t
 
 
 
@@ -147,7 +158,8 @@ posMove (PosLetOStmt) (CodePointStmt (SLetOutput _ _ s _)) = CodePointStmt s
 posMove (PosSetTrue) (CodePointStmt (SSetTrue v _)) = CodePointVar v
 posMove (PosLetBoolVar) (CodePointStmt (SLetBoolean v _ _)) = CodePointVar v
 posMove (PosLetBoolStmt) (CodePointStmt (SLetBoolean _ s _)) = CodePointStmt s
-posMove (PosForVar) (CodePointStmt (SFor (v, _, _) _ _ _)) = CodePointVar v
+posMove (PosForVar) (CodePointStmt (SFor (_,v, _) _ _ _)) = CodePointVar v
+posMove (PosForIndex) (CodePointStmt (SFor (v, _, _) _ _ _)) = CodePointVar v
 posMove (PosForExpr) (CodePointStmt (SFor _ e _ _)) = CodePointOExpr e
 posMove (PosForStmt) (CodePointStmt (SFor _ _ s _)) = CodePointStmt s
 posMove (PosSeq i) (CodePointStmt (SSeq ss _)) = CodePointStmt (ss !! i)
@@ -155,7 +167,6 @@ posMove (PosBNot) (CodePointBExpr (BNot b _)) = CodePointBExpr b
 posMove (PosBOpL) (CodePointBExpr (BOp _ e _ _)) = CodePointBExpr e
 posMove (PosBOpR) (CodePointBExpr (BOp _ _ e _)) = CodePointBExpr e
 posMove (PosBGen) (CodePointBExpr (BGen s _)) = CodePointStmt s
-posMove (PosBAppArg i) (CodePointBExpr (BApp _ es _)) = CodePointOExpr (fst $ es !! i)
 posMove (PosBLitEqL) (CodePointBExpr (BLitEq _ c _ _)) = CodePointCExpr c
 posMove (PosBLitEqR) (CodePointBExpr (BLitEq _ _ e _)) = CodePointOExpr e
 posMove (PosOGen) (CodePointOExpr (OGen s _)) = CodePointStmt s
@@ -163,7 +174,6 @@ posMove (PosOConst) (CodePointOExpr (OConst c _)) = CodePointCExpr c
 posMove (PosOList i) (CodePointOExpr (OList es _)) = CodePointOExpr (es !! i)
 posMove (PosORev) (CodePointOExpr (ORev e _)) = CodePointOExpr e
 posMove (PosOIndexL) (CodePointOExpr (OIndex e _ _)) = CodePointOExpr e
-posMove (PosOAppArg i) (CodePointOExpr (OApp _ es _)) = CodePointOExpr (fst $ es !! i)
 posMove (PosCList i) (CodePointCExpr (CList es _)) = CodePointCExpr (es !! i)
 posMove (PosFun f) (CodePointProg (Program fs _)) = CodePointFun $ fun
     where
@@ -260,7 +270,7 @@ instance MonadPos PosStateM where
         vars <- gets vars
         case M.lookup v vars of
             Just i -> return i
-            Nothing -> error $ "(getVar) Variable " ++ v ++ " not found"
+            Nothing -> error $ "(getVar) Variable " ++ v ++ " not found in " ++ show vars
 
     registerPos p = do
         i <- gets counter
@@ -347,13 +357,17 @@ assignNumbersStmtM p (SFor (i, v, tv) e s ts) = do
     n <- registerPos p
     addTypeSpec n ts
     withVar v (PosForVar : p) $ do
-        nv <- getVar v
-        addTypeSpec nv tv
-        (ne, te) <- assignNumbersOExprM (PosForVar : p) e
-        (ns, ts) <- assignNumbersStmtM  (PosForStmt : p) s
-        logConstraint $ C.VarConstraint (nv, C.Minus, ne)
-        logConstraint $ C.VarConstraint (ns, C.Equal, n)
-        return (n, SFor (i, v, nv) te ts n)
+        withVar i (PosForIndex : p) $ do 
+            nv <- getVar v
+            ni <- getVar i
+            traceM $ "For " ++ i ++ " " ++ show ni
+            addTypeSpec nv tv
+            addTypeSpec ni $ Just (computePositionType e)
+            (ne, te) <- assignNumbersOExprM (PosForVar  : p) e
+            (ns, ts) <- assignNumbersStmtM  (PosForStmt : p) s
+            logConstraint $ C.VarConstraint (nv, C.Minus, ne)
+            logConstraint $ C.VarConstraint (ns, C.Equal, n)
+            return (n, SFor (i, v, nv) te ts n)
 assignNumbersStmtM p (SSeq [] t) = do
     n <- registerPos p
     addTypeSpec n t
@@ -392,8 +406,9 @@ assignNumbersBExprM p (BComp op e1 e2 t) = do
     n <- registerPos p
     addTypeSpec n t
     addTypeSpec n (Just TBool)
-    let te1 = fmap (const (-1)) e1
-    let te2 = fmap (const (-1)) e2
+    (ne1, te1) <- assignNumbersPExprM (PosBCompL : p) e1
+    (ne2, te2) <- assignNumbersPExprM (PosBCompR : p) e2
+    logConstraint $ C.VarConstraint (ne1, C.Equal, ne2)
     return (n, BComp op te1 te2 n)
 assignNumbersBExprM p (BVar v t) = do
     n <- registerPos p
@@ -413,13 +428,13 @@ assignNumbersBExprM p (BApp v es t) = do
     n <- registerPos p
     addTypeSpec n (Just TBool)
     addTypeSpec n t
-    ms <- mapM (\(i, (e, _)) -> assignNumbersOExprM (PosBAppArg i : p) e) $ zip [0..] es
+    ms <- assignAppArgsPositionsM p es
     argv <- forM [0..length ms] $ \i -> do
         readPosition . Pos $ [PosFun v, PosFunArg i]
     body <- readPosition . Pos $ [PosFun v, PosFunBody]
-    mapM_ (\(m1, m2) -> logConstraint $ C.VarConstraint (fst m1, C.Equal, m2)) $ zip ms argv
+    mapM_ (\((nm1,_,_), m2) -> logConstraint $ C.VarConstraint (nm1, C.Equal, m2)) $ zip ms argv
     logConstraint $ C.VarConstraint (body, C.Equal, n)
-    let newArgs = map (\((nmi, tmi),(_, pis)) -> (tmi, map (fmap (const (-1))) pis)) $ zip ms es
+    let newArgs = map (\(_, a,b) -> (a,b)) ms
     return (n, BApp v newArgs n)
 assignNumbersBExprM p (BLitEq t1 c e t2) = do
     n <- registerPos p
@@ -432,7 +447,26 @@ assignNumbersBExprM p (BLitEq t1 c e t2) = do
     addTypeSpec nc t1
     return (n, BLitEq nc tc te n)
 
+assignAppArgsPositionsM :: (MonadPos m) =>
+                           [PosMove] -> 
+                           [(OExpr String (Maybe ValueType), [PExpr String (Maybe ValueType)])] 
+                           -> m [(Int, OExpr String Int, [PExpr String Int])]
+assignAppArgsPositionsM p es = do
+    forM (zip [0..] es) $ \(i, (e, ps)) -> do
+        (ne, te) <- assignNumbersOExprM (PosAppArg i : p) e
+        newpos   <- forM (zip [0..] ps) $ \(j, position) -> do
+            (np, tp) <- assignNumbersPExprM (PosAppArgPos i j : p) position
+            addTypeSpec np (Just . TPos $ Position (fmap (const ()) e))
+            return tp
+        return (ne, te, newpos)
 
+assignNumbersPExprM :: (MonadPos m) => [PosMove] -> PExpr String (Maybe ValueType) -> m (Int, PExpr String Int)
+assignNumbersPExprM p (PVar v t) = do
+    n <- registerPos p
+    addTypeSpec n t
+    nv <- getVar v
+    logConstraint $ C.VarConstraint (nv, C.Equal, n)
+    return (n, PVar v n)
 
 assignNumbersOExprM :: (MonadPos m) => [PosMove] -> OExpr String (Maybe ValueType) -> m (Int, OExpr String Int)
 assignNumbersOExprM p (OVar v t) = do
@@ -469,21 +503,22 @@ assignNumbersOExprM p (OIndex e i t) = do
     n <- registerPos p
     addTypeSpec n t
     (ne, te) <- assignNumbersOExprM (PosOIndexL : p) e
+    (ni, ti) <- assignNumbersPExprM (PosOIndexR : p) i
+    addTypeSpec ni . Just . TPos $ Position (fmap (const ()) e)
     logConstraint $ C.VarConstraint (n, C.Minus, ne)
-    let newPos = fmap (const (-1)) i
-    return (n, OIndex te newPos n)
+    return (n, OIndex te ti n)
 assignNumbersOExprM p (OApp f es t) = do
     n <- registerPos p
     addTypeSpec n t
-    ms <- mapM (\(i, (e, _)) -> assignNumbersOExprM (PosOAppArg i : p) e) $ zip [0..] es
+    ms <- assignAppArgsPositionsM p es
     -- for every argument, we search for the corresponding codepoint in the function
     -- [ PosFunArg i, PosFun f ] <-> Var i
     argv <- forM [0..length ms] $ \i -> do
         readPosition . Pos $ [PosFun f, PosFunArg i]
     body <- readPosition . Pos $ [PosFun f, PosFunBody]
-    mapM_ (\(m1, m2) -> logConstraint $ C.VarConstraint (fst m1, C.Equal, m2)) $ zip ms argv
+    mapM_ (\((m1,_,_), m2) -> logConstraint $ C.VarConstraint (m1, C.Equal, m2)) $ zip ms argv
     logConstraint $ C.VarConstraint (body, C.Equal, n)
-    let newArgs = map (\((nmi, tmi),(_, pis)) -> (tmi, map (fmap (const (-1))) pis)) $ zip ms es
+    let newArgs = map (\(a,b,c) -> (b,c)) ms
     return (n, OApp f newArgs n)
 assignNumbersOExprM p (OGen s t) = do
     n <- registerPos p
@@ -522,13 +557,21 @@ assignNumbersFuncsM (StmtFun f args s t : fs) = do
     let pargs = map (\i -> [PosFunArg i , PosFun f]) [0..] 
     -- argument names
     let nargs = map (\(v,_,_) -> v) args
+    -- argument position names
+    let pargsP = do
+                        (i, (v, t, ps)) <- zip [0..] args
+                        (j, p) <- zip [0..] ps
+                        return (p, [PosFunArgPos i j, PosFun f])
     -- assign body things 
-    (iargs, nbody, tbody) <- withVars (zip nargs pargs) $ do
+    (iargs, nbody, tbody) <- withVars (zip nargs pargs) $ withVars pargsP $ do
         -- first we collect potential type constraints
         -- on the function’s arguments
-        iargs <- forM args $ \(v, t, _) -> do
+        iargs <- forM args $ \(v, t, ps) -> do
             nv <- getVar v
             addTypeSpec nv t
+            forM_ ps $ \p -> do
+                np <- getVar p
+                addTypeSpec np (Just . TPos $ Position (OVar v ()))
             return nv
         -- then we assign numbers to the body
         (nbody, tbody) <- assignNumbersStmtM [PosFunBody, PosFun f] s

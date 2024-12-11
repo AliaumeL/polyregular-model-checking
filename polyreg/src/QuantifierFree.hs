@@ -1,6 +1,6 @@
 module QuantifierFree where
 
-data BinOp  = Conj | Disj | Impl | Equiv deriving (Show, Eq)
+data BinOp  = Conj | Disj | Impl | Equiv deriving (Show, Eq, Ord)
 
 binOpSemantics :: BinOp -> Bool -> Bool -> Bool
 binOpSemantics Conj  = (&&)
@@ -15,7 +15,7 @@ prettyPrintBin Impl  = "⇒"
 prettyPrintBin Equiv = "⇔"
 
 -- TODO: add "having the same character" as a test.
-data TestOp = Eq | Neq | Lt | Le | Gt | Ge deriving (Show, Eq)
+data TestOp = Eq | Neq | Lt | Le | Gt | Ge deriving (Show, Eq, Ord)
 
 prettyPrintOp :: TestOp -> String
 prettyPrintOp Eq  = "="

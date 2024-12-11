@@ -17,7 +17,7 @@ data StmtZip v t =
                  ZIfL (StmtZip v t )
                | ZIfR (StmtZip v t )
                | ZFor v t (StmtZip v t)
-               | ZSeq Int (StmtZip v t ) 
+               | ZSeq Int Int (StmtZip v t ) 
                | ZBegin
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
@@ -28,21 +28,28 @@ reverseStmtZip x = reverseStmtZip' x ZBegin
     reverseStmtZip' (ZIfL a) b = reverseStmtZip' a (ZIfL b)
     reverseStmtZip' (ZIfR a) b = reverseStmtZip' a (ZIfR b)
     reverseStmtZip' (ZFor v t a) b = reverseStmtZip' a (ZFor v t b)
-    reverseStmtZip' (ZSeq i a) b = reverseStmtZip' a (ZSeq i b)
+    reverseStmtZip' (ZSeq i l a) b = reverseStmtZip' a (ZSeq i l b)
     reverseStmtZip' ZBegin b = b
     
-data ExtVars v t = OldVar v | AddrVar v (StmtZip v t) 
+data ExtVars v t = OldVar v | AddrVar (StmtZip v t) | AddrRevVar (StmtZip v t)
     deriving (Show, Eq, Functor, Foldable, Traversable)
+
+makeNonReverse :: StmtZip v t -> StmtZip v t
+makeNonReverse (ZIfL a) = ZIfL (makeNonReverse a)
+makeNonReverse (ZIfR a) = ZIfR (makeNonReverse a)
+makeNonReverse (ZFor v t a) = ZFor v t (makeNonReverse a)
+makeNonReverse (ZSeq i j a) = ZSeq (j-i) j (makeNonReverse a)
+makeNonReverse ZBegin = ZBegin
 
 compareEqZip  :: t -> StmtZip v t -> StmtZip v t -> BExpr v t
 compareEqZip t (ZFor v _ a) (ZFor v' _ b) = BOp Conj veqv' (compareEqZip t a b) t
     where
         veqv' = BComp Eq (PVar v t) (PVar v' t) t
-compareEqZip t (ZIfL a) x = compareEqZip t (ZSeq 0 a) x
-compareEqZip t (ZIfR a) x = compareEqZip t (ZSeq 1 a) x
-compareEqZip t x (ZIfL a) = compareEqZip t x (ZSeq 0 a)
-compareEqZip t x (ZIfR a) = compareEqZip t x (ZSeq 1 a)
-compareEqZip t (ZSeq i a) (ZSeq j b) | i == j = compareEqZip t a b
+compareEqZip t (ZIfL a) x = compareEqZip t (ZSeq 0 1 a) x
+compareEqZip t (ZIfR a) x = compareEqZip t (ZSeq 1 1 a) x
+compareEqZip t x (ZIfL a) = compareEqZip t x (ZSeq 0 1 a)
+compareEqZip t x (ZIfR a) = compareEqZip t x (ZSeq 1 1 a)
+compareEqZip t (ZSeq i _ a) (ZSeq j _ b) | i == j = compareEqZip t a b
 compareEqZip t ZBegin ZBegin = BConst True t
 compareEqZip t _ _ = BConst False t
 
@@ -52,12 +59,12 @@ compareLeZip t (ZFor v _ a) (ZFor v' _ b) = BOp Disj smallerAfter smallerNow t
         smallerAfter = BOp Conj veqv' (compareLeZip t a b) t
         veqv' = BComp Eq (PVar v t) (PVar v' t) t
         smallerNow = BComp Lt (PVar v t) (PVar v' t) t
-compareLeZip t (ZIfL a) x = compareLeZip t (ZSeq 0 a) x
-compareLeZip t (ZIfR a) x = compareLeZip t (ZSeq 1 a) x
-compareLeZip t x (ZIfL a) = compareLeZip t x (ZSeq 0 a)
-compareLeZip t x (ZIfR a) = compareLeZip t x (ZSeq 1 a)
-compareLeZip t (ZSeq i a) (ZSeq j b) | i == j = compareLeZip t a b
-compareLeZip t (ZSeq i a) (ZSeq j b) | i < j  = BConst True t
+compareLeZip t (ZIfL a) x = compareLeZip t (ZSeq 0 1 a) x
+compareLeZip t (ZIfR a) x = compareLeZip t (ZSeq 1 1 a) x
+compareLeZip t x (ZIfL a) = compareLeZip t x (ZSeq 0 1 a)
+compareLeZip t x (ZIfR a) = compareLeZip t x (ZSeq 1 1 a)
+compareLeZip t (ZSeq i _ a) (ZSeq j _ b) | i == j = compareLeZip t a b
+compareLeZip t (ZSeq i _ a) (ZSeq j _ b) | i < j  = BConst True t
 compareLeZip t _ _ = BConst False t
 
 
@@ -73,7 +80,7 @@ eliminateExtVarsFun x = error $ "eliminateExtVarsFun: invalid function" ++ show 
 
 eliminateExtVarsVar :: (Show v, Show t) => ExtVars v t -> v
 eliminateExtVarsVar (OldVar v) = v
-eliminateExtVarsVar (AddrVar v _) = error "AddrVar in eliminateExtVarsVar"
+eliminateExtVarsVar (AddrVar _) = error "AddrVar in eliminateExtVarsVar"
 
 eliminateExtVarsStmt :: (Show v, Show t) => Stmt (ExtVars v t) t -> Stmt v t
 eliminateExtVarsStmt (SYield o t) = SYield (eliminateExtVarsOExpr o) t
@@ -90,7 +97,7 @@ eliminateExtVarsStmt x = error $ "eliminateExtVarsStmt: invalid statement" ++ sh
 
 
 eliminateExtVarsBExpr :: (Show v, Show t) => BExpr (ExtVars v t) t -> BExpr v t
-eliminateExtVarsBExpr (BComp op (PVar (AddrVar _ p1) t1) (PVar (AddrVar _ p2) t2) t) = opToFunc t op p1 p2
+eliminateExtVarsBExpr (BComp op (PVar (AddrVar p1) t1) (PVar (AddrVar p2) t2) t) = opToFunc t op p1 p2
     where
         opToFunc :: (Show v, Show t) => t -> TestOp -> StmtZip v t -> StmtZip v t -> BExpr v t
         opToFunc t Eq  a b = compareEqZip t a b
@@ -98,6 +105,13 @@ eliminateExtVarsBExpr (BComp op (PVar (AddrVar _ p1) t1) (PVar (AddrVar _ p2) t2
         opToFunc t Le  a b = BOp Disj (compareEqZip t a b) (compareLeZip t a b) t
         opToFunc t Gt  a b = BNot (opToFunc t Le a b) t
         opToFunc t Ge  a b = BNot (opToFunc t Lt a b) t
+eliminateExtVarsBExpr (BComp op (PVar (AddrRevVar p1) t1) (PVar (AddrRevVar p2) t2) t) = 
+    eliminateExtVarsBExpr (BComp op (PVar (AddrVar (makeNonReverse p1)) t1) (PVar (AddrVar (makeNonReverse p2)) t2) t)
+eliminateExtVarsBExpr (BComp op (PVar (AddrRevVar p1) t1) (PVar (AddrVar p2) t2) t) = 
+    eliminateExtVarsBExpr (BComp op (PVar (AddrVar (makeNonReverse p1)) t1) (PVar (AddrVar p2) t2) t)
+eliminateExtVarsBExpr (BComp op (PVar (AddrVar p1) t1) (PVar (AddrRevVar p2) t2) t) = 
+    eliminateExtVarsBExpr (BComp op (PVar (AddrVar p1) t1) (PVar (AddrVar (makeNonReverse p2)) t2) t)
+    
 eliminateExtVarsBExpr (BComp op (PVar (OldVar v) t) (PVar (OldVar v') t') t'') = BComp op (PVar v t) (PVar v' t') t''
 eliminateExtVarsBExpr s@(BComp _ _ _ _) =  error $ "BComp incompatible values in eliminateExtVarsBExpr" ++ show s
 eliminateExtVarsBExpr (BConst b t) = BConst b t
@@ -120,7 +134,7 @@ eliminateExtVarsOExpr x = error $ "eliminateExtVarsOExpr: invalid expression" ++
 
 eliminateExtVarsPEpxr :: (Show v, Show t) => PExpr (ExtVars v t) t -> PExpr v t
 eliminateExtVarsPEpxr (PVar (OldVar v) t) = PVar v t
-eliminateExtVarsPEpxr (PVar (AddrVar v p) t) =  error "PVar AddrVar in eliminateExtVarsPEpxr"
+eliminateExtVarsPEpxr (PVar (AddrVar p) t) =  error "PVar AddrVar in eliminateExtVarsPEpxr"
 
 eliminateExtVarsCExpr :: (Show v, Show t) => CExpr (ExtVars v t) t -> CExpr v t
 eliminateExtVarsCExpr (CChar c t) = CChar c t

@@ -30,7 +30,7 @@ reverseAndSimplify :: Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
 reverseAndSimplify (SYield o t) = SYield o t
 reverseAndSimplify (SOReturn _ _) = error "SOReturn in reverseAndSimplify"
 reverseAndSimplify (SBReturn _ _) = error "SBReturn in reverseAndSimplify"
-reverseAndSimplify (SIf _ s1 s2 t) = SSeq [reverseAndSimplify s1, reverseAndSimplify s2] t
+reverseAndSimplify (SIf _ s1 s2 t) = SSeq [reverseAndSimplify s2, reverseAndSimplify s1] t
 reverseAndSimplify (SLetOutput _ _ _ _) = error "SLetOutput in reverseAndSimplify"
 reverseAndSimplify (SLetBoolean _ s t) = reverseAndSimplify s
 reverseAndSimplify (SSetTrue _ t) = SSeq [] t
@@ -154,12 +154,13 @@ forLoopExpansionStmtM (SLetBoolean (OldVar v) s t) = withVar v $ do
 forLoopExpansionStmtM (SSetTrue (OldVar v) t) = do
     v' <- getVar v
     return $ SSetTrue v' t
+forLoopExpansionStmtM (SFor _ (OConst (CList [] _) _) _ t) = return $ SSeq [] t
 forLoopExpansionStmtM (SFor (OldVar i, OldVar e, _) (OGen stmt _) body _) = do
     body' <- forLoopExpansionStmtM body
     stmt' <- forLoopExpansionStmtM stmt
     --traceM $ "Expanding for loop. Generator stmt:\n " ++ prettyPrintStmtWithNls 0 (mapVarsStmt show stmt') 
     --traceM $ "Expanding for loop. Body stmt:\n " ++ prettyPrintStmtWithNls 0 (mapVarsStmt show body')
-    let expansion = substituteYieldStmts i e body' stmt'
+    let expansion = substituteYieldStmts AddrVar i e body' stmt'
     return expansion
 forLoopExpansionStmtM (SFor (OldVar i, OldVar e, _) (ORev (OGen stmt _) _) body t) = do
     body'  <- forLoopExpansionStmtM body
@@ -167,16 +168,12 @@ forLoopExpansionStmtM (SFor (OldVar i, OldVar e, _) (ORev (OGen stmt _) _) body 
     newVar <- freshVar i
     let stmtRevSimpl = reverseAndSimplify stmt' 
     stmtRevSimpl' <- refreshForLoopsStmt stmtRevSimpl
-    --trace ("Variables " ++ show [i,e,newVar]) $
-    --    trace (prettyPrintStmtWithNls 0 (mapVarsStmt show stmt')) $ 
-    --        trace (prettyPrintStmtWithNls 0 (mapVarsStmt show stmtRevSimpl')) $ do
     let guardedBody = (SIf (BComp Eq (PVar (OldVar i) t)
                                         (PVar (OldVar newVar) t) t)
                             body' 
                             (SSeq [] t) t)
-    let expanded    = substituteYieldStmts i       e guardedBody stmt'
-    let expandedRev = substituteYieldStmts newVar  e expanded stmtRevSimpl'
-    --trace (prettyPrintStmtWithNls 0 (mapVarsStmt show expandedRev)) $
+    let expanded    = substituteYieldStmts AddrVar    i       e guardedBody stmt'
+    let expandedRev = substituteYieldStmts AddrRevVar newVar  e expanded stmtRevSimpl'
     return expandedRev
 forLoopExpansionStmtM (SFor (OldVar i, OldVar e, t) (OVar v t') body t'') = do
     body' <- forLoopExpansionStmtM body
@@ -236,24 +233,28 @@ forLoopExpansionBExprM (BLitEq t c o t') = do
     o' <- forLoopExpansionOExprM o
     return $ BLitEq t c o' t'
 
-substituteYieldStmts :: (Show v, Show t, Eq v, Eq t) =>  v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
-substituteYieldStmts i e body statement = subYieldStmt ZBegin i e body statement
+substituteYieldStmts :: (Show v, Show t, Eq v, Eq t) =>  
+                        ((StmtZip v t) -> ExtVars v t) ->
+                        v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
+substituteYieldStmts cstr i e body statement = subYieldStmt cstr ZBegin i e body statement
 
 -- subYieldStmt addr i e body statement -> expanded statement
-subYieldStmt :: (Show v, Show t, Eq v, Eq t) => StmtZip v t -> v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
-subYieldStmt z v1 v2 s (SYield o t) = substOVarStmt (ForParams v1 v2 o (reverseStmtZip z)) s
-subYieldStmt _ _ _ _   (SOReturn o t) = error "SOReturn in subYield"
-subYieldStmt _ _ _ _   (SBReturn b t) = error "SBReturn in subYield"
-subYieldStmt z v1 v2 s (SIf b s1 s2 t) = SIf b (subYieldStmt zleft v1 v2 s s1) (subYieldStmt zright v1 v2 s s2) t
+subYieldStmt :: (Show v, Show t, Eq v, Eq t) => 
+                ((StmtZip v t) -> ExtVars v t) ->
+                StmtZip v t -> v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
+subYieldStmt cstr z v1 v2 s (SYield o t) = substOVarStmt cstr (ForParams v1 v2 o (reverseStmtZip z)) s
+subYieldStmt _    _ _ _ _   (SOReturn o t) = error "SOReturn in subYield"
+subYieldStmt _    _ _ _ _   (SBReturn b t) = error "SBReturn in subYield"
+subYieldStmt cstr z v1 v2 s (SIf b s1 s2 t) = SIf b (subYieldStmt cstr zleft v1 v2 s s1) (subYieldStmt cstr zright v1 v2 s s2) t
     where
         zleft  = ZIfL z
         zright = ZIfR z
-subYieldStmt _ _ _ _   (SLetOutput _ _ _ _) = error "SLetOutput in subYield"
-subYieldStmt z v1 v2 s (SLetBoolean v s' t) = SLetBoolean v (subYieldStmt z v1 v2 s s') t
-subYieldStmt _ _ _ _ x@(SSetTrue _ _) = x
-subYieldStmt z v1 v2 s (SFor (OldVar i, OldVar e, t) v s' t') = SFor (OldVar i, OldVar e, t) v (subYieldStmt (ZFor i t z) v1 v2 s s') t'
-subYieldStmt z v1 v2 s (SSeq ss t) = SSeq [ subYieldStmt (ZSeq i z) v1 v2 s s' | (i, s') <- zip [0..] ss ] t
-subYieldStmt _ _ _ _ _ = error "subYieldStmt: invalid statement"
+subYieldStmt _    _ _ _ _   (SLetOutput _ _ _ _) = error "SLetOutput in subYield"
+subYieldStmt cstr z v1 v2 s (SLetBoolean v s' t) = SLetBoolean v (subYieldStmt cstr z v1 v2 s s') t
+subYieldStmt _    _ _ _ _ x@(SSetTrue _ _) = x
+subYieldStmt cstr z v1 v2 s (SFor (OldVar i, OldVar e, t) v s' t') = SFor (OldVar i, OldVar e, t) v (subYieldStmt cstr (ZFor i t z) v1 v2 s s') t'
+subYieldStmt cstr z v1 v2 s (SSeq ss t) = SSeq [ subYieldStmt cstr (ZSeq i (length ss - 1) z) v1 v2 s s' | (i, s') <- zip [0..] ss ] t
+subYieldStmt _    _ _ _ _ _ = error "subYieldStmt: invalid statement"
 
 
 
@@ -265,41 +266,49 @@ data ForParams v t = ForParams {
 } deriving (Eq,Show)
 
 
-substOVarStmt :: (Eq v) => ForParams v t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
-substOVarStmt p (SYield o' t) = SYield (substOVarOExpr p o') t
-substOVarStmt _ (SOReturn _ _) = error "SOReturn in substOVarStmt"
-substOVarStmt _ (SBReturn _ _) = error "SBReturn in substOVarStmt"
-substOVarStmt p (SIf b s1 s2 t) = SIf (substOVarBExpr p b) (substOVarStmt p s1) (substOVarStmt p s2) t
-substOVarStmt _ (SLetOutput _ _ _ _) = error "SLetOutput in substOVarStmt"
-substOVarStmt p (SLetBoolean v' s t) = SLetBoolean v' (substOVarStmt p s) t
-substOVarStmt p (SSetTrue v' t) = SSetTrue v' t
-substOVarStmt p (SFor (i, e, t) v' s t') = SFor (i, e, t) v' (substOVarStmt p s) t'
-substOVarStmt p (SSeq ss t) = SSeq (map (substOVarStmt p) ss) t
+substOVarStmt :: (Eq v) => 
+                 ((StmtZip v t) -> ExtVars v t) ->
+                 ForParams v t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
+substOVarStmt cstr p (SYield o' t) = SYield (substOVarOExpr cstr p o') t
+substOVarStmt cstr _ (SOReturn _ _) = error "SOReturn in substOVarStmt"
+substOVarStmt cstr _ (SBReturn _ _) = error "SBReturn in substOVarStmt"
+substOVarStmt cstr p (SIf b s1 s2 t) = SIf (substOVarBExpr cstr p b) (substOVarStmt cstr p s1) (substOVarStmt cstr p s2) t
+substOVarStmt cstr _ (SLetOutput _ _ _ _) = error "SLetOutput in substOVarStmt"
+substOVarStmt cstr p (SLetBoolean v' s t) = SLetBoolean v' (substOVarStmt cstr p s) t
+substOVarStmt cstr p (SSetTrue v' t) = SSetTrue v' t
+substOVarStmt cstr p (SFor (i, e, t) v' s t') = SFor (i, e, t) v' (substOVarStmt cstr p s) t'
+substOVarStmt cstr p (SSeq ss t) = SSeq (map (substOVarStmt cstr p) ss) t
 
 
-substOVarOExpr :: (Eq v) => ForParams v t -> OExpr (ExtVars v t) t -> OExpr (ExtVars v t) t
-substOVarOExpr p (OVar (OldVar v') t) | forDataVar p == v' = forDataExpr p
-substOVarOExpr p (OVar v' t) = OVar v' t
-substOVarOExpr _ (OConst c t) = OConst c t
-substOVarOExpr _ (OList _ _) = error "OList in substOVarOExpr"
-substOVarOExpr p (ORev o t) = ORev (substOVarOExpr p o) t
-substOVarOExpr _ (OIndex _ _ _) = error "OIndex in substOVarOExpr"
-substOVarOExpr _ (OApp _ _ _) = error "OApp in substOVarOExpr"
-substOVarOExpr p (OGen s t) = OGen (substOVarStmt p s) t
+substOVarOExpr :: (Eq v) => 
+                 ((StmtZip v t) -> ExtVars v t) ->
+                  ForParams v t -> OExpr (ExtVars v t) t -> OExpr (ExtVars v t) t
+substOVarOExpr cstr p (OVar (OldVar v') t) | forDataVar p == v' = forDataExpr p
+substOVarOExpr cstr p (OVar v' t) = OVar v' t
+substOVarOExpr cstr _ (OConst c t) = OConst c t
+substOVarOExpr cstr _ (OList _ _) = error "OList in substOVarOExpr"
+substOVarOExpr cstr p (ORev o t) = ORev (substOVarOExpr cstr p o) t
+substOVarOExpr cstr _ (OIndex _ _ _) = error "OIndex in substOVarOExpr"
+substOVarOExpr cstr _ (OApp _ _ _) = error "OApp in substOVarOExpr"
+substOVarOExpr cstr p (OGen s t) = OGen (substOVarStmt cstr p s) t
 
-substOVarBExpr :: (Eq v) => ForParams v t -> BExpr (ExtVars v t) t -> BExpr (ExtVars v t) t
-substOVarBExpr p (BConst b t) = BConst b t
-substOVarBExpr p (BNot b t) = BNot (substOVarBExpr p b) t
-substOVarBExpr p (BOp op b1 b2 t) = BOp op (substOVarBExpr p b1) (substOVarBExpr p b2) t
-substOVarBExpr p (BComp comp p1 p2 t) = BComp comp (substOVarPExpr p p1) (substOVarPExpr p p2) t
-substOVarBExpr p (BVar v' t) = BVar v' t
-substOVarBExpr p (BGen s t) = BGen (substOVarStmt p s) t
-substOVarBExpr p (BApp _ _ _) = error "BApp in substOVarBExpr"
-substOVarBExpr p (BLitEq t c o t') = BLitEq t c (substOVarOExpr p o) t'
+substOVarBExpr :: (Eq v) => 
+                  ((StmtZip v t) -> ExtVars v t) ->
+                  ForParams v t -> BExpr (ExtVars v t) t -> BExpr (ExtVars v t) t
+substOVarBExpr cstr p (BConst b t) = BConst b t
+substOVarBExpr cstr p (BNot b t) = BNot (substOVarBExpr cstr p b) t
+substOVarBExpr cstr p (BOp op b1 b2 t) = BOp op (substOVarBExpr cstr p b1) (substOVarBExpr cstr p b2) t
+substOVarBExpr cstr p (BComp comp p1 p2 t) = BComp comp (substOVarPExpr cstr p p1) (substOVarPExpr cstr p p2) t
+substOVarBExpr cstr p (BVar v' t) = BVar v' t
+substOVarBExpr cstr p (BGen s t) = BGen (substOVarStmt cstr p s) t
+substOVarBExpr cstr p (BApp _ _ _) = error "BApp in substOVarBExpr"
+substOVarBExpr cstr p (BLitEq t c o t') = BLitEq t c (substOVarOExpr cstr p o) t'
 
-substOVarPExpr :: (Eq v) => ForParams v t -> PExpr (ExtVars v t) t -> PExpr (ExtVars v t) t
-substOVarPExpr p (PVar (OldVar v) t) | forIndexVar p == v = PVar (AddrVar v (forIndexAddr p)) t
-substOVarPExpr p (PVar v t) = PVar v t
+substOVarPExpr :: (Eq v) =>
+                  ((StmtZip v t) -> ExtVars v t) ->
+                  ForParams v t -> PExpr (ExtVars v t) t -> PExpr (ExtVars v t) t
+substOVarPExpr cstr p (PVar (OldVar v) t) | forIndexVar p == v = PVar (cstr (forIndexAddr p)) t
+substOVarPExpr cstr p (PVar v t) = PVar v t
 
 
 

@@ -254,10 +254,6 @@ interpretArgs = mapM $ \(o, ps) -> do
 interpretPExpr :: (MonadInterpreter m) => PExpr String () -> m Int
 interpretPExpr (PVar v _) = getPos v
     
-defaultOValue :: OutputType -> CExpr String ()
-defaultOValue TOChar = CChar '🎁' ()
-defaultOValue (TOList t) = CList [] ()
-
 
 interpretOExpr :: (MonadInterpreter m) => OExpr String () -> m (CExpr String ())
 interpretOExpr (OVar v _) = getValue v
