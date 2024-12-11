@@ -16,7 +16,6 @@ import QuantifierFree
 toAbsType :: ValueType -> A.Type
 toAbsType (TBool) = A.TBool
 toAbsType (TOutput t) = toAbsOutputType t
-toAbsType (TConst t) = toAbsOutputType t
 toAbsType (TPos _) = error "Positional types should not appear in the abstract syntax tree"
 
 
@@ -56,15 +55,13 @@ toAbsStmt (SIf b s1 s2 _) = pure $ A.SIfE (toAbsBExpr b) (toAbsStmt s1) (toAbsSt
 toAbsStmt (SLetOutput (v, t) o s _) = pure $ A.SLetIn (Ident v) (toAbsType t) (toAbsOExpr o) (toAbsStmt s)
 toAbsStmt (SLetBoolean v s _) = pure $ A.SLetBIn (Ident v) (toAbsStmt s)
 toAbsStmt (SSetTrue v _) = pure $ A.SLetSetTrue (Ident v)
-toAbsStmt (SFor (i, e, t) v s _) = pure $ A.SFor (Ident i) (Ident e) (toAbsType t) (toAbsOExpr v) (toAbsStmt s)
+toAbsStmt (SFor _ (i, e, t) v s _) = pure $ A.SFor (Ident i) (Ident e) (toAbsType t) (toAbsOExpr v) (toAbsStmt s)
 toAbsStmt (SSeq ss _) = concatMap toAbsStmt ss
 
 toAbsOExpr :: OExpr String ValueType -> A.Expr
 toAbsOExpr (OVar v _) = A.VEVal (Ident v)
 toAbsOExpr (OConst c _) = toAbsCExpr c
 toAbsOExpr (OList os _) = A.VEListConstr (map toAbsOExpr os)
-toAbsOExpr (ORev o _) = A.VERev (toAbsOExpr o)
-toAbsOExpr (OIndex o p _) = A.VEFunc (Ident "index") [toAbsArgA (o, [p])]
 toAbsOExpr (OApp v os _) = A.VEFunc (Ident v) (map toAbsArgA os)
 toAbsOExpr (OGen s _) = A.VEGen (toAbsStmt s)
 
@@ -138,8 +135,6 @@ prettyPrintOExprWithNls :: Int -> OExpr String ValueType -> String
 prettyPrintOExprWithNls indent (OVar v t) = v
 prettyPrintOExprWithNls indent (OConst c t) = prettyPrintCExpr c
 prettyPrintOExprWithNls indent (OList os t) = "[" ++ unwords (map (\o -> prettyPrintOExprWithNls indent o) os) ++ "]"
-prettyPrintOExprWithNls indent (ORev o t) = "rev(" ++ prettyPrintOExprWithNls indent o ++ ")"
-prettyPrintOExprWithNls indent (OIndex o p t) = prettyPrintOExprWithNls indent o ++ "[" ++ prettyPrintPExpr p ++ "]"
 prettyPrintOExprWithNls indent (OApp v os t) = v ++ "(" ++ unwords (map (\(o, ps) -> prettyPrintOExprWithNls indent o ++ unwords (map prettyPrintPExpr ps)) os) ++ ")"
 prettyPrintOExprWithNls i (OGen s t) = "{\n" ++ prettyPrintStmtWithNls (i + 1) s ++ "\n" ++ indent i  ++ "}"
 
@@ -177,7 +172,8 @@ prettyPrintStmtWithNls n (SIf b s1 (SSeq [] _) _) = indent n ++ "if " ++ prettyP
 prettyPrintStmtWithNls n (SIf b s1 s2 _) = indent n ++ "if " ++ prettyPrintBExprWithNls n 0 b ++ " then\n" ++ prettyPrintStmtWithNls (n + 1) s1 ++ "\n" ++ indent n ++ "else\n" ++ prettyPrintStmtWithNls (n + 1) s2 ++ "\n" ++ indent n ++ "endif"
 prettyPrintStmtWithNls n (SLetOutput (v, t) o s _) = indent n ++ "let " ++ v ++ " : " ++ prettyPrintT t ++ " := " ++ prettyPrintOExprWithNls n o ++ " in\n" ++ prettyPrintStmtWithNls n s
 prettyPrintStmtWithNls n (SLetBoolean v s _) = indent n ++ "let mut " ++ v ++ ": Bool := False in \n" ++ prettyPrintStmtWithNls n s
-prettyPrintStmtWithNls n (SFor (i, e, t) v s _) = indent n ++ "for (" ++ i ++ ", " ++ e ++ " : " ++ prettyPrintT t ++ ") in " ++ prettyPrintOExprWithNls n v ++ " do\n" ++ prettyPrintStmtWithNls (n + 1) s ++ "\n" ++ indent n ++  "done"
+prettyPrintStmtWithNls n (SFor Forward (i, e, t) v s _) = indent n ++ "for (" ++ i ++ ", " ++ e ++ " : " ++ prettyPrintT t ++ ") in enumerate(" ++ prettyPrintOExprWithNls n v ++ ") do\n" ++ prettyPrintStmtWithNls (n + 1) s ++ "\n" ++ indent n ++  "done"
+prettyPrintStmtWithNls n (SFor Backward (i, e, t) v s _) = indent n ++ "for (" ++ i ++ ", " ++ e ++ " : " ++ prettyPrintT t ++ ") in reversed(enumerate(" ++ prettyPrintOExprWithNls n v ++ ")) do\n" ++ prettyPrintStmtWithNls (n + 1) s ++ "\n" ++ indent n ++  "done"
 prettyPrintStmtWithNls n (SSeq ss _) = stripFinalNewLine $ unlines $ map (prettyPrintStmtWithNls n) ss
 prettyPrintStmtWithNls n (SYield o _) = indent n ++ "yield " ++ prettyPrintOExprWithNls n o
 prettyPrintStmtWithNls n (SOReturn o _) = indent n ++ "return " ++ prettyPrintOExprWithNls n o

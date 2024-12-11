@@ -39,7 +39,7 @@ reverseAndSimplify (SFor dir (OldVar i, OldVar e, t) (OVar v t') body t'') = sim
     where
         body' = reverseAndSimplify body
         simplified = SFor (reverseDirection dir) (OldVar i, OldVar e, t) (OVar v t') body' t''
-reverseAndSimplify (SFor _ _ _ _) = error "SFor in reverseAndSimplify"
+reverseAndSimplify (SFor _ _ _ _ _) = error "SFor in reverseAndSimplify"
 
 
 forLoopExpansion :: Program String ValueType -> Either ForElimError (Program String ValueType)
@@ -150,7 +150,7 @@ forLoopExpansionStmtM (SLetBoolean (OldVar v) s t) = withVar v $ do
 forLoopExpansionStmtM (SSetTrue (OldVar v) t) = do
     v' <- getVar v
     return $ SSetTrue v' t
-forLoopExpansionStmtM (SFor _ (OConst (CList [] _) _) _ t) = return $ SSeq [] t
+forLoopExpansionStmtM (SFor _ _ (OConst (CList [] _) _) _ t) = return $ SSeq [] t
 forLoopExpansionStmtM (SFor Forward (OldVar i, OldVar e, _) (OGen stmt _) body _) = do
     body' <- forLoopExpansionStmtM body
     stmt' <- forLoopExpansionStmtM stmt
@@ -158,7 +158,7 @@ forLoopExpansionStmtM (SFor Forward (OldVar i, OldVar e, _) (OGen stmt _) body _
     --traceM $ "Expanding for loop. Body stmt:\n " ++ prettyPrintStmtWithNls 0 (mapVarsStmt show body')
     let expansion = substituteYieldStmts AddrVar i e body' stmt'
     return expansion
-forLoopExpansionStmtM (SFor Backward (OldVar i, OldVar e, _) (OGen stmt _) _) body t) = do
+forLoopExpansionStmtM (SFor Backward (OldVar i, OldVar e, _) (OGen stmt _) body t) = do
     body'  <- forLoopExpansionStmtM body
     stmt'  <- forLoopExpansionStmtM stmt
     newVar <- freshVar i
@@ -236,7 +236,7 @@ subYieldStmt cstr z v1 v2 s (SIf b s1 s2 t) = SIf b (subYieldStmt cstr zleft v1 
 subYieldStmt _    _ _ _ _   (SLetOutput _ _ _ _) = error "SLetOutput in subYield"
 subYieldStmt cstr z v1 v2 s (SLetBoolean v s' t) = SLetBoolean v (subYieldStmt cstr z v1 v2 s s') t
 subYieldStmt _    _ _ _ _ x@(SSetTrue _ _) = x
-subYieldStmt cstr z v1 v2 s (SFor (OldVar i, OldVar e, t) v s' t') = SFor (OldVar i, OldVar e, t) v (subYieldStmt cstr (ZFor i t z) v1 v2 s s') t'
+subYieldStmt cstr z v1 v2 s (SFor dir (OldVar i, OldVar e, t) v s' t') = SFor dir (OldVar i, OldVar e, t) v (subYieldStmt cstr (ZFor i t z) v1 v2 s s') t'
 subYieldStmt cstr z v1 v2 s (SSeq ss t) = SSeq [ subYieldStmt cstr (ZSeq i (length ss - 1) z) v1 v2 s s' | (i, s') <- zip [0..] ss ] t
 subYieldStmt _    _ _ _ _ _ = error "subYieldStmt: invalid statement"
 
@@ -260,7 +260,7 @@ substOVarStmt cstr p (SIf b s1 s2 t) = SIf (substOVarBExpr cstr p b) (substOVarS
 substOVarStmt cstr _ (SLetOutput _ _ _ _) = error "SLetOutput in substOVarStmt"
 substOVarStmt cstr p (SLetBoolean v' s t) = SLetBoolean v' (substOVarStmt cstr p s) t
 substOVarStmt cstr p (SSetTrue v' t) = SSetTrue v' t
-substOVarStmt cstr p (SFor (i, e, t) v' s t') = SFor (i, e, t) v' (substOVarStmt cstr p s) t'
+substOVarStmt cstr p (SFor dir (i, e, t) v' s t') = SFor dir (i, e, t) v' (substOVarStmt cstr p s) t'
 substOVarStmt cstr p (SSeq ss t) = SSeq (map (substOVarStmt cstr p) ss) t
 
 
@@ -317,14 +317,14 @@ refreshForLoopsStmt (SLetOutput v o s t) = SLetOutput v <$> (refreshForLoopsOExp
 refreshForLoopsStmt (SLetBoolean v s t) = SLetBoolean v <$> (refreshForLoopsStmt s) 
                                                         <*> (pure t)
 refreshForLoopsStmt (SSetTrue v t) = return $ SSetTrue v t
-refreshForLoopsStmt (SFor (OldVar i, OldVar e, t) o s t') = do
+refreshForLoopsStmt (SFor dir (OldVar i, OldVar e, t) o s t') = do
     withVar i $ do
         withVar e $ do
             i' <- getVar i
             e' <- getVar e
             o' <- refreshForLoopsOExpr o
             s' <- refreshForLoopsStmt s
-            return $ SFor (i', e', t) o' s' t'
+            return $ SFor dir (i', e', t) o' s' t'
 refreshForLoopsStmt (SSeq ss t) = SSeq <$> mapM refreshForLoopsStmt ss <*> pure t
 refreshForLoopsStmt x = error $ "invalid statement in refreshForLoopsStmt " ++ show x
 
