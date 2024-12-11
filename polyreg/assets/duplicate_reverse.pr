@@ -1,0 +1,12 @@
+def duplicate(w : [Char]) : [Char] := 
+    for (i, c : Char) in w do
+        yield c
+    done
+    for (j, l : Char) in w do
+        yield l
+    done
+
+def main ( w : [Char] ) : [Char] := 
+    for (k, m : Char) in reversed(duplicate(w)) do
+        yield m
+    done

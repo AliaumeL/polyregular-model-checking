@@ -1,0 +1,8 @@
+def add_hash (word : [Char]) : [Char] := 
+    for (i, c : Char) in word do
+        yield c
+    done
+    yield '#'
+
+def main (word : [Char]) : [Char] := 
+    return add_hash(reversed(add_hash(word)))
