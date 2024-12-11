@@ -26,25 +26,10 @@ getProgram path = do
     program <- parseFromFile path
     return $ fromRight' program
 
-prettyPrintProgramWithNlsMaybe :: Program String (Maybe ValueType) -> String
-prettyPrintProgramWithNlsMaybe = prettyPrintProgramWithNls . fmap fakeTypes
-    where
-        fakeTypes (Just t) = t
-        fakeTypes Nothing = TBool
-
-typeProgramBothWays program = case (classicalInference, newInference) of
-                                (Right p1, Right p2) -> do 
-                                    (fmap Just p1) `shouldBe` p2
-                                (_, Left e) -> error $ "Failed to type program" ++ show e
-                                (Left e, _) -> error $ "Failed to type program" ++ show e
-    where
-        classicalInference = inferProgram program
-        newInference = I.inferTypes program
-
 spec :: Spec
 spec = do
     describe "We can infer types for usual programs" $ do
         forM_ ["assets/word_split.pr", "assets/boolean_funcs.pr", "assets/bibtex.pr", "assets/identity.pr", "assets/reverse.pr", "assets/map_reverse.pr"] $ \path -> do
             program <- runIO (getProgram path)
             it ("works for «" ++ path ++ "»") $ do
-                typeProgramBothWays program
+                (I.inferAndCheckProgram program) `shouldSatisfy` isRight
