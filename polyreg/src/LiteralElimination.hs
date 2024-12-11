@@ -45,7 +45,9 @@ eliminateLiteralCExpr (CList cs t) = SSeq (map (\c -> SYield (OConst c t) t) cs)
 eliminateLiteralOExpr :: OExpr v t -> OExpr v t
 eliminateLiteralOExpr (OVar v t) = OVar v t
 eliminateLiteralOExpr (OConst (CChar c t') t) = OConst (CChar c t') t
+eliminateLiteralOExpr (OConst (CList [] t') t) = OList (CCList [] t') t
 eliminateLiteralOExpr (OConst c t) = OGen (eliminateLiteralCExpr c) t
+eliminateLiteralOExpr (OList [] t) = OConst (CList [] t) t
 eliminateLiteralOExpr (OList os t) = OGen (SSeq subexprs t) t
     where
         subexprs = do
