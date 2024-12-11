@@ -10,14 +10,15 @@ separator nonempty Func "" ;
 FuncC. Func ::= "def" Ident "(" [ArgD] ")" ":" Type ":=" [Stmt] ;
 
 
-SFor. Stmt ::= "for" "(" Ident "," Ident ":" Type ")" "in" Expr "do" [Stmt] "done" ;
+SFor.  Stmt ::= "for" "(" Ident "," Ident ")" "in" "enumerate" "(" Expr ")" "do" [Stmt] "done" ;
+SRFor. Stmt ::= "for" "(" Ident "," Ident ")" "in" "reversed" "(" "enumerate" "(" Expr ")" ")" "do" [Stmt] "done" ; 
 SIf.  Stmt ::= "if" Expr "then" [Stmt] "endif";
 SIfE. Stmt ::=  "if" Expr "then" [Stmt] "else" [Stmt] "endif" ;
 SYield. Stmt ::= "yield" Expr ;
 SReturn. Stmt ::= "return" Expr ;
-SLetIn.  Stmt ::= "let" Ident ":" Type  ":=" Expr "in" [Stmt] ;
-SLetBIn. Stmt ::= "let mut" Ident ":" "Bool" ":=" "False" "in" [Stmt] ;
-SLetSetTrue. Stmt ::= "setTrue" Ident;
+SLetIn.  Stmt ::= "let" Ident  ":=" Expr "in" [Stmt] ;
+SLetBIn. Stmt ::= "let mut" Ident ":=" "False" "in" [Stmt] ;
+SLetSetTrue. Stmt ::= Ident ":=" "True" ;
 
 separator nonempty Stmt "" ;
 
@@ -26,7 +27,6 @@ VEString.      Expr3 ::= String ;
 VEListConstr.  Expr3 ::= "[" [Expr] "]" ;
 VEGen.         Expr3 ::= "{" [Stmt] "}" ;
 VEVal.         Expr3 ::= Ident ;
-VERev.         Expr3 ::= "reversed" "(" Expr ")" ;
 VEFunc.        Expr3 ::= Ident "(" [VEArg] ")" ;
 BETrue.        Expr3 ::= "True" ;
 BEFalse.       Expr3 ::= "False" ;
@@ -53,11 +53,12 @@ ArgDSole. ArgD ::= Ident ":" Type;
 ArgDWithPoses. ArgD ::= Ident ":" Type "with" "(" [Ident] ")";
 separator ArgD "," ;
 
-BinOpEq.  BinOp ::= "=" ;
-BinOpNeq. BinOp ::= "!=" ;
-BinOpLeq. BinOp ::= "<=" ;
-BinOpLt.  BinOp ::= "<" ;
-BinOpGeq. BinOp ::= ">=" ;
-BinOpGt.  BinOp ::= ">" ; 
-BinOpVEq. BinOp ::= "=" Type "=" ; 
-BinOpVNe. BinOp ::= "!==" ;
+BinOpEq.   BinOp ::= "=" ;
+BinOpNeq.  BinOp ::= "!=" ;
+BinOpLeq.  BinOp ::= "<=" ;
+BinOpLt.   BinOp ::= "<" ;
+BinOpGeq.  BinOp ::= ">=" ;
+BinOpGt.   BinOp ::= ">" ; 
+BinOpVEqT. BinOp ::= "=" Type "=" ;
+BinOpVEq.  BinOp ::= "===" ;  
+BinOpVNe.  BinOp ::= "!==" ;

@@ -33,16 +33,17 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 The reserved words used in HighLevelForProgram are the following:
   | ``Bool`` | ``Char`` | ``False`` | ``True``
   | ``and`` | ``def`` | ``do`` | ``done``
-  | ``else`` | ``endif`` | ``for`` | ``if``
-  | ``in`` | ``let`` | ``mut`` | ``not``
-  | ``or`` | ``return`` | ``reversed`` | ``setTrue``
+  | ``else`` | ``endif`` | ``enumerate`` | ``for``
+  | ``if`` | ``in`` | ``let`` | ``mut``
+  | ``not`` | ``or`` | ``return`` | ``reversed``
   | ``then`` | ``with`` | ``yield`` |
 
 The symbols used in HighLevelForProgram are the following:
   | ( | ) | : | :=
   | , | [ | ] | {
   | } | = | != | <=
-  | < | >= | > | !==
+  | < | >= | > | ===
+  | !== |  |  |
 
 ===Comments===
 Single-line comments begin with #.There are no multiple-line comments in the grammar.
@@ -57,14 +58,15 @@ All other symbols are terminals.
   | //[Func]// | -> | //Func//
   |  |  **|**  | //Func// //[Func]//
   | //Func// | -> | ``def`` //Ident// ``(`` //[ArgD]// ``)`` ``:`` //Type// ``:=`` //[Stmt]//
-  | //Stmt// | -> | ``for`` ``(`` //Ident// ``,`` //Ident// ``:`` //Type// ``)`` ``in`` //Expr// ``do`` //[Stmt]// ``done``
+  | //Stmt// | -> | ``for`` ``(`` //Ident// ``,`` //Ident// ``)`` ``in`` ``enumerate`` ``(`` //Expr// ``)`` ``do`` //[Stmt]// ``done``
+  |  |  **|**  | ``for`` ``(`` //Ident// ``,`` //Ident// ``)`` ``in`` ``reversed`` ``(`` ``enumerate`` ``(`` //Expr// ``)`` ``)`` ``do`` //[Stmt]// ``done``
   |  |  **|**  | ``if`` //Expr// ``then`` //[Stmt]// ``endif``
   |  |  **|**  | ``if`` //Expr// ``then`` //[Stmt]// ``else`` //[Stmt]// ``endif``
   |  |  **|**  | ``yield`` //Expr//
   |  |  **|**  | ``return`` //Expr//
-  |  |  **|**  | ``let`` //Ident// ``:`` //Type// ``:=`` //Expr// ``in`` //[Stmt]//
-  |  |  **|**  | ``let`` ``mut`` //Ident// ``:`` ``Bool`` ``:=`` ``False`` ``in`` //[Stmt]//
-  |  |  **|**  | ``setTrue`` //Ident//
+  |  |  **|**  | ``let`` //Ident// ``:=`` //Expr// ``in`` //[Stmt]//
+  |  |  **|**  | ``let`` ``mut`` //Ident// ``:=`` ``False`` ``in`` //[Stmt]//
+  |  |  **|**  | //Ident// ``:=`` ``True``
   | //[Stmt]// | -> | //Stmt//
   |  |  **|**  | //Stmt// //[Stmt]//
   | //Expr3// | -> | //Char//
@@ -72,7 +74,6 @@ All other symbols are terminals.
   |  |  **|**  | ``[`` //[Expr]// ``]``
   |  |  **|**  | ``{`` //[Stmt]// ``}``
   |  |  **|**  | //Ident//
-  |  |  **|**  | ``reversed`` ``(`` //Expr// ``)``
   |  |  **|**  | //Ident// ``(`` //[VEArg]// ``)``
   |  |  **|**  | ``True``
   |  |  **|**  | ``False``
@@ -111,6 +112,7 @@ All other symbols are terminals.
   |  |  **|**  | ``>=``
   |  |  **|**  | ``>``
   |  |  **|**  | ``=`` //Type// ``=``
+  |  |  **|**  | ``===``
   |  |  **|**  | ``!==``
 
 

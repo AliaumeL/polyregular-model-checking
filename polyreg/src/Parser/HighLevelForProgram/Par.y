@@ -59,48 +59,49 @@ import Parser.HighLevelForProgram.Lex
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
 %token
-  '!='       { PT _ (TS _ 1)  }
-  '!=='      { PT _ (TS _ 2)  }
-  '('        { PT _ (TS _ 3)  }
-  ')'        { PT _ (TS _ 4)  }
-  ','        { PT _ (TS _ 5)  }
-  ':'        { PT _ (TS _ 6)  }
-  ':='       { PT _ (TS _ 7)  }
-  '<'        { PT _ (TS _ 8)  }
-  '<='       { PT _ (TS _ 9)  }
-  '='        { PT _ (TS _ 10) }
-  '>'        { PT _ (TS _ 11) }
-  '>='       { PT _ (TS _ 12) }
-  'Bool'     { PT _ (TS _ 13) }
-  'Char'     { PT _ (TS _ 14) }
-  'False'    { PT _ (TS _ 15) }
-  'True'     { PT _ (TS _ 16) }
-  '['        { PT _ (TS _ 17) }
-  ']'        { PT _ (TS _ 18) }
-  'and'      { PT _ (TS _ 19) }
-  'def'      { PT _ (TS _ 20) }
-  'do'       { PT _ (TS _ 21) }
-  'done'     { PT _ (TS _ 22) }
-  'else'     { PT _ (TS _ 23) }
-  'endif'    { PT _ (TS _ 24) }
-  'for'      { PT _ (TS _ 25) }
-  'if'       { PT _ (TS _ 26) }
-  'in'       { PT _ (TS _ 27) }
-  'let'      { PT _ (TS _ 28) }
-  'mut'      { PT _ (TS _ 29) }
-  'not'      { PT _ (TS _ 30) }
-  'or'       { PT _ (TS _ 31) }
-  'return'   { PT _ (TS _ 32) }
-  'reversed' { PT _ (TS _ 33) }
-  'setTrue'  { PT _ (TS _ 34) }
-  'then'     { PT _ (TS _ 35) }
-  'with'     { PT _ (TS _ 36) }
-  'yield'    { PT _ (TS _ 37) }
-  '{'        { PT _ (TS _ 38) }
-  '}'        { PT _ (TS _ 39) }
-  L_Ident    { PT _ (TV $$)   }
-  L_charac   { PT _ (TC $$)   }
-  L_quoted   { PT _ (TL $$)   }
+  '!='        { PT _ (TS _ 1)  }
+  '!=='       { PT _ (TS _ 2)  }
+  '('         { PT _ (TS _ 3)  }
+  ')'         { PT _ (TS _ 4)  }
+  ','         { PT _ (TS _ 5)  }
+  ':'         { PT _ (TS _ 6)  }
+  ':='        { PT _ (TS _ 7)  }
+  '<'         { PT _ (TS _ 8)  }
+  '<='        { PT _ (TS _ 9)  }
+  '='         { PT _ (TS _ 10) }
+  '==='       { PT _ (TS _ 11) }
+  '>'         { PT _ (TS _ 12) }
+  '>='        { PT _ (TS _ 13) }
+  'Bool'      { PT _ (TS _ 14) }
+  'Char'      { PT _ (TS _ 15) }
+  'False'     { PT _ (TS _ 16) }
+  'True'      { PT _ (TS _ 17) }
+  '['         { PT _ (TS _ 18) }
+  ']'         { PT _ (TS _ 19) }
+  'and'       { PT _ (TS _ 20) }
+  'def'       { PT _ (TS _ 21) }
+  'do'        { PT _ (TS _ 22) }
+  'done'      { PT _ (TS _ 23) }
+  'else'      { PT _ (TS _ 24) }
+  'endif'     { PT _ (TS _ 25) }
+  'enumerate' { PT _ (TS _ 26) }
+  'for'       { PT _ (TS _ 27) }
+  'if'        { PT _ (TS _ 28) }
+  'in'        { PT _ (TS _ 29) }
+  'let'       { PT _ (TS _ 30) }
+  'mut'       { PT _ (TS _ 31) }
+  'not'       { PT _ (TS _ 32) }
+  'or'        { PT _ (TS _ 33) }
+  'return'    { PT _ (TS _ 34) }
+  'reversed'  { PT _ (TS _ 35) }
+  'then'      { PT _ (TS _ 36) }
+  'with'      { PT _ (TS _ 37) }
+  'yield'     { PT _ (TS _ 38) }
+  '{'         { PT _ (TS _ 39) }
+  '}'         { PT _ (TS _ 40) }
+  L_Ident     { PT _ (TV $$)   }
+  L_charac    { PT _ (TC $$)   }
+  L_quoted    { PT _ (TL $$)   }
 
 %%
 
@@ -125,14 +126,15 @@ Func
 
 Stmt :: { Parser.HighLevelForProgram.Abs.Stmt }
 Stmt
-  : 'for' '(' Ident ',' Ident ':' Type ')' 'in' Expr 'do' ListStmt 'done' { Parser.HighLevelForProgram.Abs.SFor $3 $5 $7 $10 $12 }
+  : 'for' '(' Ident ',' Ident ')' 'in' 'enumerate' '(' Expr ')' 'do' ListStmt 'done' { Parser.HighLevelForProgram.Abs.SFor $3 $5 $10 $13 }
+  | 'for' '(' Ident ',' Ident ')' 'in' 'reversed' '(' 'enumerate' '(' Expr ')' ')' 'do' ListStmt 'done' { Parser.HighLevelForProgram.Abs.SRFor $3 $5 $12 $16 }
   | 'if' Expr 'then' ListStmt 'endif' { Parser.HighLevelForProgram.Abs.SIf $2 $4 }
   | 'if' Expr 'then' ListStmt 'else' ListStmt 'endif' { Parser.HighLevelForProgram.Abs.SIfE $2 $4 $6 }
   | 'yield' Expr { Parser.HighLevelForProgram.Abs.SYield $2 }
   | 'return' Expr { Parser.HighLevelForProgram.Abs.SReturn $2 }
-  | 'let' Ident ':' Type ':=' Expr 'in' ListStmt { Parser.HighLevelForProgram.Abs.SLetIn $2 $4 $6 $8 }
-  | 'let' 'mut' Ident ':' 'Bool' ':=' 'False' 'in' ListStmt { Parser.HighLevelForProgram.Abs.SLetBIn $3 $9 }
-  | 'setTrue' Ident { Parser.HighLevelForProgram.Abs.SLetSetTrue $2 }
+  | 'let' Ident ':=' Expr 'in' ListStmt { Parser.HighLevelForProgram.Abs.SLetIn $2 $4 $6 }
+  | 'let' 'mut' Ident ':=' 'False' 'in' ListStmt { Parser.HighLevelForProgram.Abs.SLetBIn $3 $7 }
+  | Ident ':=' 'True' { Parser.HighLevelForProgram.Abs.SLetSetTrue $1 }
 
 ListStmt :: { [Parser.HighLevelForProgram.Abs.Stmt] }
 ListStmt : Stmt { (:[]) $1 } | Stmt ListStmt { (:) $1 $2 }
@@ -144,7 +146,6 @@ Expr3
   | '[' ListExpr ']' { Parser.HighLevelForProgram.Abs.VEListConstr $2 }
   | '{' ListStmt '}' { Parser.HighLevelForProgram.Abs.VEGen $2 }
   | Ident { Parser.HighLevelForProgram.Abs.VEVal $1 }
-  | 'reversed' '(' Expr ')' { Parser.HighLevelForProgram.Abs.VERev $3 }
   | Ident '(' ListVEArg ')' { Parser.HighLevelForProgram.Abs.VEFunc $1 $3 }
   | 'True' { Parser.HighLevelForProgram.Abs.BETrue }
   | 'False' { Parser.HighLevelForProgram.Abs.BEFalse }
@@ -216,7 +217,8 @@ BinOp
   | '<' { Parser.HighLevelForProgram.Abs.BinOpLt }
   | '>=' { Parser.HighLevelForProgram.Abs.BinOpGeq }
   | '>' { Parser.HighLevelForProgram.Abs.BinOpGt }
-  | '=' Type '=' { Parser.HighLevelForProgram.Abs.BinOpVEq $2 }
+  | '=' Type '=' { Parser.HighLevelForProgram.Abs.BinOpVEqT $2 }
+  | '===' { Parser.HighLevelForProgram.Abs.BinOpVEq }
   | '!==' { Parser.HighLevelForProgram.Abs.BinOpVNe }
 
 {

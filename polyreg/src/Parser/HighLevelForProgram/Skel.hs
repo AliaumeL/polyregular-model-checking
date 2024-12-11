@@ -29,12 +29,13 @@ transFunc x = case x of
 
 transStmt :: Parser.HighLevelForProgram.Abs.Stmt -> Result
 transStmt x = case x of
-  Parser.HighLevelForProgram.Abs.SFor ident1 ident2 type_ expr stmts -> failure x
+  Parser.HighLevelForProgram.Abs.SFor ident1 ident2 expr stmts -> failure x
+  Parser.HighLevelForProgram.Abs.SRFor ident1 ident2 expr stmts -> failure x
   Parser.HighLevelForProgram.Abs.SIf expr stmts -> failure x
   Parser.HighLevelForProgram.Abs.SIfE expr stmts1 stmts2 -> failure x
   Parser.HighLevelForProgram.Abs.SYield expr -> failure x
   Parser.HighLevelForProgram.Abs.SReturn expr -> failure x
-  Parser.HighLevelForProgram.Abs.SLetIn ident type_ expr stmts -> failure x
+  Parser.HighLevelForProgram.Abs.SLetIn ident expr stmts -> failure x
   Parser.HighLevelForProgram.Abs.SLetBIn ident stmts -> failure x
   Parser.HighLevelForProgram.Abs.SLetSetTrue ident -> failure x
 
@@ -45,7 +46,6 @@ transExpr x = case x of
   Parser.HighLevelForProgram.Abs.VEListConstr exprs -> failure x
   Parser.HighLevelForProgram.Abs.VEGen stmts -> failure x
   Parser.HighLevelForProgram.Abs.VEVal ident -> failure x
-  Parser.HighLevelForProgram.Abs.VERev expr -> failure x
   Parser.HighLevelForProgram.Abs.VEFunc ident veargs -> failure x
   Parser.HighLevelForProgram.Abs.BETrue -> failure x
   Parser.HighLevelForProgram.Abs.BEFalse -> failure x
@@ -78,5 +78,6 @@ transBinOp x = case x of
   Parser.HighLevelForProgram.Abs.BinOpLt -> failure x
   Parser.HighLevelForProgram.Abs.BinOpGeq -> failure x
   Parser.HighLevelForProgram.Abs.BinOpGt -> failure x
-  Parser.HighLevelForProgram.Abs.BinOpVEq type_ -> failure x
+  Parser.HighLevelForProgram.Abs.BinOpVEqT type_ -> failure x
+  Parser.HighLevelForProgram.Abs.BinOpVEq -> failure x
   Parser.HighLevelForProgram.Abs.BinOpVNe -> failure x

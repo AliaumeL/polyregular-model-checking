@@ -32,7 +32,6 @@ parsedToForProgramRaw (P.ProgramC fs) = do
 parsedToForProgram :: P.Program -> M (Program String (Maybe T.ValueType))
 parsedToForProgram p = parsedToForProgramRaw p >>= typeRemap
 
-
 identToString :: P.Ident -> String
 identToString (P.Ident s) = s
 
@@ -55,7 +54,6 @@ returnDefaultValue P.TChar = SOReturn (OConst (CChar '🎁' (Just P.TChar)) (Jus
 returnDefaultValue (P.TList t) = SOReturn (OConst (CList [] (Just $ P.TList t)) (Just $ P.TList t)) (Just $ P.TList t)
 
 
-
 parsedToFunction :: P.Func -> M PAStmtFun 
 parsedToFunction (P.FuncC (P.Ident name) args retType stmts) = do 
     let ctx = typeToRetContext retType
@@ -64,20 +62,23 @@ parsedToFunction (P.FuncC (P.Ident name) args retType stmts) = do
     let fstmt = SSeq (stmts' ++ [retValue]) (Just retType)
     return $ StmtFun name (map parsedToArgD args) fstmt (Just retType)
 
+
 annotateTypeOExpr :: PAOExpr -> PType -> PAOExpr
 annotateTypeOExpr (OVar v _) t = OVar v (Just t)
 annotateTypeOExpr (OConst c _) t = OConst c (Just t)
 annotateTypeOExpr (OList es _) t = OList (map (`annotateTypeOExpr` t) es) (Just t)
-annotateTypeOExpr (ORev e _) t = ORev e (Just t)
-annotateTypeOExpr (OIndex e p _) t = OIndex e p (Just t)
 annotateTypeOExpr (OApp f args _) t = OApp f args (Just t)
 annotateTypeOExpr (OGen stmt _) t = OGen stmt (Just t)
 
 parsedToStmt :: RetContext -> P.Stmt -> M PAStmt
-parsedToStmt ctx (P.SFor i v t list stmts) = do
+parsedToStmt ctx (P.SFor i v list stmts) = do
     list' <- parsedToOutputExpr list
     stmts' <- forM stmts (parsedToStmt ctx)
-    return $ SFor (identToString i, identToString v, (Just t)) list' (SSeq stmts' Nothing) Nothing
+    return $ SFor Forward (identToString i, identToString v, Nothing) list' (SSeq stmts' Nothing) Nothing
+parsedToStmt ctx (P.SRFor i v list stmts) = do
+    list' <- parsedToOutputExpr list
+    stmts' <- forM stmts (parsedToStmt ctx)
+    return $ SFor Backward (identToString i, identToString v, Nothing) list' (SSeq stmts' Nothing) Nothing
 parsedToStmt ctx (P.SIf cond stmts) = do
     cond' <- parsedToBoolExpr cond
     stmts' <- forM stmts (parsedToStmt ctx)
@@ -97,15 +98,10 @@ parsedToStmt RVal (P.SReturn e) = do
 parsedToStmt RBool (P.SReturn e) = do 
     e' <- parsedToBoolExpr e
     return $ SBReturn e' Nothing
-parsedToStmt ctx (P.SLetIn i t e stmts) = do 
+parsedToStmt ctx (P.SLetIn i e stmts) = do 
     stmt' <- mapM (parsedToStmt ctx) stmts
-    case typeToRetContext t of 
-        RVal ->   do
-            e' <- parsedToOutputExpr e
-            let e'' = annotateTypeOExpr e' t
-            return $ SLetOutput (identToString i, Just t) e'' (SSeq stmt' Nothing) Nothing
-        RBool -> do
-            Left "Boolean non-mut variables not supported"
+    e' <- parsedToOutputExpr e
+    return $ SLetOutput (identToString i, Just t) e' (SSeq stmt' Nothing) Nothing
 parsedToStmt ctx (P.SLetBIn i stmts) = do
     stmt' <- mapM (parsedToStmt ctx) stmts
     return $ SLetBoolean (identToString i) (SSeq stmt' Nothing) Nothing
@@ -148,7 +144,6 @@ parsedToBoolExpr (P.VEGen stmts) = do
     stmts' <- mapM (parsedToStmt RBool) stmts
     return $ BGen (SSeq stmts' $ Just P.TBool) (Just P.TBool)
 parsedToBoolExpr (P.VEVal i) = return $ BVar (identToString i) (Just P.TBool)
-parsedToBoolExpr (P.VERev e) = Left "Rev in boolean expression"
 parsedToBoolExpr (P.VEFunc i args) = do 
     args <- forM args parsedToArg
     return $ BApp (identToString i) args (Just P.TBool)
@@ -159,11 +154,18 @@ parsedToBoolExpr (P.BENot e) = do
     return $ BNot e' (Just P.TBool)
 parsedToBoolExpr (P.BEBinOp e1 op e2) =
     case op of 
-        P.BinOpVEq t -> do
+        P.BinOpVEqT t -> do
             e1' <- parsedToOutputExpr e1
             e2' <- parsedToConstExpr e2 
             return $ BLitEq (Just t) e2' e1' (Just P.TBool)
-        P.BinOpVEq t -> undefined 
+        P.BinOpVEq -> do 
+            e1' <- parsedToOutputExpr e1
+            e2' <- parsedToConstExpr e2
+            return $ BLitEq Nothing e2' e1' (Just P.TBool)
+        P.BinOpVNe -> do 
+            e1' <- parsedToOutputExpr e1
+            e2' <- parsedToConstExpr e2
+            return $ BNot (BLitEq Nothing e2' e1' (Just P.TBool)) (Just P.TBool)
         op -> do
             e1' <- expectVar e1
             e2' <- expectVar e2
@@ -187,9 +189,6 @@ parsedToOutputExpr (P.VEGen stmts) = do
     stmts' <- mapM (parsedToStmt RVal) stmts
     return $ OGen (SSeq stmts' Nothing) Nothing
 parsedToOutputExpr (P.VEVal i) = return $ OVar (identToString i) Nothing
-parsedToOutputExpr (P.VERev e) = do
-    e' <- parsedToOutputExpr e
-    return $ ORev e' Nothing
 parsedToOutputExpr (P.VEFunc i args) = do 
     args <- forM args parsedToArg
     return $ OApp (identToString i) args Nothing

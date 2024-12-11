@@ -28,7 +28,7 @@ $u = [. \n]          -- universal: any character
 
 -- Symbols and non-identifier-like reserved words
 
-@rsyms = \( | \) | \: | \: \= | \, | \[ | \] | \{ | \} | \= | \! \= | \< \= | \< | \> \= | \> | \! \= \=
+@rsyms = \( | \) | \: | \: \= | \, | \[ | \] | \{ | \} | \= | \! \= | \< \= | \< | \> \= | \> | \= \= \= | \! \= \=
 
 :-
 
@@ -155,22 +155,22 @@ eitherResIdent tv s = treeFind resWords
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
-  b "def" 20
-    (b "=" 10
-       (b "," 5
-          (b "(" 3 (b "!==" 2 (b "!=" 1 N N) N) (b ")" 4 N N))
-          (b "<" 8 (b ":=" 7 (b ":" 6 N N) N) (b "<=" 9 N N)))
-       (b "False" 15
-          (b "Bool" 13 (b ">=" 12 (b ">" 11 N N) N) (b "Char" 14 N N))
-          (b "]" 18 (b "[" 17 (b "True" 16 N N) N) (b "and" 19 N N))))
-    (b "not" 30
-       (b "for" 25
-          (b "else" 23 (b "done" 22 (b "do" 21 N N) N) (b "endif" 24 N N))
-          (b "let" 28 (b "in" 27 (b "if" 26 N N) N) (b "mut" 29 N N)))
-       (b "then" 35
-          (b "reversed" 33
-             (b "return" 32 (b "or" 31 N N) N) (b "setTrue" 34 N N))
-          (b "{" 38 (b "yield" 37 (b "with" 36 N N) N) (b "}" 39 N N))))
+  b "def" 21
+    (b "===" 11
+       (b ":" 6
+          (b "(" 3 (b "!==" 2 (b "!=" 1 N N) N) (b "," 5 (b ")" 4 N N) N))
+          (b "<=" 9 (b "<" 8 (b ":=" 7 N N) N) (b "=" 10 N N)))
+       (b "False" 16
+          (b "Bool" 14 (b ">=" 13 (b ">" 12 N N) N) (b "Char" 15 N N))
+          (b "]" 19 (b "[" 18 (b "True" 17 N N) N) (b "and" 20 N N))))
+    (b "mut" 31
+       (b "enumerate" 26
+          (b "else" 24 (b "done" 23 (b "do" 22 N N) N) (b "endif" 25 N N))
+          (b "in" 29 (b "if" 28 (b "for" 27 N N) N) (b "let" 30 N N)))
+       (b "then" 36
+          (b "return" 34
+             (b "or" 33 (b "not" 32 N N) N) (b "reversed" 35 N N))
+          (b "{" 39 (b "yield" 38 (b "with" 37 N N) N) (b "}" 40 N N))))
   where
   b s n = B bs (TS bs n)
     where

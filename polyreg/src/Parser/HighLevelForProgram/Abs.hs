@@ -17,12 +17,13 @@ data Func = FuncC Ident [ArgD] Type [Stmt]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Stmt
-    = SFor Ident Ident Type Expr [Stmt]
+    = SFor Ident Ident Expr [Stmt]
+    | SRFor Ident Ident Expr [Stmt]
     | SIf Expr [Stmt]
     | SIfE Expr [Stmt] [Stmt]
     | SYield Expr
     | SReturn Expr
-    | SLetIn Ident Type Expr [Stmt]
+    | SLetIn Ident Expr [Stmt]
     | SLetBIn Ident [Stmt]
     | SLetSetTrue Ident
   deriving (C.Eq, C.Ord, C.Show, C.Read)
@@ -33,7 +34,6 @@ data Expr
     | VEListConstr [Expr]
     | VEGen [Stmt]
     | VEVal Ident
-    | VERev Expr
     | VEFunc Ident [VEArg]
     | BETrue
     | BEFalse
@@ -59,7 +59,8 @@ data BinOp
     | BinOpLt
     | BinOpGeq
     | BinOpGt
-    | BinOpVEq Type
+    | BinOpVEqT Type
+    | BinOpVEq
     | BinOpVNe
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
