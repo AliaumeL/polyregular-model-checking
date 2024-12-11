@@ -47,7 +47,7 @@ data Argument = Argument OutputType Int
 data FunctionType = FProd [Argument] ValueType
     deriving (Show, Eq)
 
-data ValueType = TBool | TPos Position | TOutput OutputType | TConst OutputType
+data ValueType = TBool | TPos Position | TOutput OutputType
     deriving (Show, Eq)
 
 

@@ -199,20 +199,15 @@ interpretStmt (SYield e _) = StmtYield . VOutput . (flip CList ()) . pure <$> in
 interpretStmt (SOReturn e _) = StmtReturn . VOutput <$> interpretOExpr e
 interpretStmt (SBReturn b _) = StmtReturn . VBool <$> interpretBExpr b
 interpretStmt (SSeq stmts _) = mconcat <$> mapM interpretStmt stmts
-interpretStmt (SFor (i, v, _) (ORev e _) stmt _) = do
+interpretStmt (SFor direction (i, v, _) e stmt _) = do
     e' <- interpretOExpr e
     case e' of
         CChar c _ -> throwWithCtx $ "Cannot iterate over character " ++ show e ++ " which is " ++ show c
         CList l _ -> do
-            let l' = reverse $ zip [0..] l
-            mconcat <$> (forM l' $ \(index, currentValue) -> do
-                withValue v currentValue $ withPos i index $ interpretStmt stmt)
-interpretStmt (SFor (i, v, _) e stmt _) = do
-    e' <- interpretOExpr e
-    case e' of
-        CChar c _ -> throwWithCtx $ "Cannot iterate over character " ++ show e ++ " which is " ++ show c
-        CList l _ -> do
-            let l' = zip [0..] l
+            let modifier = case direction of
+                    Forward -> id
+                    Backward -> reverse
+            let l' = modifier $ zip [0..] l
             mconcat <$> (forM l' $ \(index, currentValue) -> do
                 withValue v currentValue $ withPos i index $ interpretStmt stmt)
 
@@ -259,17 +254,6 @@ interpretOExpr :: (MonadInterpreter m) => OExpr String () -> m (CExpr String ())
 interpretOExpr (OVar v _) = getValue v
 interpretOExpr (OConst c _) = return c
 interpretOExpr (OList l _) = CList <$> mapM interpretOExpr l <*> pure ()
-interpretOExpr (ORev o _) = do
-    o' <- interpretOExpr o
-    case o' of
-        CList l _ -> return $ CList (reverse l) ()
-        _ -> throwWithCtx $ "(Rev) Expected list, got " ++ show o'
-interpretOExpr (OIndex o p _) = do
-    o' <- interpretOExpr o
-    p' <- interpretPExpr p
-    case o' of
-        CList l _ -> return $ l !! p'
-        _ -> throwWithCtx $ "(Index) Expected list, got " ++ show o'
 interpretOExpr (OApp v args _) = do
     f <- getFunction v
     evaluatedArgs <- interpretArgs args

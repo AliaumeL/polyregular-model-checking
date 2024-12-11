@@ -35,11 +35,12 @@ instance Semigroup (CExpr v t) where
 data OExpr v t = OVar v t
                | OConst (CExpr v t) t
                | OList [OExpr v t] t
-               | ORev (OExpr v t) t
-               | OIndex (OExpr v t) (PExpr v t) t
                | OApp v [(OExpr v t, [PExpr v t])] t
                | OGen (Stmt v t) t -- generator expression
                deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
+
+
+data Direction = Forward | Backward deriving (Show, Eq, Ord)
 
 -- For statements:
 -- 1. Function declarations
@@ -52,7 +53,7 @@ data Stmt v t = SIf (BExpr v t) (Stmt v t) (Stmt v t) t
               | SLetOutput (v, t) (OExpr v t) (Stmt v t) t
               | SLetBoolean v (Stmt v t) t
               | SSetTrue v t
-              | SFor (v, v, t) (OExpr v t) (Stmt v t) t
+              | SFor Direction (v, v, t) (OExpr v t) (Stmt v t) t
               | SSeq [Stmt v t] t
                deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
 
@@ -61,8 +62,6 @@ oExprType :: OExpr v t -> t
 oExprType (OVar _ t) = t
 oExprType (OConst _ t) = t
 oExprType (OList _ t) = t
-oExprType (ORev _ t) = t
-oExprType (OIndex _ _ t) = t
 oExprType (OApp _ _ t) = t
 oExprType (OGen _ t) = t
 
@@ -101,7 +100,7 @@ freeVarsStmt (SBReturn b _) = freeVarsBExpr b
 freeVarsStmt (SLetOutput (v, _) e s _) = freeVarsOExpr e `union` (freeVarsStmt s `S.difference` singleton v)
 freeVarsStmt (SLetBoolean v s _) = freeVarsStmt s `S.difference` singleton v
 freeVarsStmt (SSetTrue _ _) = empty
-freeVarsStmt (SFor (i, v, _) e s _) = freeVarsOExpr e `union` (freeVarsStmt s `S.difference` S.fromList [i, v])
+freeVarsStmt (SFor _ (i, v, _) e s _) = freeVarsOExpr e `union` (freeVarsStmt s `S.difference` S.fromList [i, v])
 freeVarsStmt (SSeq ss _) = unions (map freeVarsStmt ss)
 
 freeVarsBExpr :: (Ord v) => BExpr v t -> Set v
@@ -124,8 +123,6 @@ freeVarsOExpr :: (Ord v) => OExpr v t -> Set v
 freeVarsOExpr (OVar v _) = singleton v
 freeVarsOExpr (OConst _ _) = empty
 freeVarsOExpr (OList es _) = unions (map freeVarsOExpr es)
-freeVarsOExpr (ORev e _) = freeVarsOExpr e
-freeVarsOExpr (OIndex e p _) = freeVarsOExpr e `union` freeVarsPExpr p
 freeVarsOExpr (OApp v es _) = singleton v `union` unions (map (freeVarsOExpr . fst) es)
 freeVarsOExpr (OGen s _) = freeVarsStmt s
 
@@ -149,15 +146,13 @@ mapVarsStmt f (SIf b s1 s2 t) = SIf (mapVarsBExpr f b) (mapVarsStmt f s1) (mapVa
 mapVarsStmt f (SLetOutput (v, t) o s t') = SLetOutput (f v, t) (mapVarsOExpr f o) (mapVarsStmt f s) t'
 mapVarsStmt f (SLetBoolean v s t) = SLetBoolean (f v) (mapVarsStmt f s) t
 mapVarsStmt f (SSetTrue v t) = SSetTrue (f v) t
-mapVarsStmt f (SFor (v, t, t'') o s t') = SFor (f v, f t, t'') (mapVarsOExpr f o) (mapVarsStmt f s) t'
+mapVarsStmt f (SFor dir (v, t, t'') o s t') = SFor dir (f v, f t, t'') (mapVarsOExpr f o) (mapVarsStmt f s) t'
 mapVarsStmt f (SSeq ss t) = SSeq (map (mapVarsStmt f) ss) t
     
 mapVarsOExpr :: (va -> vb) -> OExpr va t -> OExpr vb t
 mapVarsOExpr f (OVar v t) = OVar (f v) t
 mapVarsOExpr f (OConst c t) = OConst (mapVarsCExpr f c) t
 mapVarsOExpr f (OList os t) = OList (map (mapVarsOExpr f) os) t
-mapVarsOExpr f (ORev o t) = ORev (mapVarsOExpr f o) t
-mapVarsOExpr f (OIndex o p t) = OIndex (mapVarsOExpr f o) (mapVarsPExpr f p) t
 mapVarsOExpr f (OApp v os t) = OApp (f v) (mapVarsArgs f os) t
 mapVarsOExpr f (OGen s t) = OGen (mapVarsStmt f s) t
     
