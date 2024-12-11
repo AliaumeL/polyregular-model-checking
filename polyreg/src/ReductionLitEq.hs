@@ -30,7 +30,7 @@ hasLitEqStmt (SIf b s1 s2 _) = hasLitEqBExpr b || hasLitEqStmt s1 || hasLitEqStm
 hasLitEqStmt (SLetOutput _ o s _) = hasLitEqOExpr o || hasLitEqStmt s
 hasLitEqStmt (SLetBoolean _ s _) = hasLitEqStmt s
 hasLitEqStmt (SSetTrue _ _) = False
-hasLitEqStmt (SFor _ v s _) = hasLitEqOExpr v || hasLitEqStmt s
+hasLitEqStmt (SFor _ _ v s _) = hasLitEqOExpr v || hasLitEqStmt s
 hasLitEqStmt (SSeq ss _) = any hasLitEqStmt ss
 
 -- BLitEq with a constant char is ok, everything else is not
@@ -49,8 +49,6 @@ hasLitEqOExpr :: OExpr String t -> Bool
 hasLitEqOExpr (OVar _ _) = False
 hasLitEqOExpr (OConst _ _) = False
 hasLitEqOExpr (OList os _) = any hasLitEqOExpr os
-hasLitEqOExpr (ORev o _) = hasLitEqOExpr o
-hasLitEqOExpr (OIndex o p _) = hasLitEqOExpr o
 hasLitEqOExpr (OApp _ oes _) = any hasLitEqOExpr . map fst $ oes
 hasLitEqOExpr (OGen s _) = hasLitEqStmt s
 
@@ -79,14 +77,14 @@ safeLast xs = Just $ last xs
 
 unlitEq :: (MonadFresh m) => (CExpr String ValueType) -> (OExpr String ValueType) -> m (BExpr String ValueType)
 unlitEq (CChar c t) v = pure $ BLitEq t (CChar c t) v TBool
-unlitEq (CList xs (TConst (TOList t))) v = do
+unlitEq (CList xs (TOutput (TOList t))) v = do
         let n = length xs
         vars  <- mapM (\i -> fresh ("b" ++ show i)) [0..(n-1)]
         e     <- fresh "v"
         i     <- fresh "i"
         tests <- mapM (\x -> unlitEq x (OVar e (TOutput t))) xs
         let ifs = makeIfs tests vars
-        let body = SFor (i, e, (TOutput t)) v ifs TBool
+        let body = SFor Forward (i, e, (TOutput t)) v ifs TBool
         let lastVarOrTrue = case safeLast vars of
                 Just x -> BVar x TBool
                 Nothing -> BConst True TBool
@@ -131,8 +129,6 @@ unlitEqOExpr :: (MonadFresh m) => OExpr String ValueType -> m (OExpr String Valu
 unlitEqOExpr (OVar v t) = pure $ OVar v t
 unlitEqOExpr (OConst c t) = pure $ OConst c t
 unlitEqOExpr (OList os t) = pure $ OList os t
-unlitEqOExpr (ORev o t) = pure $ ORev o t
-unlitEqOExpr (OIndex o p t) = pure $ OIndex o p t
 unlitEqOExpr (OApp v oes t) = pure $ OApp v oes t
 unlitEqOExpr (OGen stmt t) = do
     stmt' <- unlitEqStmt stmt
@@ -153,10 +149,10 @@ unlitEqStmt (SLetBoolean v s t) = do
     s' <- unlitEqStmt s
     return $ SLetBoolean v s' t
 unlitEqStmt (SSetTrue v t) = pure $ SSetTrue v t
-unlitEqStmt (SFor (i, e, t) v s t') = do
+unlitEqStmt (SFor dir (i, e, t) v s t') = do
     v' <- unlitEqOExpr v
     s' <- unlitEqStmt s
-    return $ SFor (i, e, t) v' s' t'
+    return $ SFor dir (i, e, t) v' s' t'
 unlitEqStmt (SSeq ss t) = SSeq <$> mapM unlitEqStmt ss <*> pure t
 
 unlitEqFunction :: (MonadFresh m) => StmtFun String ValueType -> m (StmtFun String ValueType)

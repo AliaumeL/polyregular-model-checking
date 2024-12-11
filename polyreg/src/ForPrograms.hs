@@ -42,6 +42,10 @@ data OExpr v t = OVar v t
 
 data Direction = Forward | Backward deriving (Show, Eq, Ord)
 
+reverseDirection :: Direction -> Direction
+reverseDirection Forward = Backward
+reverseDirection Backward = Forward
+
 -- For statements:
 -- 1. Function declarations
 -- 2. Block of statements

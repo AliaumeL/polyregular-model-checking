@@ -34,7 +34,7 @@ hasFunctionCallStmt  (SIf b s1 s2 _) = hasFunctionCallBExpr b || hasFunctionCall
 hasFunctionCallStmt  (SLetOutput _ o s _) = hasFunctionCallOExpr o || hasFunctionCallStmt s
 hasFunctionCallStmt  (SLetBoolean _ s _) = hasFunctionCallStmt s
 hasFunctionCallStmt  (SSetTrue _ _) = False
-hasFunctionCallStmt  (SFor _ o s _) = hasFunctionCallOExpr o || hasFunctionCallStmt s
+hasFunctionCallStmt  (SFor _ _ o s _) = hasFunctionCallOExpr o || hasFunctionCallStmt s
 hasFunctionCallStmt  (SSeq ss _) = any hasFunctionCallStmt ss
 
 hasFunctionCallBExpr :: BExpr String t -> Bool
@@ -57,8 +57,6 @@ hasFunctionCallOExpr :: OExpr String t -> Bool
 hasFunctionCallOExpr (OVar _ _) = False
 hasFunctionCallOExpr (OConst _ _) = False
 hasFunctionCallOExpr (OList os _) = any hasFunctionCallOExpr os
-hasFunctionCallOExpr (ORev o _) = hasFunctionCallOExpr o
-hasFunctionCallOExpr (OIndex o p _) = hasFunctionCallOExpr o || hasFunctionCallPExpr p
 hasFunctionCallOExpr (OApp _ ops _) = True
 hasFunctionCallOExpr (OGen s _) = hasFunctionCallStmt s
 
@@ -210,13 +208,6 @@ refreshOExpr (OConst c t) = pure (OConst c t)
 refreshOExpr (OList os t) = do
     os' <- mapM refreshOExpr os
     return $ OList os' t
-refreshOExpr (ORev o t) = do
-    o' <- refreshOExpr o
-    return $ ORev o' t
-refreshOExpr (OIndex o p t) = do
-    o' <- refreshOExpr o
-    p' <- refreshPExpr p
-    return $ OIndex o' p' t
 refreshOExpr (OApp v ops t) = do
     ops' <- mapM (\(o, ps) -> do
             o' <- refreshOExpr o
@@ -257,13 +248,13 @@ refreshStmt (SLetBoolean v s t) = do
 refreshStmt (SSetTrue v t) = do
     v' <- getVar v
     return $ SSetTrue v' t
-refreshStmt (SFor (i, e, t') v s t) = do
+refreshStmt (SFor dir (i, e, t') v s t) = do
     v' <- refreshOExpr v
     withFreshVars [i, e] $ do
         i' <- getVar i
         e' <- getVar e
         s' <- refreshStmt s
-        return $ SFor (i', e', t') v' s' t
+        return $ SFor dir (i', e', t') v' s' t
 refreshStmt (SSeq ss t) = do
     ss' <- mapM refreshStmt ss
     return $ SSeq ss' t
@@ -317,8 +308,6 @@ substOExpr s (OVar v t) = case M.lookup v (oVars s) of
     Just o -> o
 substOExpr s (OConst c t) = OConst (substCExpr s c) t
 substOExpr s (OList os t) = OList (map (substOExpr s) os) t
-substOExpr s (ORev o t) = ORev (substOExpr s o) t
-substOExpr s (OIndex o p t) = OIndex (substOExpr s o) (substPExpr s p) t
 substOExpr s (OApp v ops t) = OApp v (map (\(o, ps) -> (substOExpr s o, map (substPExpr s) ps)) ops) t
 substOExpr s (OGen stmt t) = OGen (substStmt s stmt) t
 
@@ -330,7 +319,7 @@ substStmt s (SIf b s1 s2 t) = SIf (substBExpr s b) (substStmt s s1) (substStmt s
 substStmt s (SLetOutput (v, t') o stmt t) = SLetOutput (v, t') (substOExpr s o) (substStmt s stmt) t
 substStmt s (SLetBoolean v stmt t) = SLetBoolean v (substStmt s stmt) t
 substStmt _ (SSetTrue v t) = SSetTrue v t
-substStmt s (SFor (i, e, t') v stmt t) = SFor (i, e, t') (substOExpr s v) (substStmt s stmt) t
+substStmt s (SFor dir (i, e, t') v stmt t) = SFor dir (i, e, t') (substOExpr s v) (substStmt s stmt) t
 substStmt s (SSeq ss t) = SSeq (map (substStmt s) ss) t
 
 
@@ -381,13 +370,6 @@ elimOExpr (OConst c t) = pure $ OConst c t
 elimOExpr (OList os t) = do
     os' <- mapM elimOExpr os
     return $ OList os' t
-elimOExpr (ORev o t) = do
-    o' <- elimOExpr o
-    return $ ORev o' t
-elimOExpr (OIndex o p t) = do
-    o' <- elimOExpr o
-    p' <- elimPExpr p
-    return $ OIndex o' p' t
 -- Applications
 -- 1. get the function body
 -- 2. eliminate function calls in the arguments
@@ -435,11 +417,11 @@ elimStmt (SLetBoolean v stmt t) = do
     withLocalVars [v] $ do 
         return $ SLetBoolean v stmt' t
 elimStmt (SSetTrue v t) = pure $ SSetTrue v t
-elimStmt (SFor (i, e, t') v stmt t) = do
+elimStmt (SFor dir (i, e, t') v stmt t) = do
     v' <- elimOExpr v
     withLocalVars [i,e] $ do 
         stmt' <- elimStmt stmt
-        return $ SFor (i, e, t') v' stmt' t
+        return $ SFor dir (i, e, t') v' stmt' t
 elimStmt (SSeq ss t) = do
     ss' <- mapM elimStmt ss
     return $ SSeq ss' t

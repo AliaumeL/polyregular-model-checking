@@ -29,15 +29,13 @@ hasBooleanGenStmt (SIf b s1 s2 _) = hasBooleanGenBExpr b || hasBooleanGenStmt s1
 hasBooleanGenStmt (SLetOutput _ o s _) = hasBooleanGenOExpr o || hasBooleanGenStmt s
 hasBooleanGenStmt (SLetBoolean _ s _) = hasBooleanGenStmt s
 hasBooleanGenStmt (SSetTrue _ _) = False
-hasBooleanGenStmt (SFor _ v s _) = hasBooleanGenOExpr v || hasBooleanGenStmt s
+hasBooleanGenStmt (SFor _ _ v s _) = hasBooleanGenOExpr v || hasBooleanGenStmt s
 hasBooleanGenStmt (SSeq ss _) = any hasBooleanGenStmt ss
 
 hasBooleanGenOExpr :: OExpr v t -> Bool
 hasBooleanGenOExpr (OVar _ _) = False
 hasBooleanGenOExpr (OConst _ _) = False
 hasBooleanGenOExpr (OList os _) = any hasBooleanGenOExpr os
-hasBooleanGenOExpr (ORev o _) = hasBooleanGenOExpr o
-hasBooleanGenOExpr (OIndex o _ _) = hasBooleanGenOExpr o
 hasBooleanGenOExpr (OApp _ os _) = any (hasBooleanGenOExpr . fst) os
 hasBooleanGenOExpr (OGen s _) = hasBooleanGenStmt s
 
@@ -138,7 +136,7 @@ substituteReturnBool t b r (SBReturn x _) = returnWithVar t b r x
 substituteReturnBool t b r (SIf b' s1 s2 _) = SIf b' (substituteReturnBool t b r s1) (substituteReturnBool t b r s2) t
 substituteReturnBool t b r (SLetOutput v o s _) = SLetOutput v o (substituteReturnBool t b r s) t
 substituteReturnBool t b r (SLetBoolean v s _) = SLetBoolean v (substituteReturnBool t b r s) t
-substituteReturnBool t b r (SFor v o s _) = SFor v o (substituteReturnBool t b r s) t
+substituteReturnBool t b r (SFor dir v o s _) = SFor dir v o (substituteReturnBool t b r s) t
 substituteReturnBool t b r (SSeq ss _) = SSeq (map (substituteReturnBool t b r) ss) t
 
 -- (step 5. a)
@@ -203,27 +201,21 @@ removeBooleanGenStmt (SLetBoolean v s t) = do
     s' <- removeBooleanGenStmt s
     return $ SLetBoolean v s' t
 removeBooleanGenStmt (SSetTrue v t) = return $ SSetTrue v t
-removeBooleanGenStmt (SFor v o s t) = do
+removeBooleanGenStmt (SFor dir v o s t) = do
     o' <- removeBooleanGenOExpr o
     s' <- removeBooleanGenStmt s
-    return $ SFor v o' s' t
+    return $ SFor dir v o' s' t
 removeBooleanGenStmt (SSeq ss t) = do
     ss' <- mapM (removeBooleanGenStmt) ss
     return $ SSeq ss' t
 
 removeBooleanGenOExpr :: (MonadFresh m) =>  OExpr String ValueType -> m (OExpr String ValueType)
 removeBooleanGenOExpr (OApp _ _ _) = error "removeBooleanGenOExpr: OApp is impossible"
-removeBooleanGenOExpr (OIndex o p t) = do
-    o' <- removeBooleanGenOExpr o
-    return $ OIndex o' p t
 removeBooleanGenOExpr (OVar v t) = return $ OVar v t
 removeBooleanGenOExpr (OConst c t) = return $ OConst c t
 removeBooleanGenOExpr (OList os t) = do
     os' <- mapM removeBooleanGenOExpr os
     return $ OList os' t
-removeBooleanGenOExpr (ORev o t) = do
-    o' <- removeBooleanGenOExpr o
-    return $ ORev o' t
 removeBooleanGenOExpr (OGen s t) = do
     s' <- removeBooleanGenStmt s
     return $ OGen s' t

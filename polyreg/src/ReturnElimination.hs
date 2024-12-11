@@ -91,13 +91,6 @@ retElimStmt (SYield (OGen s (TOutput (TOList _))) t) = do
     has_returned <- fresh "has_returned"
     updated <- updateReturnsList has_returned s
     return $ SLetBoolean has_returned updated t
-retElimStmt (SYield (ORev o t@(TOutput (TOList tinside))) _) = do
-    i  <- fresh "i"
-    v  <- fresh "v"
-    o' <- retElimOExpr o
-    let it = TOutput tinside
-    let s = SFor (i, v, it) (ORev o' t) (SYield (OVar v it) t) t
-    retElimStmt s
 retElimStmt (SYield x _) = error $ "(retElimStmt)qInvalid type for yield" ++ show x
 retElimStmt (SIf b s1 s2 t) = SIf b <$> (retElimStmt s1) <*> (retElimStmt s2) <*> pure t
 retElimStmt (SOReturn x t) = error $ "SOReturn ret" ++ show x --  SOReturn <$> (retElimOExpr x) <*> pure t
@@ -105,15 +98,13 @@ retElimStmt (SBReturn x t) = pure $ SBReturn x t
 retElimStmt (SLetOutput v x s t) = SLetOutput v <$> (retElimOExpr x) <*> (retElimStmt s) <*> pure t
 retElimStmt (SLetBoolean x s t) = SLetBoolean x <$> (retElimStmt s) <*> pure t
 retElimStmt (SSetTrue x t) = pure $ SSetTrue x t
-retElimStmt (SFor (v1, v2, t) x s t') = SFor (v1, v2, t) <$> (retElimOExpr x) <*> (retElimStmt s) <*> pure t'
+retElimStmt (SFor dir (v1, v2, t) x s t') = SFor dir (v1, v2, t) <$> (retElimOExpr x) <*> (retElimStmt s) <*> pure t'
 retElimStmt (SSeq ss t) = SSeq <$> (mapM retElimStmt ss) <*> pure t
 
 retElimOExpr :: (MonadFresh m) => OExpr String ValueType -> m (OExpr String ValueType)
 retElimOExpr (OVar x t) = pure $ OVar x t
 retElimOExpr (OConst c t) = pure $ OConst c t
 retElimOExpr (OList xs t) = OList <$> (mapM retElimOExpr xs) <*> pure t
-retElimOExpr (ORev x t) = ORev <$> (retElimOExpr x) <*> pure t
-retElimOExpr (OIndex x i t) = OIndex <$> (retElimOExpr x) <*> pure i <*> pure t
 retElimOExpr (OApp x xs t) = OApp x <$> (mapM (\(x, ys) -> (,) <$> (retElimOExpr x) <*> pure ys) xs) <*> pure t
 retElimOExpr (OGen s (TOutput TOChar)) = do
     has_returned <- fresh "g-has_returned"
@@ -139,7 +130,7 @@ updateReturnsChar has_returned (SIf b s1 s2 t) = SIf b (updateReturnsChar has_re
 updateReturnsChar has_returned (SLetOutput v x s t) = SLetOutput v x (updateReturnsChar has_returned s) t
 updateReturnsChar has_returned (SLetBoolean v s t) = SLetBoolean v (updateReturnsChar has_returned s) t
 updateReturnsChar has_returned (SSetTrue v t) = SSetTrue v t
-updateReturnsChar has_returned (SFor (v1, v2, t) x s t') = SFor (v1, v2, t) x (updateReturnsChar has_returned s) t'
+updateReturnsChar has_returned (SFor dir (v1, v2, t) x s t') = SFor dir (v1, v2, t) x (updateReturnsChar has_returned s) t'
 updateReturnsChar has_returned (SSeq ss t) = SSeq (map (updateReturnsChar has_returned) ss) t
 updateReturnsChar has_returned (SBReturn x t) = SBReturn x t
 
@@ -150,7 +141,7 @@ updateReturnsList has_returned (SOReturn o t@(TOutput (TOList tinside))) = do
     i <- fresh "i-return"
     v <- fresh "v-return"
     let it = TOutput tinside
-    let s = SFor (i, v, it) o (SYield (OVar v it) t) t
+    let s = SFor Forward (i, v, it) o (SYield (OVar v it) t) t
     pure $ ifHasNotReturnedRet has_returned s
 updateReturnsList has_returned (SOReturn o t) = error $ "SO return List " ++ show o 
 updateReturnsList has_returned (SBReturn x t) = pure $ SBReturn x t
@@ -158,7 +149,7 @@ updateReturnsList has_returned (SIf b s1 s2 t) = SIf b <$> (updateReturnsList ha
 updateReturnsList has_returned (SLetOutput v x s t) = SLetOutput v x <$> (updateReturnsList has_returned s) <*> pure t
 updateReturnsList has_returned (SLetBoolean v s t) = SLetBoolean v <$> (updateReturnsList has_returned s) <*> pure t
 updateReturnsList has_returned (SSetTrue v t) = pure $ SSetTrue v t
-updateReturnsList has_returned (SFor (v1, v2, t) x s t') = SFor (v1, v2, t) x <$> (updateReturnsList has_returned s) <*> pure t'
+updateReturnsList has_returned (SFor dir (v1, v2, t) x s t') = SFor dir (v1, v2, t) x <$> (updateReturnsList has_returned s) <*> pure t'
 updateReturnsList has_returned (SSeq ss t) = SSeq <$> (mapM (updateReturnsList has_returned) ss) <*> pure t
 
 

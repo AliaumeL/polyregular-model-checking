@@ -53,8 +53,6 @@ eliminateLiteralOExpr (OList os t) = OGen (SSeq subexprs t) t
         subexprs = do
             expr <- os
             return $ SYield (eliminateLiteralOExpr expr) t
-eliminateLiteralOExpr (ORev o t) = ORev (eliminateLiteralOExpr o) t
-eliminateLiteralOExpr (OIndex _ _ _) = error "OIndex in eliminateLiteralOExpr"
 eliminateLiteralOExpr (OApp _ _ _) = error "OApp in eliminateLiteralOExpr"
 eliminateLiteralOExpr (OGen s t) = OGen (eliminateLiteralStmt s) t
 
@@ -67,5 +65,5 @@ eliminateLiteralStmt (SBReturn b t) =  SBReturn (eliminateLiteralBExpr b) t
 eliminateLiteralStmt (SLetOutput (v, t1) e s t2) = SLetOutput (v, t1) (eliminateLiteralOExpr e) (eliminateLiteralStmt s) t2
 eliminateLiteralStmt (SLetBoolean b s t)  = SLetBoolean b (eliminateLiteralStmt s) t
 eliminateLiteralStmt (SSetTrue b t) = SSetTrue b t
-eliminateLiteralStmt (SFor (i, e, t) v s t') = SFor (i, e, t) (eliminateLiteralOExpr v) (eliminateLiteralStmt s) t'
+eliminateLiteralStmt (SFor dir (i, e, t) v s t') = SFor dir (i, e, t) (eliminateLiteralOExpr v) (eliminateLiteralStmt s) t'
 eliminateLiteralStmt (SSeq ss t) = SSeq (map eliminateLiteralStmt ss) t

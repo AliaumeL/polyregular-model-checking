@@ -90,8 +90,7 @@ eliminateExtVarsStmt (SIf b s1 s2 t) = SIf (eliminateExtVarsBExpr b) (eliminateE
 eliminateExtVarsStmt (SLetOutput (OldVar v, t) e s t') = SLetOutput (v, t) (eliminateExtVarsOExpr e) (eliminateExtVarsStmt s) t'
 eliminateExtVarsStmt (SLetBoolean (OldVar v) s t) = SLetBoolean v (eliminateExtVarsStmt s) t
 eliminateExtVarsStmt (SSetTrue (OldVar v) t) = SSetTrue v t
-eliminateExtVarsStmt (SFor (OldVar i, OldVar e, t) o s t') = SFor (i, e, t) (eliminateExtVarsOExpr o) (eliminateExtVarsStmt s) t'
-eliminateExtVarsStmt (SFor (OldVar i, OldVar e, t) o s t') = SFor (i, e, t) (eliminateExtVarsOExpr o) (eliminateExtVarsStmt s) t'
+eliminateExtVarsStmt (SFor dir (OldVar i, OldVar e, t) o s t') = SFor dir (i, e, t) (eliminateExtVarsOExpr o) (eliminateExtVarsStmt s) t'
 eliminateExtVarsStmt (SSeq ss t) = SSeq (map eliminateExtVarsStmt ss) t
 eliminateExtVarsStmt x = error $ "eliminateExtVarsStmt: invalid statement" ++ show x
 
@@ -124,10 +123,8 @@ eliminateExtVarsBExpr (BLitEq t c o t') = BLitEq t (eliminateExtVarsCExpr c) (el
 
 eliminateExtVarsOExpr :: (Show v, Show t) => OExpr (ExtVars v t) t -> OExpr v t
 eliminateExtVarsOExpr (OVar (OldVar v) t) = OVar v t
-eliminateExtVarsOExpr (ORev o t) = ORev (eliminateExtVarsOExpr o) t
 eliminateExtVarsOExpr (OConst c t) = OConst (eliminateExtVarsCExpr c) t
 eliminateExtVarsOExpr (OList os t) = OList (map eliminateExtVarsOExpr os) t
-eliminateExtVarsOExpr (OIndex o p t) = OIndex (eliminateExtVarsOExpr o) (eliminateExtVarsPEpxr p) t
 eliminateExtVarsOExpr (OApp _ _ _) = error "OApp in eliminateExtVarsOExpr"
 eliminateExtVarsOExpr (OGen s t) = OGen (eliminateExtVarsStmt s) t
 eliminateExtVarsOExpr x = error $ "eliminateExtVarsOExpr: invalid expression" ++ show x

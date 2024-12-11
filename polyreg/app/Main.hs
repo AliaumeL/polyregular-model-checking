@@ -2,7 +2,8 @@ module Main (main) where
 
 
 import ForPrograms
-import ForProgramsTyping
+import ForProgramsTyping (ValueType)
+import Typing.Inference (inferAndCheckProgram)
 import ForProgramInterpreter (runProgramString)
 import BooleanElimination (removeBooleanGen)
 import FunctionElimination (eliminateFunctionCalls)
@@ -99,7 +100,7 @@ main = do
     case parsedProgOrErr of
         Left err -> putStrLn . show $ err
         Right parsedProg -> do 
-            let typedProg = inferProgram parsedProg
+            let typedProg = inferAndCheckProgram parsedProg
             case typedProg of
                 Left err -> putStrLn . show $ err
                 Right prog -> do

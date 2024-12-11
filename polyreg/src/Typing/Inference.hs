@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Typing.Inference where
+module Typing.Inference (inferAndCheckProgram)
+where
 
 import qualified Data.Map as M
 import qualified Data.IntSet as IntSet
@@ -7,69 +8,16 @@ import qualified Data.IntMap as IntMap
 
 import qualified Typing.Constraints as C
 import ForPrograms
-import ForProgramsTyping (ValueType(..), OutputType(..), Position(..))
+import ForProgramsTyping (ValueType(..), 
+                          OutputType(..), 
+                          Position(..), 
+                          eraseTypesO,
+                          outputTypeDepth,
+                          depthToType)
 import QuantifierFree
 
 import Control.Monad
 import Control.Monad.State
-
-import Debug.Trace
-
-
--- | Collect constraints from a program.
--- every variable name and every statement is given a unique number
--- we collect constraints 
---
--- [ (for (i, e) in o do s) ] => (e, Minus, o) ; ((for...), Equal, s)
--- [ if b then s1 else s2 ]   => (b, Equal, TBool) ; (s1, Equal, s2)
--- [ SSeq [s1, ..., sn] ]     => (s1, Equal, s2) ; (s2, Equal, s3) ; ... ; (sn-1, Equal, sn)
--- [ SSetTrue v ]             => (v, Equal, TBool)
--- [ SLetOutput (v, t) e s ]  => (e, Equal, v) ; ((SLetOutput ...), Equal, s)
--- [ SLetBoolean v s ]        => ((SLetBoolean ...), Equal, s); (v, Equal, TBool)
--- [ SOReturn e ]             => (e, Equal, (SOReturn ...))
--- [ SBReturn b ]             => (b, Equal, TBool) ; (SBReturn ..., Equal, TBool)
--- [ SYield e ]               => (e, Minus, (SYield ...))
---
--- [ OVar v ]                 => (v, Equal, T)
--- [ OConst c ]               => (c, Equal, T)
--- [ OList (e1,...,en) ]               => (ei, Minus, (OList ...))
--- [ ORev e ]                 => (e, Equal, (ORev ...)) 
--- [ OIndex e p ]             => (e, Equal, (OIndex ...)) ; (p, Equal, T)
--- [ OApp f args ]            => (arguments have same type)
--- [ OGen stmt ]              => (stmt, Equal, (OGen ...))
---
--- [ BBinOp op e1 e2 ]        => (e1, Equal, TBool) ; (e2, Equal, TBool) ; (SBinOp ... , Equal, TBool)
--- [ BCmpOp op e1 e2 ]        => (SCmpOp ... , Equal, TBool)
--- [ BNot e ]                 => (e, Equal, TBool)
--- [ BVar v ]                 => (v, Equal, TBool)
--- [ BGen stmt ]              => (stmt, Equal, TBool) ; (BGen ..., Equal, TBool)
--- [ BApp f args ]            => (arguments have same type)
--- [ BLitEq c e ]             => (c, Equal, e) ; (BLitEq ... , Equal, TBool)
---
--- [ CChar c ]                 => (v, Equal, TList 0)
--- [ CList (e1,...,en) ]       => (ei, Minus, (CList ...))
---
---
--- Then, we build a graph from these constraints using `createGraph`
--- and solve the constraints using `solveConstraints`
--- In case of success we have a map from every subprogram into an integer,
--- and from integers to types, so composing them leads to a fully typed program.
---
-
--- We assign a variable (int) to every *code point* in the program.
--- This respects variables in the original program, meaning 
--- that a variable "v" is mapped to the same int regardless of its position
--- (unless it is shadowed by a new variable with the same name).
---
--- FIXME: also add position types to the program
---  - p1 === p2 => types are equal
---  (i, v) in e ... => i has type TPos (erase e)
---
-
-computePositionType :: OExpr String t -> ValueType
-computePositionType (ORev e _) = TPos $ Position (fmap (const ()) e)
-computePositionType x = TPos $ Position (fmap (const ()) x)
-
 
 data PosMove = PosIfL 
              | PosIfR 
@@ -98,9 +46,6 @@ data PosMove = PosIfL
              | PosOGen 
              | PosOConst 
              | PosOList Int
-             | PosORev
-             | PosOIndexL
-             | PosOIndexR
              | PosOExprRoot
              | PosCList Int
              | PosAppArg Int
@@ -123,14 +68,6 @@ data ProgramCodePoint t = CodePointStmt    (Stmt String t)
                         | CodePointVar     String
                         deriving (Show, Eq)
 
-outputTypeDepth :: OutputType -> Int
-outputTypeDepth TOChar = 0
-outputTypeDepth (TOList t) = 1 + outputTypeDepth t
-
-depthToType :: Int -> OutputType
-depthToType n | n < 0 = error "Invalid depth"
-depthToType 0 = TOChar
-depthToType n = TOList $ depthToType (n-1)
 
 cTypeToValueType :: C.Type -> ValueType
 cTypeToValueType C.TBool = TBool
@@ -140,7 +77,6 @@ cTypeToValueType (C.TPos t) = TPos $ Position t
 valueTypeToCType :: ValueType -> C.Type
 valueTypeToCType TBool = C.TBool
 valueTypeToCType (TOutput t) = C.TList $ outputTypeDepth t
-valueTypeToCType (TConst t) = C.TList $ outputTypeDepth t
 valueTypeToCType (TPos (Position t)) = C.TPos t
 
 
@@ -158,10 +94,10 @@ posMove (PosLetOStmt) (CodePointStmt (SLetOutput _ _ s _)) = CodePointStmt s
 posMove (PosSetTrue) (CodePointStmt (SSetTrue v _)) = CodePointVar v
 posMove (PosLetBoolVar) (CodePointStmt (SLetBoolean v _ _)) = CodePointVar v
 posMove (PosLetBoolStmt) (CodePointStmt (SLetBoolean _ s _)) = CodePointStmt s
-posMove (PosForVar) (CodePointStmt (SFor (_,v, _) _ _ _)) = CodePointVar v
-posMove (PosForIndex) (CodePointStmt (SFor (v, _, _) _ _ _)) = CodePointVar v
-posMove (PosForExpr) (CodePointStmt (SFor _ e _ _)) = CodePointOExpr e
-posMove (PosForStmt) (CodePointStmt (SFor _ _ s _)) = CodePointStmt s
+posMove (PosForVar) (CodePointStmt (SFor _ (_,v, _) _ _ _)) = CodePointVar v
+posMove (PosForIndex) (CodePointStmt (SFor _ (v, _, _) _ _ _)) = CodePointVar v
+posMove (PosForExpr) (CodePointStmt (SFor _ _ e _ _)) = CodePointOExpr e
+posMove (PosForStmt) (CodePointStmt (SFor _ _ _ s _)) = CodePointStmt s
 posMove (PosSeq i) (CodePointStmt (SSeq ss _)) = CodePointStmt (ss !! i)
 posMove (PosBNot) (CodePointBExpr (BNot b _)) = CodePointBExpr b
 posMove (PosBOpL) (CodePointBExpr (BOp _ e _ _)) = CodePointBExpr e
@@ -172,8 +108,6 @@ posMove (PosBLitEqR) (CodePointBExpr (BLitEq _ _ e _)) = CodePointOExpr e
 posMove (PosOGen) (CodePointOExpr (OGen s _)) = CodePointStmt s
 posMove (PosOConst) (CodePointOExpr (OConst c _)) = CodePointCExpr c
 posMove (PosOList i) (CodePointOExpr (OList es _)) = CodePointOExpr (es !! i)
-posMove (PosORev) (CodePointOExpr (ORev e _)) = CodePointOExpr e
-posMove (PosOIndexL) (CodePointOExpr (OIndex e _ _)) = CodePointOExpr e
 posMove (PosCList i) (CodePointCExpr (CList es _)) = CodePointCExpr (es !! i)
 posMove (PosFun f) (CodePointProg (Program fs _)) = CodePointFun $ fun
     where
@@ -353,21 +287,20 @@ assignNumbersStmtM p (SSetTrue v t) = do
     nv <- getVar v
     addTypeSpec nv (Just TBool)
     return (n, SSetTrue v n)
-assignNumbersStmtM p (SFor (i, v, tv) e s ts) = do
+assignNumbersStmtM p (SFor dir (i, v, tv) e s ts) = do
     n <- registerPos p
     addTypeSpec n ts
     withVar v (PosForVar : p) $ do
         withVar i (PosForIndex : p) $ do 
             nv <- getVar v
             ni <- getVar i
-            traceM $ "For " ++ i ++ " " ++ show ni
             addTypeSpec nv tv
-            addTypeSpec ni $ Just (computePositionType e)
+            addTypeSpec ni $ Just (TPos (Position (eraseTypesO e)))
             (ne, te) <- assignNumbersOExprM (PosForVar  : p) e
             (ns, ts) <- assignNumbersStmtM  (PosForStmt : p) s
             logConstraint $ C.VarConstraint (nv, C.Minus, ne)
             logConstraint $ C.VarConstraint (ns, C.Equal, n)
-            return (n, SFor (i, v, nv) te ts n)
+            return (n, SFor dir (i, v, nv) te ts n)
 assignNumbersStmtM p (SSeq [] t) = do
     n <- registerPos p
     addTypeSpec n t
@@ -456,7 +389,7 @@ assignAppArgsPositionsM p es = do
         (ne, te) <- assignNumbersOExprM (PosAppArg i : p) e
         newpos   <- forM (zip [0..] ps) $ \(j, position) -> do
             (np, tp) <- assignNumbersPExprM (PosAppArgPos i j : p) position
-            addTypeSpec np (Just . TPos $ Position (fmap (const ()) e))
+            addTypeSpec np (Just . TPos $ Position (eraseTypesO e))
             return tp
         return (ne, te, newpos)
 
@@ -493,20 +426,6 @@ assignNumbersOExprM p (OList es t) = do
     mapM_ (\(m1, m2) -> logConstraint $ C.VarConstraint (fst m1, C.Equal, fst m2)) $ zip ms (tail ms)
     logConstraint $ C.VarConstraint (fst (head ms), C.Minus, n)
     return (n, OList (map snd ms) n)
-assignNumbersOExprM p (ORev e t) = do
-    n <- registerPos p
-    addTypeSpec n t
-    (ne, te) <- assignNumbersOExprM (PosORev : p) e
-    logConstraint $ C.VarConstraint (ne, C.Equal, n)
-    return (n, ORev te n)
-assignNumbersOExprM p (OIndex e i t) = do
-    n <- registerPos p
-    addTypeSpec n t
-    (ne, te) <- assignNumbersOExprM (PosOIndexL : p) e
-    (ni, ti) <- assignNumbersPExprM (PosOIndexR : p) i
-    addTypeSpec ni . Just . TPos $ Position (fmap (const ()) e)
-    logConstraint $ C.VarConstraint (n, C.Minus, ne)
-    return (n, OIndex te ti n)
 assignNumbersOExprM p (OApp f es t) = do
     n <- registerPos p
     addTypeSpec n t
@@ -621,8 +540,13 @@ displayNodeOrType (PosCoding _ b) cgraph  i = case IntMap.lookup i b of
         Nothing -> error "Node not found"
 
 
-inferTypes :: Program String (Maybe ValueType) -> Either (InferError) (Program String (Maybe ValueType))
-inferTypes p = runInfer p
+resolveTypeOrError :: IntMap.IntMap C.Type -> Int -> Either InferError ValueType
+resolveTypeOrError m i = case IntMap.lookup i m of
+    Just t ->  Right $ cTypeToValueType t
+    Nothing -> Left $ InferError $ "Type not found for node " ++ show i
+
+inferAndCheckProgram :: Program String (Maybe ValueType) -> Either (InferError) (Program String ValueType)
+inferAndCheckProgram p = runInfer p
     where
         runInfer p = do
             let (prog, coding, cgraph) = runPosState $ computeNumbersAndConstraints p
@@ -630,4 +554,4 @@ inferTypes p = runInfer p
                 Left (C.UncoveredNodes ns) -> Left $ InferError $ "Uncovered nodes: " ++ show (C.const cgraph) ++ displayUncoveredNodes coding ns 
                 Left (C.InvalidConstraint x y c t) -> Left $ InferError $ "Invalid constraint: " ++ show x ++ ":" ++ show (readIntCoding coding x) ++ " " ++ show y ++ ":" ++ show (readIntCoding coding y) ++ " " ++ show c ++ " " ++ show t
                 Left (C.InconsistentGraph x y c tx ty) -> Left $ InferError $ "Inconsistent graph: " ++ (displayNodeOrType coding cgraph x) ++ " " ++ (displayNodeOrType coding cgraph y) ++ " " ++ show c ++ " " ++ show tx ++ " " ++ show ty
-                Right intToType -> Right $ fmap (resolveType intToType) prog
+                Right intToType -> mapM (resolveTypeOrError intToType) prog

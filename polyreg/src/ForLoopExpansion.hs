@@ -35,14 +35,10 @@ reverseAndSimplify (SLetOutput _ _ _ _) = error "SLetOutput in reverseAndSimplif
 reverseAndSimplify (SLetBoolean _ s t) = reverseAndSimplify s
 reverseAndSimplify (SSetTrue _ t) = SSeq [] t
 reverseAndSimplify (SSeq ss t) = SSeq (reverse $ map reverseAndSimplify ss) t
-reverseAndSimplify (SFor (OldVar i, OldVar e, t) (OVar v t') body t'') = simplified
+reverseAndSimplify (SFor dir (OldVar i, OldVar e, t) (OVar v t') body t'') = simplified
     where
         body' = reverseAndSimplify body
-        simplified = SFor (OldVar i, OldVar e, t) (ORev (OVar v t') t') body' t''
-reverseAndSimplify (SFor (OldVar i, OldVar e, t) (ORev oexpr t') body t'') = simplified
-    where
-        body' = reverseAndSimplify body
-        simplified = SFor (OldVar i, OldVar e, t) oexpr body' t''
+        simplified = SFor (reverseDirection dir) (OldVar i, OldVar e, t) (OVar v t') body' t''
 reverseAndSimplify (SFor _ _ _ _) = error "SFor in reverseAndSimplify"
 
 
@@ -155,14 +151,14 @@ forLoopExpansionStmtM (SSetTrue (OldVar v) t) = do
     v' <- getVar v
     return $ SSetTrue v' t
 forLoopExpansionStmtM (SFor _ (OConst (CList [] _) _) _ t) = return $ SSeq [] t
-forLoopExpansionStmtM (SFor (OldVar i, OldVar e, _) (OGen stmt _) body _) = do
+forLoopExpansionStmtM (SFor Forward (OldVar i, OldVar e, _) (OGen stmt _) body _) = do
     body' <- forLoopExpansionStmtM body
     stmt' <- forLoopExpansionStmtM stmt
     --traceM $ "Expanding for loop. Generator stmt:\n " ++ prettyPrintStmtWithNls 0 (mapVarsStmt show stmt') 
     --traceM $ "Expanding for loop. Body stmt:\n " ++ prettyPrintStmtWithNls 0 (mapVarsStmt show body')
     let expansion = substituteYieldStmts AddrVar i e body' stmt'
     return expansion
-forLoopExpansionStmtM (SFor (OldVar i, OldVar e, _) (ORev (OGen stmt _) _) body t) = do
+forLoopExpansionStmtM (SFor Backward (OldVar i, OldVar e, _) (OGen stmt _) _) body t) = do
     body'  <- forLoopExpansionStmtM body
     stmt'  <- forLoopExpansionStmtM stmt
     newVar <- freshVar i
@@ -175,15 +171,9 @@ forLoopExpansionStmtM (SFor (OldVar i, OldVar e, _) (ORev (OGen stmt _) _) body 
     let expanded    = substituteYieldStmts AddrVar    i       e guardedBody stmt'
     let expandedRev = substituteYieldStmts AddrRevVar newVar  e expanded stmtRevSimpl'
     return expandedRev
-forLoopExpansionStmtM (SFor (OldVar i, OldVar e, t) (OVar v t') body t'') = do
+forLoopExpansionStmtM (SFor dir (OldVar i, OldVar e, t) (OVar v t') body t'') = do
     body' <- forLoopExpansionStmtM body
-    return $ SFor (OldVar i, OldVar e, t) (OVar v t') body' t''
-forLoopExpansionStmtM (SFor (OldVar i, OldVar e, t) (ORev (OVar v t') t'') body t''') = do
-    body' <- forLoopExpansionStmtM body
-    return $ SFor (OldVar i, OldVar e, t) (ORev (OVar v t') t'') body' t'''
-forLoopExpansionStmtM (SFor (OldVar i, OldVar e, t) (ORev (ORev o _) _) body t') = do
-    body' <- forLoopExpansionStmtM body
-    return $ SFor (OldVar i, OldVar e, t) o body' t'
+    return $ SFor dir (OldVar i, OldVar e, t) (OVar v t') body' t''
 forLoopExpansionStmtM (SSeq ss t) = do
     ss' <- mapM forLoopExpansionStmtM ss
     return $ SSeq ss' t
@@ -198,12 +188,6 @@ forLoopExpansionOExprM c@(OConst _ _) = return c
 forLoopExpansionOExprM (OList os t) = do
     os' <- mapM forLoopExpansionOExprM os
     return $ OList os' t
-forLoopExpansionOExprM (ORev o t) = do
-    o' <- forLoopExpansionOExprM o
-    return $ ORev o' t
-forLoopExpansionOExprM (OIndex o p t) = do
-    o' <- forLoopExpansionOExprM o
-    return $ OIndex o' p t
 forLoopExpansionOExprM (OApp _ _ _) = throwWithCtx "OApp in forLoopExpansionOExprM"
 forLoopExpansionOExprM (OGen s t) = do
     s' <- forLoopExpansionStmtM s
@@ -287,8 +271,6 @@ substOVarOExpr cstr p (OVar (OldVar v') t) | forDataVar p == v' = forDataExpr p
 substOVarOExpr cstr p (OVar v' t) = OVar v' t
 substOVarOExpr cstr _ (OConst c t) = OConst c t
 substOVarOExpr cstr _ (OList _ _) = error "OList in substOVarOExpr"
-substOVarOExpr cstr p (ORev o t) = ORev (substOVarOExpr cstr p o) t
-substOVarOExpr cstr _ (OIndex _ _ _) = error "OIndex in substOVarOExpr"
 substOVarOExpr cstr _ (OApp _ _ _) = error "OApp in substOVarOExpr"
 substOVarOExpr cstr p (OGen s t) = OGen (substOVarStmt cstr p s) t
 
@@ -355,8 +337,6 @@ refreshForLoopsOExpr (OVar (OldVar v) t) = do
 refreshForLoopsOExpr (OVar v t) = return $ OVar v t
 refreshForLoopsOExpr (OConst c t) = return $ OConst c t
 refreshForLoopsOExpr (OList os t) = OList <$> mapM refreshForLoopsOExpr os <*> pure t
-refreshForLoopsOExpr (ORev o t) = ORev <$> refreshForLoopsOExpr o <*> pure t
-refreshForLoopsOExpr (OIndex o p t) = OIndex <$> refreshForLoopsOExpr o <*> pure p <*> pure t
 refreshForLoopsOExpr (OApp _ _ _) = throwWithCtx "OApp in refreshForLoopsOExpr"
 refreshForLoopsOExpr (OGen s t) = OGen <$> refreshForLoopsStmt s <*> pure t
 

@@ -70,10 +70,10 @@ eliminateLetStmtM (SLetBoolean v s t) = do
     s' <- eliminateLetStmtM s
     return $ SLetBoolean v s' t
 eliminateLetStmtM (SSetTrue v t) = return $ SSetTrue v t
-eliminateLetStmtM (SFor (i, v, t1) e s t2) = do
+eliminateLetStmtM (SFor dir (i, v, t1) e s t2) = do
     e' <- eliminateLetOexprM e
     s' <- eliminateLetStmtM s
-    return $ SFor (i, v, t1) e' s' t2
+    return $ SFor dir (i, v, t1) e' s' t2
 eliminateLetStmtM (SSeq ss t) = do
     ss' <- mapM eliminateLetStmtM ss
     return $ SSeq ss' t
@@ -121,13 +121,6 @@ eliminateLetOexprM (OConst v t) = return $ OConst v t
 eliminateLetOexprM (OList l t) = do 
     l' <- mapM eliminateLetOexprM l 
     return $ OList l' t 
-eliminateLetOexprM (ORev v t) = do
-    v' <- eliminateLetOexprM v 
-    return $ ORev v' t 
-eliminateLetOexprM (OIndex v i t) = do
-    v' <- eliminateLetOexprM v 
-    i' <- eliminateLetPexprM i 
-    return $ OIndex v' i' t 
 eliminateLetOexprM (OApp f args t) = do 
     args' <- forM args $ \(v, ps) -> do 
         v' <- eliminateLetOexprM v 
