@@ -3,7 +3,7 @@ def isFirstAinBlock(w : [Char] with (i)) : Bool :=
     let mut seen_i : Bool := False in
     for (j, c : Char) in reversed(w) do
         if j < i then 
-            if c == 'a' then 
+            if c =Char= 'a' then 
                 return False
             else
                 return True
@@ -16,7 +16,7 @@ def isFirstAinBlock(w : [Char] with (i)) : Bool :=
 
 def main (w : [Char]) : [Char] := 
     for (i, c : Char) in w do 
-        if not (c == 'a') or isFirstAinBlock(w, i) then
+        if not (c =Char= 'a') or isFirstAinBlock(w, i) then
             yield c
         endif
     done

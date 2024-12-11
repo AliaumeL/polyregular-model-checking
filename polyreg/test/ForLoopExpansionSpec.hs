@@ -11,6 +11,7 @@ import BooleanElimination
 import FunctionElimination
 import LiteralElimination
 import ReductionLitEq
+import AddrVarElimination
 import ForLoopExpansion
 
 import Control.Monad
@@ -47,15 +48,9 @@ getProgram file = do
     return noLiterals
     
 transformProgram :: Program String ValueType -> Program String ()
-transformProgram (Program funcs main) = newProgClassicalVars
-    where
-        (StmtFun v args body t) = last funcs
-        noGenerators = expandGenStmt (mapVars OldVar body)
-        newArgs = map (\(n, t, ps) -> (OldVar n, t, map OldVar ps)) args
-        newName = OldVar v
-        newProg = Program [StmtFun newName newArgs noGenerators t] newName
-        newProgUntyped = fmap (const ()) newProg
-        newProgClassicalVars = mapVarsProgram (\(OldVar v) -> v) newProgUntyped
+transformProgram p = case forLoopExpansion p of 
+    Right p' -> fmap (const ())  p'
+    Left e -> error $ show e
 
 
 spec :: Spec

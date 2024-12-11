@@ -5,6 +5,7 @@ import Test.Hspec
 import Data.Map (Map)
 import qualified Data.Map as M
 
+import QuantifierFree
 import ForPrograms
 import ForProgramInterpreter
 import ForProgramsTyping
@@ -40,14 +41,14 @@ spec = do
             let cb = CChar 'b' tc
             let cbb = CList [cb, cb] tl
             -- Input : if i < j then x else (yield [x, x])
-            let input = (SIf (BComp Leq pi pj TBool)
+            let input = (SIf (BComp Le pi pj TBool)
                              (SYield vy tl)
                              (SYield (OList [vx, vx] tl) tl) tl)
             -- substitution x -> 'a' y -> "bb"
             let map = SubstMap { oVars = M.fromList [("x", OConst ca tc),
                                                      ("y", OConst cbb tl)],
                                  pVars = M.empty }
-            let expected = (SIf (BComp Leq pi pj TBool)
+            let expected = (SIf (BComp Le pi pj TBool)
                                 (SYield (OConst cbb tl) tl)
                                 (SYield (OList [OConst ca tc, OConst ca tc] tl) tl) tl)
             substStmt map input `shouldBe` expected
@@ -62,7 +63,7 @@ spec = do
             let map = SubstMap {pVars = M.fromList [], oVars = M.fromList [("s", vs)]}
             let body = SSeq [SLetBoolean "seen_space"
                             (SFor ("i","v",tc) vs 
-                                (SSeq [SIf (BOp And (BNot seen_space TBool)
+                                (SSeq [SIf (BOp Conj (BNot seen_space TBool)
                                                     (BNot (BLitEq tc space vv TBool) TBool) TBool)
                                            (SSeq [SYield vv tl] tl)
                                            (SSeq [] tl)
