@@ -34,7 +34,7 @@ reverseAndSimplify (SIf _ s1 s2 t) = SSeq [reverseAndSimplify s1, reverseAndSimp
 reverseAndSimplify (SLetOutput _ _ _ _) = error "SLetOutput in reverseAndSimplify"
 reverseAndSimplify (SLetBoolean _ s t) = reverseAndSimplify s
 reverseAndSimplify (SSetTrue _ t) = SSeq [] t
-reverseAndSimplify (SSeq ss t) = SSeq (map reverseAndSimplify ss) t
+reverseAndSimplify (SSeq ss t) = SSeq (reverse $ map reverseAndSimplify ss) t
 reverseAndSimplify (SFor (OldVar i, OldVar e, t) (OVar v t') body t'') = simplified
     where
         body' = reverseAndSimplify body
@@ -167,17 +167,17 @@ forLoopExpansionStmtM (SFor (OldVar i, OldVar e, _) (ORev (OGen stmt _) _) body 
     newVar <- freshVar i
     let stmtRevSimpl = reverseAndSimplify stmt' 
     stmtRevSimpl' <- refreshForLoopsStmt stmtRevSimpl
-    trace ("Variables " ++ show [i,e,newVar]) $
-        trace (prettyPrintStmtWithNls 0 (mapVarsStmt show stmt')) $ 
-            trace (prettyPrintStmtWithNls 0 (mapVarsStmt show stmtRevSimpl')) $ do
-                let guardedBody = (SIf (BComp Eq (PVar (OldVar i) t)
-                                                 (PVar (OldVar newVar) t) t)
-                                        body' 
-                                        (SSeq [] t) t)
-                let expanded    = substituteYieldStmts i       e guardedBody stmt'
-                let expandedRev = substituteYieldStmts newVar  e expanded    stmtRevSimpl'
-                trace (prettyPrintStmtWithNls 0 (mapVarsStmt show expandedRev)) $
-                    return expandedRev
+    --trace ("Variables " ++ show [i,e,newVar]) $
+    --    trace (prettyPrintStmtWithNls 0 (mapVarsStmt show stmt')) $ 
+    --        trace (prettyPrintStmtWithNls 0 (mapVarsStmt show stmtRevSimpl')) $ do
+    let guardedBody = (SIf (BComp Eq (PVar (OldVar i) t)
+                                        (PVar (OldVar newVar) t) t)
+                            body' 
+                            (SSeq [] t) t)
+    let expanded    = substituteYieldStmts i       e guardedBody stmt'
+    let expandedRev = substituteYieldStmts newVar  e expanded stmtRevSimpl'
+    --trace (prettyPrintStmtWithNls 0 (mapVarsStmt show expandedRev)) $
+    return expandedRev
 forLoopExpansionStmtM (SFor (OldVar i, OldVar e, t) (OVar v t') body t'') = do
     body' <- forLoopExpansionStmtM body
     return $ SFor (OldVar i, OldVar e, t) (OVar v t') body' t''
@@ -363,7 +363,3 @@ refreshForLoopsBExpr (BLitEq t c o t') = BLitEq t c <$> refreshForLoopsOExpr o <
 
 refreshForLoopsPExpr :: (MonadForElim m) => PExpr ExStr ValueType -> m (PExpr ExStr ValueType)
 refreshForLoopsPExpr (PVar v t) = return $ PVar v t
-
-
-    
-

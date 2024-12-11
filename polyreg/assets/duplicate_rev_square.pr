@@ -1,4 +1,3 @@
-
 def duplicate (word : [Char]) : [Char] := 
     for (i, c : Char) in word do
         yield c
@@ -25,4 +24,4 @@ def square (word : [Char] ) : [Char] :=
     done
 
 def main (word : [Char]) : [Char] := 
-    return square(duplicate(word))
+    return add_hash(reversed(add_hash(word)))

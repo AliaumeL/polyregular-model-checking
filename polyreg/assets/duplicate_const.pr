@@ -1,0 +1,14 @@
+
+def duplicate (word : [Char]) : [Char] := 
+    for (i, c : Char) in word do
+        yield c
+    done
+    yield '#'
+    for (j, c : Char) in word do
+        yield c
+    done
+
+def main (word : [Char]) : [Char] := 
+    for (j, v : Char) in duplicate(word) do 
+        yield 'o'
+    done
