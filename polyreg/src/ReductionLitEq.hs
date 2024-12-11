@@ -73,26 +73,30 @@ instance MonadFresh FreshM where
         put (i + 1)
         return . replaceHashPart i $ s
 
+safeLast :: [a] -> Maybe a
+safeLast [] = Nothing
+safeLast xs = Just $ last xs
+
 unlitEq :: (MonadFresh m) => (CExpr String ValueType) -> (OExpr String ValueType) -> m (BExpr String ValueType)
 unlitEq (CChar c t) v = pure $ BLitEq t (CChar c t) v TBool
 unlitEq (CList xs (TConst (TOList t))) v = do
         let n = length xs
-        vars  <- mapM (\i -> fresh ("b" ++ show i)) [0..n]
+        vars  <- mapM (\i -> fresh ("b" ++ show i)) [0..(n-1)]
         e     <- fresh "v"
         i     <- fresh "i"
         tests <- mapM (\x -> unlitEq x (OVar e (TOutput t))) xs
         let ifs = makeIfs tests vars
         let body = SFor (i, e, (TOutput t)) v ifs TBool
-        return . (\x -> BGen x TBool) . letBooleans TBool vars $ SSeq [ body, SBReturn (BConst True TBool) TBool ] TBool
+        let lastVarOrTrue = case safeLast vars of
+                Just x -> BVar x TBool
+                Nothing -> BConst True TBool
+        let returnLastVar = SBReturn lastVarOrTrue TBool
+        return . (\x -> BGen x TBool) . letBooleans TBool vars $ SSeq [ body, returnLastVar ] TBool
 unlitEq a b = error $ "unlitEq: incompatible arguments " ++ show a ++ " " ++ show b
 
 -- makeIfs v cexprs bvars 
 makeIfs :: [BExpr String ValueType] -> [String] -> Stmt String ValueType
-makeIfs [] [b] = SIf cond truePart falsePart TBool
-    where 
-        cond = BNot (BVar b TBool) TBool
-        truePart  = SSetTrue b TBool
-        falsePart = SBReturn (BConst False TBool) TBool
+makeIfs [] [] = SBReturn (BConst False TBool) TBool
 makeIfs (t : ts) (b : bs) = SIf cond (SSeq trueBranch TBool) falseBranch TBool
     where
         cond = BNot (BVar b TBool) TBool

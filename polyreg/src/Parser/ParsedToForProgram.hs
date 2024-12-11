@@ -49,11 +49,19 @@ typeToRetContext :: P.Type -> RetContext
 typeToRetContext P.TBool = RBool
 typeToRetContext _ = RVal
 
+returnDefaultValue :: P.Type -> Stmt String (Maybe PType)
+returnDefaultValue P.TBool = SBReturn (BConst False (Just P.TBool)) (Just P.TBool)
+returnDefaultValue P.TChar = SOReturn (OConst (CChar '🎁' (Just P.TChar)) (Just P.TChar)) (Just P.TChar)
+returnDefaultValue (P.TList t) = SOReturn (OConst (CList [] (Just $ P.TList t)) (Just $ P.TList t)) (Just $ P.TList t)
+
+
+
 parsedToFunction :: P.Func -> M PAStmtFun 
 parsedToFunction (P.FuncC (P.Ident name) args retType stmts) = do 
     let ctx = typeToRetContext retType
     stmts' <- forM stmts (parsedToStmt ctx)
-    let fstmt = SSeq stmts' (Just retType)
+    let retValue = returnDefaultValue retType
+    let fstmt = SSeq (stmts' ++ [retValue]) (Just retType)
     return $ StmtFun name (map parsedToArgD args) fstmt (Just retType)
 
 annotateTypeOExpr :: PAOExpr -> PType -> PAOExpr
