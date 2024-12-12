@@ -16,7 +16,7 @@ import ForProgramsTyping
 data StmtZip v t = 
                  ZIfL (StmtZip v t )
                | ZIfR (StmtZip v t )
-               | ZFor v t (StmtZip v t)
+               | ZFor Direction v t (StmtZip v t)
                | ZSeq Int Int (StmtZip v t ) 
                | ZBegin
                deriving (Show, Eq, Functor, Foldable, Traversable)
@@ -27,7 +27,7 @@ reverseStmtZip x = reverseStmtZip' x ZBegin
     reverseStmtZip' :: StmtZip v t -> StmtZip v t -> StmtZip v t
     reverseStmtZip' (ZIfL a) b = reverseStmtZip' a (ZIfL b)
     reverseStmtZip' (ZIfR a) b = reverseStmtZip' a (ZIfR b)
-    reverseStmtZip' (ZFor v t a) b = reverseStmtZip' a (ZFor v t b)
+    reverseStmtZip' (ZFor dir v t a) b = reverseStmtZip' a (ZFor dir v t b)
     reverseStmtZip' (ZSeq i l a) b = reverseStmtZip' a (ZSeq i l b)
     reverseStmtZip' ZBegin b = b
     
@@ -37,12 +37,12 @@ data ExtVars v t = OldVar v | AddrVar (StmtZip v t) | AddrRevVar (StmtZip v t)
 makeNonReverse :: StmtZip v t -> StmtZip v t
 makeNonReverse (ZIfL a) = ZIfL (makeNonReverse a)
 makeNonReverse (ZIfR a) = ZIfR (makeNonReverse a)
-makeNonReverse (ZFor v t a) = ZFor v t (makeNonReverse a)
+makeNonReverse (ZFor dir v t a) = ZFor dir v t (makeNonReverse a)
 makeNonReverse (ZSeq i j a) = ZSeq (j-i) j (makeNonReverse a)
 makeNonReverse ZBegin = ZBegin
 
 compareEqZip  :: t -> StmtZip v t -> StmtZip v t -> BExpr v t
-compareEqZip t (ZFor v _ a) (ZFor v' _ b) = BOp Conj veqv' (compareEqZip t a b) t
+compareEqZip t (ZFor _ v _ a) (ZFor _ v' _ b) = BOp Conj veqv' (compareEqZip t a b) t
     where
         veqv' = BComp Eq (PVar v t) (PVar v' t) t
 compareEqZip t (ZIfL a) x = compareEqZip t (ZSeq 0 1 a) x
@@ -54,11 +54,17 @@ compareEqZip t ZBegin ZBegin = BConst True t
 compareEqZip t _ _ = BConst False t
 
 compareLeZip :: t -> StmtZip v t -> StmtZip v t -> BExpr v t
-compareLeZip t (ZFor v _ a) (ZFor v' _ b) = BOp Disj smallerAfter smallerNow t
+compareLeZip t (ZFor Forward v _ a) (ZFor Forward v' _ b) = BOp Disj smallerAfter smallerNow t
     where
         smallerAfter = BOp Conj veqv' (compareLeZip t a b) t
         veqv' = BComp Eq (PVar v t) (PVar v' t) t
         smallerNow = BComp Lt (PVar v t) (PVar v' t) t
+compareLeZip t (ZFor Backward v _ a) (ZFor Backward v' _ b) = BOp Disj smallerAfter smallerNow t
+    where
+        smallerAfter = BOp Conj veqv' (compareLeZip t a b) t
+        veqv' = BComp Eq (PVar v t) (PVar v' t) t
+        smallerNow = BComp Gt (PVar v t) (PVar v' t) t
+compareLeZip t (ZFor _ _ _ _) (ZFor _ _ _ _) = error $ "compareLeZip: incompatible directions"
 compareLeZip t (ZIfL a) x = compareLeZip t (ZSeq 0 1 a) x
 compareLeZip t (ZIfR a) x = compareLeZip t (ZSeq 1 1 a) x
 compareLeZip t x (ZIfL a) = compareLeZip t x (ZSeq 0 1 a)

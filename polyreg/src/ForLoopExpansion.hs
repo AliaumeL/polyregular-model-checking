@@ -236,7 +236,7 @@ subYieldStmt cstr z v1 v2 s (SIf b s1 s2 t) = SIf b (subYieldStmt cstr zleft v1 
 subYieldStmt _    _ _ _ _   (SLetOutput _ _ _ _) = error "SLetOutput in subYield"
 subYieldStmt cstr z v1 v2 s (SLetBoolean v s' t) = SLetBoolean v (subYieldStmt cstr z v1 v2 s s') t
 subYieldStmt _    _ _ _ _ x@(SSetTrue _ _) = x
-subYieldStmt cstr z v1 v2 s (SFor dir (OldVar i, OldVar e, t) v s' t') = SFor dir (OldVar i, OldVar e, t) v (subYieldStmt cstr (ZFor i t z) v1 v2 s s') t'
+subYieldStmt cstr z v1 v2 s (SFor dir (OldVar i, OldVar e, t) v s' t') = SFor dir (OldVar i, OldVar e, t) v (subYieldStmt cstr (ZFor dir i t z) v1 v2 s s') t'
 subYieldStmt cstr z v1 v2 s (SSeq ss t) = SSeq [ subYieldStmt cstr (ZSeq i (length ss - 1) z) v1 v2 s s' | (i, s') <- zip [0..] ss ] t
 subYieldStmt _    _ _ _ _ _ = error "subYieldStmt: invalid statement"
 

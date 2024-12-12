@@ -52,10 +52,11 @@ toAbsStmt (SYield o _) = pure $ A.SYield (toAbsOExpr o)
 toAbsStmt (SOReturn o _) = pure $ A.SReturn (toAbsOExpr o)
 toAbsStmt (SBReturn b _) = pure $ A.SReturn (toAbsBExpr b)
 toAbsStmt (SIf b s1 s2 _) = pure $ A.SIfE (toAbsBExpr b) (toAbsStmt s1) (toAbsStmt s2)
-toAbsStmt (SLetOutput (v, t) o s _) = pure $ A.SLetIn (Ident v) (toAbsType t) (toAbsOExpr o) (toAbsStmt s)
+toAbsStmt (SLetOutput (v, t) o s _) = pure $ A.SLetIn (Ident v) (toAbsOExpr o) (toAbsStmt s)
 toAbsStmt (SLetBoolean v s _) = pure $ A.SLetBIn (Ident v) (toAbsStmt s)
 toAbsStmt (SSetTrue v _) = pure $ A.SLetSetTrue (Ident v)
-toAbsStmt (SFor _ (i, e, t) v s _) = pure $ A.SFor (Ident i) (Ident e) (toAbsType t) (toAbsOExpr v) (toAbsStmt s)
+toAbsStmt (SFor Forward (i, e, t) v s _) = pure $ A.SFor (Ident i) (Ident e) (toAbsOExpr v) (toAbsStmt s)
+toAbsStmt (SFor Backward (i, e, t) v s _) = pure $ A.SRFor (Ident i) (Ident e) (toAbsOExpr v) (toAbsStmt s)
 toAbsStmt (SSeq ss _) = concatMap toAbsStmt ss
 
 toAbsOExpr :: OExpr String ValueType -> A.Expr

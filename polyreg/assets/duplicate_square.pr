@@ -1,22 +1,22 @@
 
 def duplicate (word : [Char]) : [Char] := 
-    for (i, c : Char) in word do
+    for (i, c) in enumerate(word) do
         yield c
     done
     yield '#'
-    for (j, d : Char) in word do
+    for (j, d) in enumerate(word) do
         yield d
     done
 
 def add_hash (word : [Char]) : [Char] := 
-    for (i, c : Char) in word do
+    for (i, c) in enumerate(word) do
         yield c
     done
     yield '#'
 
 def square (word : [Char] ) : [Char] := 
-    for (k, c : Char) in word do
-        for (l, d : Char) in word do
+    for (k, c) in enumerate(word) do
+        for (l, d) in enumerate(word) do
             if l < k then
                 yield d
             endif

@@ -1,30 +1,30 @@
 def getFirstWord (sa : [Char]) : [Char] :=
-    let mut seen_space : Bool := False in
-    for (i, v : Char) in sa do 
-        if not seen_space and not (v =Char= ' ') then 
+    let mut seen_space := False in
+    for (i, v) in enumerate(sa) do 
+        if not seen_space and not (v === ' ') then 
             yield v
         endif
-        if v =Char= ' ' then 
-            setTrue seen_space
+        if v === ' ' then 
+            seen_space := True
         endif
     done
 
 def concatLists( l1 : [Char], l2 : [Char]) : [Char] :=
-    for (i, v : Char) in l1 do 
+    for (i, v) in enumerate(l1) do 
         yield v
     done
-    for (i, v : Char) in l2 do 
+    for (i, v) in enumerate(l2) do 
         yield v
     done
 
 
 
 def getCurrentWord (sb : [Char] with (i)) : [Char] :=
-    let mut seen_space : Bool := False in
-    for (j, v : Char) in sb do 
+    let mut seen_space := False in
+    for (j, v) in enumerate(sb) do 
        if j > i then 
            if v =Char= ' ' then 
-               setTrue seen_space
+               seen_space := True
            endif
            if not seen_space then 
               yield v 
@@ -34,17 +34,17 @@ def getCurrentWord (sb : [Char] with (i)) : [Char] :=
 
 def words (ss : [Char]) : [[Char]] :=
     yield getFirstWord(ss)
-    for (i, vv : Char) in ss do 
+    for (i, vv) in enumerate(ss) do 
         if vv =Char= ' ' then 
             yield getCurrentWord(ss with (i)) 
         endif 
      done
 
 def getFirstAnd(wordsl : [[Char]]) : [[Char]] :=
-    let mut seen_and : Bool := False in
-    for (i, w : [Char]) in wordsl do 
+    let mut seen_and := False in
+    for (i, w) in enumerate(wordsl) do 
         if w =[Char]= "and" then
-            setTrue seen_and
+            seen_and := True
         endif
         if not seen_and then 
             yield w
@@ -52,11 +52,11 @@ def getFirstAnd(wordsl : [[Char]]) : [[Char]] :=
     done
 
 def getCurrentAnd (wordsc : [[Char]] with (i)) : [[Char]] :=
-    let mut seen_and : Bool := False in
-    for (j, w : [Char]) in wordsc do 
+    let mut seen_and := False in
+    for (j, w) in enumerate(wordsc) do 
         if j > i then 
             if w =[Char]= "and" then
-                setTrue seen_and
+                seen_and := True
             endif
             if not seen_and then 
                 yield w
@@ -66,49 +66,54 @@ def getCurrentAnd (wordsc : [[Char]] with (i)) : [[Char]] :=
 
 def splitOnAnd(wordsd : [[Char]]) : [[[Char]]] :=
     yield getFirstAnd(wordsd)
-    for (i, w : [Char]) in wordsd do 
+    for (i, w) in enumerate(wordsd) do 
         if w =[Char]= "and" then
             yield getCurrentAnd(wordsd with (i))
         endif
     done
 
 def isSingleAuthor(isSingleAuthorArg : [[Char]]) : Bool :=
-    let mut one_name : Bool := False in
-    for (i, name : [Char]) in isSingleAuthorArg do
+    let mut one_name := False in
+    for (i, name) in enumerate(isSingleAuthorArg) do
         if one_name then
             return False
         else
-            setTrue one_name
+            one_name := True
         endif
     done
     return True
 
 def getLastName(getLastNameArg : [[Char]]) : [Char] :=
-    let mut last_name : Bool := False in 
-    for (i, name : [Char]) in reversed(getLastNameArg) do
+    let mut last_name := False in 
+    for (i, name) in reversed(enumerate(getLastNameArg)) do
         if not last_name then
             return name
         endif
-        setTrue last_name
+        last_name := True
     done
 
 def getAllButFirstName(getAllButFirstNameArg : [[Char]]) : [[Char]] :=
-    let mut first_name : Bool := False in 
-    for (i, name : [Char]) in getAllButFirstNameArg do
+    let mut first_name := False in 
+    for (i, name) in enumerate(getAllButFirstNameArg) do
         if not first_name then
-            setTrue first_name
+            first_name := True
         else
             yield name
         endif
     done
 
+def reverse(reverseArg : [Char]) : [Char] :=
+    for (i, c) in reversed(enumerate(reverseArg)) do
+        yield c
+    done
+
 def getAllButLastName(getAllButLastNameArg : [[Char]]) : [[Char]] :=
-    for (i, name : [Char]) in reversed(getAllButFirstName(reversed(getAllButLastNameArg))) do
+    for (i, name) in reversed(enumerate(getAllButFirstName(reverse(getAllButLastNameArg)))) do
         yield name
     done
 
 def addComma(author : [Char]) : [Char] :=
-    for (i, c : Char) in author do
+    for (i, c) in enumerate(author) do
         yield c
     done
     yield ','
@@ -118,39 +123,39 @@ def remapAuthor(remapAuthorArg : [[Char]]) : [[Char]] :=
     if isSingleAuthor(remapAuthorArg) then
         return remapAuthorArg
     else
-        let last : [Char] := getLastName(remapAuthorArg) in
-        let allButLast : [[Char]] := getAllButLastName(remapAuthorArg) in
+        let last := getLastName(remapAuthorArg) in
+        let allButLast := getAllButLastName(remapAuthorArg) in
         yield concatLists(last, ",")
         return allButLast
     endif
 
 
 def intersperseAnd(sss : [[[Char]]]) : [[Char]] :=
-    let mut started : Bool := False in
-    for (i, intersperseAndIter : [[Char]]) in sss do
+    let mut started := False in
+    for (i, intersperseAndIter) in enumerate(sss) do
         if started then
             yield "and"
         endif
-        for (j, name : [Char]) in intersperseAndIter do
+        for (j, name) in enumerate(intersperseAndIter) do
             yield name
         done
-        setTrue started
+        started := True
     done
 
 def concat(ss : [[Char]]) : [Char] :=
-    let mut started : Bool := False in
-    for (i, s : [Char]) in ss do
+    let mut started := False in
+    for (i, s) in enumerate(ss) do
         if started then
             yield ' '
         endif
-        setTrue started
-        for (j, c : Char) in s do
+        started := True
+        for (j, c) in enumerate(s) do
             yield c
         done
     done
 
 def mapRemapAuthor(mapRemapAuthorArg : [[[Char]]]) : [[[Char]]] :=
-    for (k, mapRemapAuthorIter : [[Char]])  in mapRemapAuthorArg do
+    for (k, mapRemapAuthorIter) in enumerate(mapRemapAuthorArg) do
         yield remapAuthor(mapRemapAuthorIter)
     done
 
@@ -161,9 +166,9 @@ def mapRemapAuthor(mapRemapAuthorArg : [[[Char]]]) : [[[Char]]] :=
 # 
 # etc.
 def main (ssmain : [Char]) : [Char] :=
-    let words : [[Char]] := words(ssmain) in
-    let authors : [[[Char]]] := splitOnAnd(words) in
-    let mapRemapAuthorV : [[[Char]]] := mapRemapAuthor(authors) in
-    let intersperseAnd : [[Char]] := intersperseAnd(mapRemapAuthorV) in
-    let concat : [Char] := concat(intersperseAnd) in
+    let words := words(ssmain) in
+    let authors := splitOnAnd(words) in
+    let mapRemapAuthorV  := mapRemapAuthor(authors) in
+    let intersperseAnd  := intersperseAnd(mapRemapAuthorV) in
+    let concat := concat(intersperseAnd) in
     return concat

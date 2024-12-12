@@ -101,7 +101,7 @@ parsedToStmt RBool (P.SReturn e) = do
 parsedToStmt ctx (P.SLetIn i e stmts) = do 
     stmt' <- mapM (parsedToStmt ctx) stmts
     e' <- parsedToOutputExpr e
-    return $ SLetOutput (identToString i, Just t) e' (SSeq stmt' Nothing) Nothing
+    return $ SLetOutput (identToString i, Nothing) e' (SSeq stmt' Nothing) Nothing
 parsedToStmt ctx (P.SLetBIn i stmts) = do
     stmt' <- mapM (parsedToStmt ctx) stmts
     return $ SLetBoolean (identToString i) (SSeq stmt' Nothing) Nothing
