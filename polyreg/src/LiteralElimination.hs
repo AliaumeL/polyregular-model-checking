@@ -14,13 +14,13 @@ module LiteralElimination where
 import ForPrograms
 import ForProgramsTyping
 
-eliminateLiterals :: Program v t -> Program v t
+eliminateLiterals :: Program String ValueType -> Program String ValueType
 eliminateLiterals (Program funcs main) = Program (map eliminateLiteralFun funcs) main
 
-eliminateLiteralFun :: StmtFun v t -> StmtFun v t
+eliminateLiteralFun :: StmtFun String ValueType -> StmtFun String ValueType
 eliminateLiteralFun (StmtFun name args stmt t) = StmtFun name args (eliminateLiteralStmt stmt) t
 
-eliminateLiteralBExpr :: BExpr v t -> BExpr v t
+eliminateLiteralBExpr :: BExpr String ValueType -> BExpr String ValueType
 eliminateLiteralBExpr (BConst b t) = BConst b t
 eliminateLiteralBExpr (BNot b t) = BNot (eliminateLiteralBExpr b) t
 eliminateLiteralBExpr (BOp op b1 b2 t) = BOp op (eliminateLiteralBExpr b1) (eliminateLiteralBExpr b2) t
@@ -33,17 +33,25 @@ eliminateLiteralBExpr (BLitEq t (CChar c v) (OConst (CChar c' v') t') t'') = BCo
 eliminateLiteralBExpr (BLitEq t (CChar c v) _ _) = BConst False t
 eliminateLiteralBExpr (BLitEq t _ _ _) = error "BLitEq with non-char CExpr"
 
-eliminateLiteralPExpr :: PExpr v t -> PExpr v t
-eliminateLiteralPExpr (PVar v t ) = PVar v t
+eliminateLiteralPExpr :: PExpr String ValueType -> PExpr String ValueType
+eliminateLiteralPExpr (PVar v t) = PVar v t 
 
 -- Convert a constant expression to a statement that produces
 -- the same value
-eliminateLiteralCExpr :: CExpr v t -> Stmt v t
-eliminateLiteralCExpr (CChar _ _) = error $ "CChar in eliminateLiteralCExpr"
-eliminateLiteralCExpr (CList cs t) = SSeq (map (\c -> SYield (OConst c t) t) cs) t
+eliminateLiteralCExpr :: CExpr String ValueType -> Stmt String ValueType
+eliminateLiteralCExpr c@(CChar _ _) = error $ "CChar in eliminateLiteralCExpr"
+eliminateLiteralCExpr (CList [] t) = SSeq [] t
+eliminateLiteralCExpr (CList cs ts@(TOutput (TOList TOChar))) = SSeq (map eliminateSubExpr cs) ts
+    where
+        eliminateSubExpr :: CExpr String ValueType -> Stmt String ValueType
+        eliminateSubExpr c = SYield (OConst c (TOutput TOChar)) ts
+eliminateLiteralCExpr (CList cs ts@(TOutput (TOList (TOList t)))) = SSeq (map eliminateSubExpr cs) ts
+    where
+        eliminateSubExpr :: CExpr String ValueType -> Stmt String ValueType
+        eliminateSubExpr c = SYield (OGen (eliminateLiteralCExpr c) (TOutput t)) ts
 
-eliminateLiteralOExpr :: OExpr v t -> OExpr v t
-eliminateLiteralOExpr (OVar v t) = OVar v t
+eliminateLiteralOExpr :: OExpr String ValueType -> OExpr String ValueType
+eliminateLiteralOExpr (OVar v t) = OVar v t 
 eliminateLiteralOExpr (OConst (CChar c t') t) = OConst (CChar c t') t
 eliminateLiteralOExpr (OConst (CList [] t') t) = OConst (CList [] t') t
 eliminateLiteralOExpr (OConst c t) = OGen (eliminateLiteralCExpr c) t
@@ -57,7 +65,7 @@ eliminateLiteralOExpr (OApp _ _ _) = error "OApp in eliminateLiteralOExpr"
 eliminateLiteralOExpr (OGen s t) = OGen (eliminateLiteralStmt s) t
 
 
-eliminateLiteralStmt :: Stmt v t -> Stmt v t
+eliminateLiteralStmt :: Stmt String ValueType -> Stmt String ValueType
 eliminateLiteralStmt (SIf b s1 s2 t) = SIf (eliminateLiteralBExpr b) (eliminateLiteralStmt s1) (eliminateLiteralStmt s2) t
 eliminateLiteralStmt (SYield o t) = SYield (eliminateLiteralOExpr o) t
 eliminateLiteralStmt (SOReturn o t) = SOReturn (eliminateLiteralOExpr o) t
