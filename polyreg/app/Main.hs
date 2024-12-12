@@ -113,6 +113,9 @@ main = do
                     writeOutputFile (optOutputProg opts) (prettyPrintProgramWithNls prog)
                     writeOutputFile (optOutputProg opts) (replicate 80 '-')
                     writeOutputFile (optOutputProg opts) (prettyPrintProgramWithNls transformedProg)
+                    case inferAndCheckProgram (fmap Just transformedProg) of
+                        Left err -> putStrLn $ "Program stopped typechecking " ++ show err
+                        Right _  -> putStrLn $ "Program still type checks"
                     case word of
                         Nothing -> return ()
                         Just w -> do
