@@ -277,7 +277,7 @@ assignNumbersStmtM p (SLetOutput (v, t1) e s t2) = do
     addTypeSpec n t2
     withVar v (PosLetOVar : p) $ do
         nv <- getVar v
-        addTypeSpec nv t2
+        addTypeSpec nv t1
         (ne, te) <- assignNumbersOExprM (PosLetOExpr : p) e
         logConstraint $ C.VarConstraint (nv, C.Equal, ne)
         (ns, ts) <- assignNumbersStmtM (PosLetOStmt : p) s
