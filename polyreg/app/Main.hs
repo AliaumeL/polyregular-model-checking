@@ -2,7 +2,7 @@ module Main (main) where
 
 
 import ForPrograms
-import ForProgramsTyping (ValueType)
+import ForProgramsTyping (ValueType(..))
 import Typing.Inference (inferAndCheckProgram)
 import ForProgramInterpreter (runProgramString)
 import BooleanElimination (removeBooleanGen)
@@ -91,6 +91,10 @@ writeOutputFile :: Maybe FilePath -> String -> IO ()
 writeOutputFile Nothing = putStrLn
 writeOutputFile (Just file) = writeFile file
 
+erasePositionTypes ::ValueType -> Maybe ValueType
+erasePositionTypes (TPos _) = Nothing
+erasePositionTypes t = Just t
+
 main :: IO ()
 main = do
     opts <- execParser cmdParser
@@ -113,7 +117,7 @@ main = do
                     writeOutputFile (optOutputProg opts) (prettyPrintProgramWithNls prog)
                     writeOutputFile (optOutputProg opts) (replicate 80 '-')
                     writeOutputFile (optOutputProg opts) (prettyPrintProgramWithNls transformedProg)
-                    case inferAndCheckProgram (fmap Just transformedProg) of
+                    case inferAndCheckProgram (fmap erasePositionTypes transformedProg) of
                         Left err -> putStrLn $ "Program stopped typechecking " ++ show err
                         Right _  -> putStrLn $ "Program still type checks"
                     case word of

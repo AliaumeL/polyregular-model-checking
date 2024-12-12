@@ -100,8 +100,8 @@ runElimM (ElimM m) = case runExcept (runStateT m (ElimState 0 M.empty M.empty)) 
 -- replaceHashPart "abc" 123 = "abc#123"
 replaceHashPart :: Int -> String -> String
 replaceHashPart i s = case break (=='#') s of
-    (a, '#':b) -> a ++ "#" ++ show i
-    (a, b)     -> a ++ "#" ++ show i
+    (a, '#':b) -> a ++ "#func#" ++ show i
+    (a, b)     -> a ++ "#func#" ++ show i
 
 
 instance MonadElim ElimM where
