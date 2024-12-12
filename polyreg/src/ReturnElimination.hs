@@ -91,7 +91,7 @@ retElimStmt (SYield (OGen s (TOutput (TOList _))) t) = do
     has_returned <- fresh "has_returned"
     updated <- updateReturnsList has_returned s
     return $ SLetBoolean has_returned updated t
-retElimStmt (SYield x _) = error $ "(retElimStmt)qInvalid type for yield" ++ show x
+retElimStmt (SYield x _) = error $ "(retElimStmt) Invalid type for yield" ++ show x
 retElimStmt (SIf b s1 s2 t) = SIf b <$> (retElimStmt s1) <*> (retElimStmt s2) <*> pure t
 retElimStmt (SOReturn x t) = error $ "SOReturn ret" ++ show x --  SOReturn <$> (retElimOExpr x) <*> pure t
 retElimStmt (SBReturn x t) = pure $ SBReturn x t
