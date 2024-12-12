@@ -62,8 +62,8 @@ type FreshM = State Int
 -- replaceHashPart "abc" 123 = "abc#123"
 replaceHashPart :: Int -> String -> String
 replaceHashPart i s = case break (=='#') s of
-    (a, '#':b) -> a ++ "#" ++ show i
-    (a, b)     -> a ++ "#" ++ show i
+    (a, '#':b) -> a ++ "#liteq#" ++ show i
+    (a, b)     -> a ++ "#liteq#" ++ show i
 
 instance MonadFresh FreshM where
     fresh s = do
