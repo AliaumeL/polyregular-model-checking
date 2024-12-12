@@ -28,6 +28,7 @@ import Debug.Trace
 -- and turns `ifs` into sequences.
 reverseAndSimplify :: Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
 reverseAndSimplify (SYield o t) = SYield o t
+reverseAndSimplify (SOReturn (OConst (CList [] _) _) t) = SSeq [] t
 reverseAndSimplify (SOReturn _ _) = error "SOReturn in reverseAndSimplify"
 reverseAndSimplify (SBReturn _ _) = error "SBReturn in reverseAndSimplify"
 reverseAndSimplify (SIf _ s1 s2 t) = SSeq [reverseAndSimplify s2, reverseAndSimplify s1] t
@@ -227,6 +228,7 @@ subYieldStmt :: (Show v, Show t, Eq v, Eq t) =>
                 ((StmtZip v t) -> ExtVars v t) ->
                 StmtZip v t -> v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
 subYieldStmt cstr z v1 v2 s (SYield o t) = substOVarStmt cstr (ForParams v1 v2 o (reverseStmtZip z)) s
+subYieldStmt _    _ _ _ _   (SOReturn (OConst (CList [] _) _) t) = SSeq [] t
 subYieldStmt _    _ _ _ _   (SOReturn o t) = error "SOReturn in subYield"
 subYieldStmt _    _ _ _ _   (SBReturn b t) = error "SBReturn in subYield"
 subYieldStmt cstr z v1 v2 s (SIf b s1 s2 t) = SIf b (subYieldStmt cstr zleft v1 v2 s s1) (subYieldStmt cstr zright v1 v2 s s2) t
@@ -254,6 +256,7 @@ substOVarStmt :: (Eq v) =>
                  ((StmtZip v t) -> ExtVars v t) ->
                  ForParams v t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
 substOVarStmt cstr p (SYield o' t) = SYield (substOVarOExpr cstr p o') t
+substOVarStmt cstr p (SOReturn (OConst (CList [] _) _) t) = SSeq [] t
 substOVarStmt cstr _ (SOReturn _ _) = error "SOReturn in substOVarStmt"
 substOVarStmt cstr _ (SBReturn _ _) = error "SBReturn in substOVarStmt"
 substOVarStmt cstr p (SIf b s1 s2 t) = SIf (substOVarBExpr cstr p b) (substOVarStmt cstr p s1) (substOVarStmt cstr p s2) t
