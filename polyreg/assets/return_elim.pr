@@ -24,11 +24,6 @@ def getCurrentWord (sb : [Char] with (i)) : [Char] :=
 
 def words (ss : [Char]) : [[Char]] :=
     yield getFirstWord(ss)
-    for (i, vv) in enumerate(ss) do 
-        if vv =Char= ' ' then 
-            yield getCurrentWord(ss with (i)) 
-        endif 
-     done
 
 
 def main (ssmain : [Char]) : [Char] :=
