@@ -548,7 +548,7 @@ displayUncoveredNodes (PosCoding _ b) ns = show (IntMap.keys b)  ++ " ; " ++ unl
 displayNodeOrType :: PosCoding -> C.ConstraintGraph -> Int -> String
 displayNodeOrType (PosCoding _ b) cgraph  i = case IntMap.lookup i b of
     Just p  -> "Node " ++ show i ++ " at " ++ show p
-    Nothing -> case IntMap.lookup i (C.const cgraph) of
+    Nothing -> case IntMap.lookup i (C.csts cgraph) of
         Just t  -> "Constant Type " ++ show i ++ " : " ++ show t
         Nothing -> error "Node not found"
 
@@ -559,7 +559,7 @@ resolveTypeOrError m i = case IntMap.lookup i m of
     Nothing -> Left $ InferError $ "Type not found for node " ++ show i
 
 displaySolverError :: PosCoding -> C.ConstraintGraph -> C.SolverError -> String
-displaySolverError coding cgraph (C.UncoveredNodes ns) = "Uncovered nodes: " ++ show (C.const cgraph) ++ displayUncoveredNodes coding ns 
+displaySolverError coding cgraph (C.UncoveredNodes ns) = "Uncovered nodes: " ++ show (C.csts cgraph) ++ displayUncoveredNodes coding ns 
 displaySolverError coding cgraph (C.InvalidConstraint x y c t) = "Invalid constraint: " ++ show x ++ ":" ++ show (readIntCoding coding x) ++ " " ++ show y ++ ":" ++ show (readIntCoding coding y) ++ " " ++ show c ++ " " ++ show t 
 displaySolverError coding cgraph (C.InconsistentGraph x y c tx ty) = "Inconsistent graph: " ++ (displayNodeOrType coding cgraph x) ++ " " ++ (displayNodeOrType coding cgraph y) ++ " " ++ show c ++ " " ++ show tx ++ " " ++ show ty 
 
@@ -568,6 +568,6 @@ inferAndCheckProgram p = runInfer p
     where
         runInfer p = do
             let (prog, coding, cgraph) = runPosState $ computeNumbersAndConstraints p
-            case C.verifyAndSolve cgraph of
+            case C.verifyAndSolveBFS cgraph of
                 Left errs -> Left $ InferError $ unlines $ (map $ displaySolverError coding cgraph) errs
                 Right intToType -> mapM (resolveTypeOrError intToType) prog

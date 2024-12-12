@@ -107,8 +107,13 @@ def reverse(reverseArg : [Char]) : [Char] :=
         yield c
     done
 
+def reverseLL(reverseArg : [[Char]]) : [[Char]] :=
+    for (i, c) in reversed(enumerate(reverseArg)) do
+        yield c
+    done
+
 def getAllButLastName(getAllButLastNameArg : [[Char]]) : [[Char]] :=
-    for (i, name) in reversed(enumerate(getAllButFirstName(reverse(getAllButLastNameArg)))) do
+    for (i, name) in reversed(enumerate(getAllButFirstName(reverseLL(getAllButLastNameArg)))) do
         yield name
     done
 

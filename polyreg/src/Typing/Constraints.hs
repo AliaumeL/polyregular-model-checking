@@ -8,7 +8,11 @@ import qualified Data.Set    as S
 import qualified Data.IntMap as IntMap
 import qualified Data.IntSet as IntSet
 
+import qualified Data.Array as A
 import qualified Data.Graph as G
+
+import Control.Monad
+import Control.Monad.State
 
 import Data.Foldable (toList)
 
@@ -24,7 +28,7 @@ updateType _ _ = Nothing
 
 data ConstraintGraph = ConstraintGraph {
     graph :: G.Graph,                    -- the graph of constraints
-    const :: IntMap.IntMap Type,         -- "sink" / "constant" nodes
+    csts  :: IntMap.IntMap Type,         -- "sink" / "constant" nodes
     elbl  :: M.Map (Int, Int) Constraint -- edge labels
 } deriving (Show, Eq)
 
@@ -149,6 +153,60 @@ verifyConstraints types (ConstraintGraph _ _ elbl) = aggregateErrors $ map verif
 verifyAndSolve :: ConstraintGraph -> Either [SolverError] (IntMap.IntMap Type)
 verifyAndSolve graph =
     case solveConstraints graph of
+        Left err -> Left [err]
+        Right t -> do
+            verifyConstraints t graph
+            return t
+
+-- 
+--
+-- Recode a simple BFS algorithm
+-- to propagate typing constraints.
+--
+-- This code is for debug purpose only.
+--
+bfsForest :: ConstraintGraph -> [(G.Vertex,Type)] -> IntMap.IntMap Type
+bfsForest g roots = evalState (bfsForestM g roots >> get) IntMap.empty
+
+bfsForestM :: ConstraintGraph -> [(G.Vertex,Type)] -> State (IntMap.IntMap Type) ()
+bfsForestM g roots = bfsPrim $ map (\x -> [x]) roots
+    where
+        bfsTypeStep :: [(G.Vertex,Type)] -> State (IntMap.IntMap Type) [(G.Vertex,Type)]
+        bfsTypeStep [] = return []
+        bfsTypeStep ((x,tx):xs) = do
+            visited <- get
+            case IntMap.lookup x visited of
+                Just _ -> return xs
+                Nothing -> do
+                    put $ IntMap.insert x tx visited
+                    let neighbours = (graph g) A.! x
+                    let newTypesM = map (\y -> (y, updateType ((elbl g) M.! (x,y)) tx)) neighbours
+                    let newTypes = [(y, t) | (y, Just t) <- newTypesM]
+                    bfsTypeStep (xs ++ newTypes)
+
+        bfsSteps :: [[(G.Vertex,Type)]] -> State (IntMap.IntMap Type) [[(G.Vertex,Type)]]
+        bfsSteps l = mapM bfsTypeStep l
+
+        bfsPrim :: [[(G.Vertex,Type)]] -> State (IntMap.IntMap Type) ()
+        bfsPrim l = do 
+            newL <- bfsSteps l
+            case any (not . null) newL of
+                True -> bfsPrim newL
+                False -> return ()
+
+solveConstraintsBFS :: ConstraintGraph -> Either SolverError (IntMap.IntMap Type) 
+solveConstraintsBFS g = do
+                                let types        = bfsForest g $ IntMap.toList (csts g)
+                                let allNodes     = IntSet.fromList $ G.vertices (graph g)
+                                let touchedNodes = IntSet.fromList $ IntMap.keys types
+                                let uncovered    = IntSet.difference allNodes touchedNodes
+                                case IntSet.null uncovered of
+                                    True  -> Right $ types
+                                    False -> Left $ UncoveredNodes [uncovered]
+
+verifyAndSolveBFS :: ConstraintGraph -> Either [SolverError] (IntMap.IntMap Type)
+verifyAndSolveBFS graph =
+    case solveConstraintsBFS graph of
         Left err -> Left [err]
         Right t -> do
             verifyConstraints t graph
