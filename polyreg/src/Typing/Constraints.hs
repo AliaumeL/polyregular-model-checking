@@ -125,10 +125,17 @@ solveConstraints (ConstraintGraph g c elbl) = do
 
 
 
+aggregateErrors :: [Either SolverError a] -> Either [SolverError] ()
+aggregateErrors [] = Right ()
+aggregateErrors (Right _ : xs) = aggregateErrors xs
+aggregateErrors (Left x : xs) = case aggregateErrors xs of
+    Right () -> Left [x]
+    Left xs -> Left (x:xs)
+
 -- Verifies that all edges in the constraint graph are 
 -- satisfied.
-verifyConstraints :: IntMap.IntMap Type -> ConstraintGraph -> Either SolverError ()
-verifyConstraints types (ConstraintGraph _ _ elbl) = mapM_ verifyEdge $ M.toList elbl
+verifyConstraints :: IntMap.IntMap Type -> ConstraintGraph -> Either [SolverError] ()
+verifyConstraints types (ConstraintGraph _ _ elbl) = aggregateErrors $ map verifyEdge $ M.toList elbl
     where
         verifyEdge :: ((Int, Int), Constraint) -> Either SolverError ()
         verifyEdge ((x, y), c) = case (IntMap.lookup x types, IntMap.lookup y types) of
@@ -139,8 +146,10 @@ verifyConstraints types (ConstraintGraph _ _ elbl) = mapM_ verifyEdge $ M.toList
             _ -> error "Invalid nodes"
 
 
-verifyAndSolve :: ConstraintGraph -> Either SolverError (IntMap.IntMap Type)
-verifyAndSolve graph = do
-            t <- solveConstraints graph
+verifyAndSolve :: ConstraintGraph -> Either [SolverError] (IntMap.IntMap Type)
+verifyAndSolve graph =
+    case solveConstraints graph of
+        Left err -> Left [err]
+        Right t -> do
             verifyConstraints t graph
             return t

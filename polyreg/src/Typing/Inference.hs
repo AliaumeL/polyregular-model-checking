@@ -19,6 +19,8 @@ import QuantifierFree
 import Control.Monad
 import Control.Monad.State
 
+import Debug.Trace
+
 data PosMove = PosIfL 
              | PosIfR 
              | PosIfB 
@@ -208,7 +210,13 @@ instance MonadPos PosStateM where
 
     registerPos p = do
         i <- gets counter
+        --let pos = Pos p
         let pos = Pos (reverse p)
+        PosCoding c _ <- gets coding 
+        if M.member pos c then
+            traceM $ "Position " ++ show pos ++ " already registered"
+        else return ()
+        traceM $ "Registering " ++ show pos ++ " as " ++ show (i + 1)
         modify $ \s -> s { counter = i + 1, coding = insertCoding pos (i+1) (coding s) }
         return (i+1)
 
@@ -220,7 +228,10 @@ instance MonadPos PosStateM where
         coding <- gets coding
         return $ readIntCoding coding i
 
-    logConstraint c = modify $ \s -> s { constraints = c : constraints s }
+    logConstraint c = do 
+        traceM $ "Logging constraint " ++ show c
+        modify $ \s -> s { constraints = c : constraints s }
+
     getConstraints = gets constraints
 
     getPosRelation = gets coding
@@ -296,7 +307,7 @@ assignNumbersStmtM p (SFor dir (i, v, tv) e s ts) = do
             ni <- getVar i
             addTypeSpec nv tv
             addTypeSpec ni $ Just (TPos (Position (eraseTypesO e)))
-            (ne, te) <- assignNumbersOExprM (PosForVar  : p) e
+            (ne, te) <- assignNumbersOExprM (PosForExpr  : p) e
             (ns, ts) <- assignNumbersStmtM  (PosForStmt : p) s
             logConstraint $ C.VarConstraint (nv, C.Minus, ne)
             logConstraint $ C.VarConstraint (ns, C.Equal, n)
@@ -509,8 +520,10 @@ computeNumbersAndConstraints p = do
     let cgraph = C.createGraph constraints
     return (newP, coding, cgraph)
 
-data InferError = InferError String
-  deriving (Show)
+data InferError = InferError String 
+
+instance (Show InferError) where
+    show (InferError s) = "InferError:\n" ++ s
 
 
 resolveType :: IntMap.IntMap C.Type -> Int -> Maybe ValueType
@@ -545,13 +558,16 @@ resolveTypeOrError m i = case IntMap.lookup i m of
     Just t ->  Right $ cTypeToValueType t
     Nothing -> Left $ InferError $ "Type not found for node " ++ show i
 
+displaySolverError :: PosCoding -> C.ConstraintGraph -> C.SolverError -> String
+displaySolverError coding cgraph (C.UncoveredNodes ns) = "Uncovered nodes: " ++ show (C.const cgraph) ++ displayUncoveredNodes coding ns 
+displaySolverError coding cgraph (C.InvalidConstraint x y c t) = "Invalid constraint: " ++ show x ++ ":" ++ show (readIntCoding coding x) ++ " " ++ show y ++ ":" ++ show (readIntCoding coding y) ++ " " ++ show c ++ " " ++ show t 
+displaySolverError coding cgraph (C.InconsistentGraph x y c tx ty) = "Inconsistent graph: " ++ (displayNodeOrType coding cgraph x) ++ " " ++ (displayNodeOrType coding cgraph y) ++ " " ++ show c ++ " " ++ show tx ++ " " ++ show ty 
+
 inferAndCheckProgram :: Program String (Maybe ValueType) -> Either (InferError) (Program String ValueType)
 inferAndCheckProgram p = runInfer p
     where
         runInfer p = do
             let (prog, coding, cgraph) = runPosState $ computeNumbersAndConstraints p
             case C.verifyAndSolve cgraph of
-                Left (C.UncoveredNodes ns) -> Left $ InferError $ "Uncovered nodes: " ++ show (C.const cgraph) ++ displayUncoveredNodes coding ns 
-                Left (C.InvalidConstraint x y c t) -> Left $ InferError $ "Invalid constraint: " ++ show x ++ ":" ++ show (readIntCoding coding x) ++ " " ++ show y ++ ":" ++ show (readIntCoding coding y) ++ " " ++ show c ++ " " ++ show t
-                Left (C.InconsistentGraph x y c tx ty) -> Left $ InferError $ "Inconsistent graph: " ++ (displayNodeOrType coding cgraph x) ++ " " ++ (displayNodeOrType coding cgraph y) ++ " " ++ show c ++ " " ++ show tx ++ " " ++ show ty
+                Left errs -> Left $ InferError $ unlines $ (map $ displaySolverError coding cgraph) errs
                 Right intToType -> mapM (resolveTypeOrError intToType) prog
