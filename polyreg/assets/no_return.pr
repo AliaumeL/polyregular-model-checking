@@ -1,0 +1,18 @@
+def first_letter (w : [Char]) : Char :=
+    for (i, c : Char) in w do
+        return c 
+    done
+
+def buggy_has_a (w : [Char]) : Bool :=
+    for (i, c : Char) in w do
+        if c =Char= 'a' then
+            return True 
+        endif
+    done 
+
+def main(w : [Char]) : [Char] := 
+    if buggy_has_a(w) then 
+        return "Starts with a"
+    else 
+        return "Starts with non-a"
+    endif

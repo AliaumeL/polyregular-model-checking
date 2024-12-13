@@ -1,0 +1,10 @@
+def main (w : [Char]) : [Char] := 
+    if w =[Char]= "" then
+        yield 'A'
+    endif
+    if w =[Char]= [] then
+        yield 'B'
+    endif
+    if w =[Char]= "a" then 
+        yield 'C'
+    endif

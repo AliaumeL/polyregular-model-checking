@@ -267,7 +267,7 @@ substOVarStmt cstr p (SIf b s1 s2 t) = SIf (substOVarBExpr cstr p b) (substOVarS
 substOVarStmt cstr _ (SLetOutput _ _ _ _) = error "SLetOutput in substOVarStmt"
 substOVarStmt cstr p (SLetBoolean v' s t) = SLetBoolean v' (substOVarStmt cstr p s) t
 substOVarStmt cstr p (SSetTrue v' t) = SSetTrue v' t
-substOVarStmt cstr p (SFor dir (i, e, t) v' s t') = SFor dir (i, e, t) v' (substOVarStmt cstr p s) t'
+substOVarStmt cstr p (SFor dir (i, e, t) v' s t') = SFor dir (i, e, t) (substOVarOExpr cstr p v') (substOVarStmt cstr p s) t'
 substOVarStmt cstr p (SSeq ss t) = SSeq (map (substOVarStmt cstr p) ss) t
 
 

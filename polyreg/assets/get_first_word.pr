@@ -1,0 +1,35 @@
+def getFirstWord (sa : [Char]) : [Char] :=
+    let mut seen_space := False in
+    for (i, v) in enumerate(sa) do 
+        if not seen_space and not (v === ' ') then 
+            yield v
+        endif
+        if v === ' ' then 
+            seen_space := True
+        endif
+    done
+
+def getCurrentWord (sb : [Char] with (i)) : [Char] :=
+    let mut seen_space := False in
+    for (j, v) in enumerate(sb) do 
+       if j > i then 
+           if v =Char= ' ' then 
+               seen_space := True
+           endif
+           if not seen_space then 
+              yield v 
+           endif
+       endif
+     done 
+
+
+def words (ss : [Char]) : [[Char]] :=
+    yield getFirstWord(ss)
+    for (i, vv) in enumerate(ss) do 
+        if vv =Char= ' ' then 
+            yield getCurrentWord(ss with (i)) 
+        endif 
+     done
+
+def main(w : [Char]) : [Char] := 
+    return getFirstWord(w)
