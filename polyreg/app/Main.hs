@@ -38,8 +38,8 @@ data Transformation = LitEqElimination
                     | FunctionElimination
                     | LiteralElimination    -- litteral to generators
                     | BooleanElimination
-                    | ReturnElimination
                     | LetOutputElimination
+                    | ReturnElimination
                     | ForLoopExpansion
                     deriving (Eq,Show,Read,Ord,Enum)
 
