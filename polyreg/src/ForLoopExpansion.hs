@@ -54,7 +54,7 @@ forLoopExpansionProg p = runForElim (forLoopExpansionProgM p)
 class Monad m => MonadForElim m where
     withVar       :: String -> m a -> m a
     getVar        :: String -> m (ExtVars String ValueType)
-    getVarMaybe   :: String -> m (Maybe (ExtVars String ValueType))
+    getVarOrSame  :: String -> m (ExtVars String ValueType)
     freshVar      :: String -> m String
 
     throwWithCtx  :: String -> m a
@@ -92,9 +92,11 @@ instance MonadForElim ForElim where
         result <- m
         modify $ \s -> s { varMap = oldMap }
         return result
-    getVarMaybe v = do
+    getVarOrSame v = do
         m <- gets varMap
-        return . fmap OldVar $ M.lookup v m
+        case M.lookup v m of
+            Nothing -> return $ (OldVar v)
+            Just v' -> return $ (OldVar v')
     getVar v = do
         m <- gets varMap
         case M.lookup v m of
@@ -172,9 +174,11 @@ forLoopExpansionStmtM (SFor Backward (OldVar i, OldVar e, _) (OGen stmt _) body 
     let expanded    = substituteYieldStmts AddrVar    i       e guardedBody stmt'
     let expandedRev = substituteYieldStmts AddrRevVar newVar  e expanded stmtRevSimpl'
     return expandedRev
-forLoopExpansionStmtM (SFor dir (OldVar i, OldVar e, t) (OVar v t') body t'') = do
+forLoopExpansionStmtM (SFor dir (OldVar i, OldVar e, t) (OVar (OldVar v) t') body t'') = do
     body' <- forLoopExpansionStmtM body
-    return $ SFor dir (OldVar i, OldVar e, t) (OVar v t') body' t''
+    v'    <- getVarOrSame v
+    return $ SFor dir (OldVar i, OldVar e, t) (OVar v' t') body' t''
+forLoopExpansionStmtM (SFor dir (OldVar i, OldVar e, t) (OVar _ t') body t'') = error "SFor in forLoopExpansionStmtM"
 forLoopExpansionStmtM (SSeq ss t) = do
     ss' <- mapM forLoopExpansionStmtM ss
     return $ SSeq ss' t
@@ -333,10 +337,8 @@ refreshForLoopsStmt x = error $ "invalid statement in refreshForLoopsStmt " ++ s
 
 refreshForLoopsOExpr :: (MonadForElim m) => OExpr ExStr ValueType -> m (OExpr ExStr ValueType)
 refreshForLoopsOExpr (OVar (OldVar v) t) = do
-    v' <- getVarMaybe v
-    case v' of 
-        Nothing  -> return (OVar (OldVar v) t)
-        Just v'' -> return (OVar v'' t)
+    v' <- getVarOrSame v
+    return $ OVar v' t
 refreshForLoopsOExpr (OVar v t) = return $ OVar v t
 refreshForLoopsOExpr (OConst c t) = return $ OConst c t
 refreshForLoopsOExpr (OList os t) = OList <$> mapM refreshForLoopsOExpr os <*> pure t

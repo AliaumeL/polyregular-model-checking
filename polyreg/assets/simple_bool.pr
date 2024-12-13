@@ -1,0 +1,6 @@
+def main(w : [Char]) : [Char] := 
+    if { return True } then
+        return "a"
+    else
+        return "b"
+    endif

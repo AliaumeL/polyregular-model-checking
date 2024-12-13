@@ -19,7 +19,10 @@ import QuantifierFree
 import Control.Monad
 import Control.Monad.State
 
-import Debug.Trace
+-- import Debug.Trace
+
+traceM :: Monad m => String -> m ()
+traceM s = return ()
 
 data PosMove = PosIfL 
              | PosIfR 

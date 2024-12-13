@@ -171,18 +171,22 @@ prettyPrintBExprWithNls i priority (BGen s t) = "{\n" ++ prettyPrintStmtWithNls 
 prettyPrintBExprWithNls i priority (BApp v es t) = v ++ "(" ++ unwords (map (\(e, ps) -> prettyPrintOExpr e ++ unwords (map prettyPrintPExpr ps)) es) ++ ")"
 prettyPrintBExprWithNls i priority (BLitEq t c e _) = prettyPrintOExpr e ++ " === " ++ prettyPrintCExpr c
 
+
 prettyPrintStmtWithNls :: Int -> Stmt String ValueType -> String
-prettyPrintStmtWithNls n (SIf b s1 (SSeq [] _) _) = indent n ++ "if " ++ prettyPrintBExprWithNls n 0 b ++ " then\n" ++ prettyPrintStmtWithNls (n + 1) s1 ++ "\n" ++ indent n ++ "endif"
-prettyPrintStmtWithNls n (SIf b s1 s2 _) = indent n ++ "if " ++ prettyPrintBExprWithNls n 0 b ++ " then\n" ++ prettyPrintStmtWithNls (n + 1) s1 ++ "\n" ++ indent n ++ "else\n" ++ prettyPrintStmtWithNls (n + 1) s2 ++ "\n" ++ indent n ++ "endif"
-prettyPrintStmtWithNls n (SLetOutput (v, t) o s _) = indent n ++ "let " ++ v ++ " : " ++ prettyPrintT t ++ " := " ++ prettyPrintOExprWithNlsTyped n o ++ " in\n" ++ prettyPrintStmtWithNls n s
-prettyPrintStmtWithNls n (SLetBoolean v s _) = indent n ++ "let mut " ++ v ++ ": Bool := False in \n" ++ prettyPrintStmtWithNls n s
-prettyPrintStmtWithNls n (SFor Forward (i, e, t) v s _) = indent n ++ "for (" ++ i ++ ", " ++ e ++ " : " ++ prettyPrintT t ++ ") in enumerate(" ++ prettyPrintOExprWithNlsTyped n v ++ ") do\n" ++ prettyPrintStmtWithNls (n + 1) s ++ "\n" ++ indent n ++  "done"
-prettyPrintStmtWithNls n (SFor Backward (i, e, t) v s _) = indent n ++ "for (" ++ i ++ ", " ++ e ++ " : " ++ prettyPrintT t ++ ") in reversed(enumerate(" ++ prettyPrintOExprWithNlsTyped n v ++ ")) do\n" ++ prettyPrintStmtWithNls (n + 1) s ++ "\n" ++ indent n ++  "done"
-prettyPrintStmtWithNls n (SSeq ss _) = stripFinalNewLine $ unlines $ map (prettyPrintStmtWithNls n) ss
-prettyPrintStmtWithNls n (SYield o _) = indent n ++ "yield " ++ prettyPrintOExprWithNlsTyped n o
-prettyPrintStmtWithNls n (SOReturn o _) = indent n ++ "return " ++ prettyPrintOExprWithNlsTyped n o
-prettyPrintStmtWithNls n (SBReturn b _) = indent n ++ "return " ++ prettyPrintBExprWithNls n 0 b
-prettyPrintStmtWithNls n (SSetTrue v _) = indent n ++ "setTrue " ++ v
+prettyPrintStmtWithNls i s = prettyPrintStmtWithNlsSub i s  ++ " :: " ++ prettyPrintT (getType s)
+
+prettyPrintStmtWithNlsSub :: Int -> Stmt String ValueType -> String
+prettyPrintStmtWithNlsSub n (SIf b s1 (SSeq [] _) _) = indent n ++ "if " ++ prettyPrintBExprWithNls n 0 b ++ " then\n" ++ prettyPrintStmtWithNls (n + 1) s1 ++ "\n" ++ indent n ++ "endif"
+prettyPrintStmtWithNlsSub n (SIf b s1 s2 _) = indent n ++ "if " ++ prettyPrintBExprWithNls n 0 b ++ " then\n" ++ prettyPrintStmtWithNls (n + 1) s1 ++ "\n" ++ indent n ++ "else\n" ++ prettyPrintStmtWithNls (n + 1) s2 ++ "\n" ++ indent n ++ "endif"
+prettyPrintStmtWithNlsSub n (SLetOutput (v, t) o s _) = indent n ++ "let " ++ v ++ " : " ++ prettyPrintT t ++ " := " ++ prettyPrintOExprWithNlsTyped n o ++ " in\n" ++ prettyPrintStmtWithNls n s
+prettyPrintStmtWithNlsSub n (SLetBoolean v s _) = indent n ++ "let mut " ++ v ++ ": Bool := False in \n" ++ prettyPrintStmtWithNls n s
+prettyPrintStmtWithNlsSub n (SFor Forward (i, e, t) v s _) = indent n ++ "for (" ++ i ++ ", " ++ e ++ " : " ++ prettyPrintT t ++ ") in enumerate(" ++ prettyPrintOExprWithNlsTyped n v ++ ") do\n" ++ prettyPrintStmtWithNls (n + 1) s ++ "\n" ++ indent n ++  "done"
+prettyPrintStmtWithNlsSub n (SFor Backward (i, e, t) v s _) = indent n ++ "for (" ++ i ++ ", " ++ e ++ " : " ++ prettyPrintT t ++ ") in reversed(enumerate(" ++ prettyPrintOExprWithNlsTyped n v ++ ")) do\n" ++ prettyPrintStmtWithNls (n + 1) s ++ "\n" ++ indent n ++  "done"
+prettyPrintStmtWithNlsSub n (SSeq ss _) = stripFinalNewLine $ unlines $ map (prettyPrintStmtWithNls n) ss
+prettyPrintStmtWithNlsSub n (SYield o _) = indent n ++ "yield " ++ prettyPrintOExprWithNlsTyped n o
+prettyPrintStmtWithNlsSub n (SOReturn o _) = indent n ++ "return " ++ prettyPrintOExprWithNlsTyped n o
+prettyPrintStmtWithNlsSub n (SBReturn b _) = indent n ++ "return " ++ prettyPrintBExprWithNls n 0 b
+prettyPrintStmtWithNlsSub n (SSetTrue v _) = indent n ++ "setTrue " ++ v
 
 prettyPrintFunctionWithNls :: StmtFun String ValueType -> String
 prettyPrintFunctionWithNls (StmtFun name args stmt t) = "def " ++ name ++ "(" ++ unwords (map (\(a, t, _) -> a ++ " : " ++ prettyPrintT t) args) ++ ") : " ++ prettyPrintT t ++ " := \n" ++ prettyPrintStmtWithNls 1 stmt ++ "\n"

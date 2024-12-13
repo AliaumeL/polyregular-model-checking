@@ -1,6 +1,6 @@
 def isOnlyAs (s : [Char]) : Bool :=
-    for (j, v : Char) in s do 
-        if not (v =Char= 'a') then
+    for (j, v) in enumerate(s) do 
+        if not (v === 'a') then
             return False
         endif 
     done 

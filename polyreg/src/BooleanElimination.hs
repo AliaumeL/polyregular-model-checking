@@ -142,7 +142,7 @@ substituteReturnBool t b r (SSeq ss _) = SSeq (map (substituteReturnBool t b r) 
 -- (step 5. a)
 -- the type given should be the return type of the block /!\
 introduceAllVariables :: ValueType -> [(Stmt String ValueType, String, String)] -> Stmt String ValueType -> Stmt String ValueType
-introduceAllVariables t l block = letBooleans TBool boolAllVars $ SSeq allBlocks t
+introduceAllVariables t l block = letBooleans t boolAllVars $ SSeq allBlocks t
     where 
         boolOutputVars = map (\(_, b, _) -> b) l
         boolReturnVars = map (\(_, _, r) -> r) l
