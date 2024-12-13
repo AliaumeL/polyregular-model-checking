@@ -4,7 +4,7 @@ module Main (main) where
 import ForPrograms
 import ForProgramsTyping (ValueType(..))
 import Typing.Inference (inferAndCheckProgram)
-import ForProgramInterpreter (runProgramString)
+import ForProgramInterpreter (runProgramString, InterpretError(..))
 import BooleanElimination (removeBooleanGen)
 import FunctionElimination (eliminateFunctionCalls)
 import LiteralElimination (eliminateLiterals)
@@ -14,6 +14,7 @@ import ReturnElimination (retElimProgram)
 import ReductionLitEq (removeBLitEq)
 import ForProgramsPrettyPrint
 import Parser.ParseHighLevel (parseHighLevel)
+import Typing.TypeChecker (typeCheckProgram)
 
 import Options.Applicative
 
@@ -95,6 +96,13 @@ erasePositionTypes ::ValueType -> Maybe ValueType
 erasePositionTypes (TPos _) = Nothing
 erasePositionTypes t = Just t
 
+simpleShowInterpreterError :: InterpretError -> String
+simpleShowInterpreterError (InterpretError s _) = s
+
+simpleShowEitherError :: Either InterpretError String -> String
+simpleShowEitherError (Left e) = "ERROR: " ++ simpleShowInterpreterError e
+simpleShowEitherError (Right s) = "OK: " ++ s
+
 main :: IO ()
 main = do
     opts <- execParser cmdParser
@@ -117,8 +125,8 @@ main = do
                     writeOutputFile (optOutputProg opts) (prettyPrintProgramWithNls prog)
                     writeOutputFile (optOutputProg opts) (replicate 80 '-')
                     writeOutputFile (optOutputProg opts) (prettyPrintProgramWithNls transformedProg)
-                    case inferAndCheckProgram (fmap erasePositionTypes transformedProg) of
-                        Left err -> putStrLn $ "Program stopped typechecking " ++ show err
+                    case typeCheckProgram transformedProg of
+                        Left err -> putStrLn $ "Program stopped typechecking:\n " ++ err
                         Right _  -> putStrLn $ "Program still type checks"
                     case word of
                         Nothing -> return ()
@@ -128,4 +136,4 @@ main = do
                             writeOutputFile (optOutputWord opts) (replicate 80 '-')
                             writeOutputFile (optOutputWord opts) w
                             writeOutputFile (optOutputWord opts) (show wordBefore)
-                            writeOutputFile (optOutputWord opts) (show wordAfter)
+                            writeOutputFile (optOutputWord opts) (simpleShowEitherError wordAfter)

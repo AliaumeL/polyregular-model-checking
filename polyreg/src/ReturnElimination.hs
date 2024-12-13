@@ -87,12 +87,12 @@ retElimStmt s@(SYield (OVar _ _) _) = pure s
 retElimStmt (SYield (OGen s (TOutput TOChar)) t) = do 
     has_returned <- fresh "has_returned"
     return $ SLetBoolean has_returned (updateReturnsChar has_returned s) t
-retElimStmt (SYield (OGen s ts@(TOutput (TOList _))) t) = SYield <$> (OGen <$> (retElimStmt s) <*> pure ts) <*> pure t
-{- do
+retElimStmt (SYield (OGen s ts@(TOutput (TOList _))) t) = do 
+    s' <- retElimStmt s
     has_returned <- fresh "has_returned"
-    updated <- updateReturnsList has_returned s
-    return $ SLetBoolean has_returned updated t
--}
+    updated <- updateReturnsList has_returned s'
+    let updated2 = SYield (OGen updated ts) t
+    return $ SLetBoolean has_returned updated2 t
 retElimStmt (SYield x _) = error $ "(retElimStmt) Invalid type for yield" ++ show x
 retElimStmt (SIf b s1 s2 t) = SIf b <$> (retElimStmt s1) <*> (retElimStmt s2) <*> pure t
 retElimStmt (SOReturn x t) = SOReturn <$> (retElimOExpr x) <*> pure t
@@ -115,13 +115,13 @@ retElimOExpr (OGen s (TOutput TOChar)) = do
     stmt'' <- retElimStmt stmt'
     let new_stmt = SLetBoolean has_returned stmt'' (TOutput TOChar)
     return $ OGen new_stmt (TOutput TOChar)
+-}
 retElimOExpr (OGen s (TOutput (TOList t))) = do
     has_returned <- fresh "g-has_returned"
     stmt' <- updateReturnsList has_returned s
     stmt'' <- retElimStmt stmt'
     let new_stmt = SLetBoolean has_returned stmt'' (TOutput (TOList t))
     return $ OGen new_stmt (TOutput (TOList t))
--} 
 retElimOExpr (OGen s t) = OGen <$> (retElimStmt s) <*> pure t
 --error $ "Invalid type for generator" ++ show s ++ " " ++ show t
 

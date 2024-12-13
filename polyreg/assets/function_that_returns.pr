@@ -1,0 +1,5 @@
+def f(w : Char) : [Char] := 
+    yield w 
+
+def main (w : [Char]) : [Char] := 
+    return f('a')

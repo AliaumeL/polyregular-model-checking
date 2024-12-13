@@ -15,11 +15,12 @@ import ForProgramsTyping (ValueType(..),
                           outputTypeDepth,
                           depthToType)
 import QuantifierFree
+import ForProgramsPrettyPrint
 
 import Control.Monad
 import Control.Monad.State
 
--- import Debug.Trace
+import Debug.Trace (trace)
 
 traceM :: Monad m => String -> m ()
 traceM s = return ()
@@ -73,6 +74,17 @@ data ProgramCodePoint t = CodePointStmt    (Stmt String t)
                         | CodePointVar     String
                         deriving (Show, Eq)
 
+prettyPrintCodePoint :: (Show t) => ProgramCodePoint t -> String
+prettyPrintCodePoint (CodePointStmt s) = "CodePointStmt " ++ prettyPrintStmtWithNlsNoTypes 0 s
+prettyPrintCodePoint (CodePointBExpr b) = "CodePointBExpr " ++ prettyPrintBExprWithNlsNoTypes 0 0 b
+prettyPrintCodePoint (CodePointOExpr e) = "CodePointOExpr " ++ prettyPrintOExprWithNlsNoTypes 0 e
+prettyPrintCodePoint (CodePointCExpr c) = "CodePointCExpr " ++ prettyPrintCExprWithNlsNoTypes c
+prettyPrintCodePoint (CodePointFun f) = "CodePointFun " ++ prettyPrintFunctionWithNlsNoTypes f
+prettyPrintCodePoint (CodePointProg p) = "CodePointProg " ++ prettyPrintProgramWithNoTypes p
+prettyPrintCodePoint (CodePointVar v) = "CodePointVar " ++ v
+
+
+
 
 cTypeToValueType :: C.Type -> ValueType
 cTypeToValueType C.TBool = TBool
@@ -86,7 +98,7 @@ valueTypeToCType (TPos (Position t)) = C.TPos t
 
 
 
-posMove :: PosMove -> ProgramCodePoint t -> ProgramCodePoint t
+posMove :: (Show t) => PosMove -> ProgramCodePoint t -> ProgramCodePoint t
 posMove (PosIfL) (CodePointStmt (SIf _ s _ _)) = CodePointStmt s
 posMove (PosIfR) (CodePointStmt (SIf _ _ s _)) = CodePointStmt s
 posMove (PosIfB) (CodePointStmt (SIf b _ _ _)) = CodePointBExpr b
@@ -119,15 +131,15 @@ posMove (PosFun f) (CodePointProg (Program fs _)) = CodePointFun $ fun
         fun = head $ filter (\(StmtFun f' _ _ _) -> f == f') fs
 posMove (PosFunBody) (CodePointFun (StmtFun _ _ s _)) = CodePointStmt s
 posMove (PosFunArg i) (CodePointFun (StmtFun _ args _ _)) = CodePointVar $ (\(v, _, _) -> v) $ args !! i
-posMove _ _ = error "Invalid move"
+posMove x _ = error $ "Invalid move" ++ show x
 
 
-posMoveStar :: [PosMove] -> ProgramCodePoint t -> ProgramCodePoint t
+posMoveStar :: (Show t) => [PosMove] -> ProgramCodePoint t -> ProgramCodePoint t
 posMoveStar [] p = p
 posMoveStar (m:ms) p = posMoveStar ms $ posMove m p
 
-posGoTo :: Pos -> ProgramCodePoint t -> ProgramCodePoint t
-posGoTo (Pos ms) p = posMoveStar (reverse ms) p
+posGoTo :: (Show t) => Pos -> ProgramCodePoint t -> ProgramCodePoint t
+posGoTo (Pos ms) p = posMoveStar ( ms) p
 
 
 data PosCoding = PosCoding (M.Map Pos Int) (IntMap.IntMap Pos)
@@ -548,9 +560,9 @@ displayUncoveredNodes :: PosCoding -> [IntSet.IntSet] -> String
 displayUncoveredNodes (PosCoding _ b) ns = show (IntMap.keys b)  ++ " ; " ++ unlines (map (displayUncoveredNodesBag (PosCoding M.empty b)) ns)
 
 
-displayNodeOrType :: PosCoding -> C.ConstraintGraph -> Int -> String
-displayNodeOrType (PosCoding _ b) cgraph  i = case IntMap.lookup i b of
-    Just p  -> "Node " ++ show i ++ " at " ++ show p
+displayNodeOrType :: Program String (Maybe ValueType) -> PosCoding -> C.ConstraintGraph -> Int -> String
+displayNodeOrType p (PosCoding _ b) cgraph  i = case IntMap.lookup i b of
+    Just pos  -> "Node " ++ show i ++ " at " ++ show pos ++ "\n" ++ prettyPrintCodePoint (posGoTo pos (CodePointProg p))
     Nothing -> case IntMap.lookup i (C.csts cgraph) of
         Just t  -> "Constant Type " ++ show i ++ " : " ++ show t
         Nothing -> error "Node not found"
@@ -561,10 +573,10 @@ resolveTypeOrError m i = case IntMap.lookup i m of
     Just t ->  Right $ cTypeToValueType t
     Nothing -> Left $ InferError $ "Type not found for node " ++ show i
 
-displaySolverError :: PosCoding -> C.ConstraintGraph -> C.SolverError -> String
-displaySolverError coding cgraph (C.UncoveredNodes ns) = "Uncovered nodes: " ++ show (C.csts cgraph) ++ displayUncoveredNodes coding ns 
-displaySolverError coding cgraph (C.InvalidConstraint x y c t) = "Invalid constraint: " ++ show x ++ ":" ++ show (readIntCoding coding x) ++ " " ++ show y ++ ":" ++ show (readIntCoding coding y) ++ " " ++ show c ++ " " ++ show t 
-displaySolverError coding cgraph (C.InconsistentGraph x y c tx ty) = "Inconsistent graph: " ++ (displayNodeOrType coding cgraph x) ++ " " ++ (displayNodeOrType coding cgraph y) ++ " " ++ show c ++ " " ++ show tx ++ " " ++ show ty 
+displaySolverError :: Program String (Maybe ValueType) -> PosCoding -> C.ConstraintGraph -> C.SolverError -> String
+displaySolverError p coding cgraph (C.UncoveredNodes ns) = "Uncovered nodes: " ++ show (C.csts cgraph) ++ displayUncoveredNodes coding ns 
+displaySolverError p coding cgraph (C.InvalidConstraint x y c t) = "Invalid constraint: " ++ show x ++ ":" ++ show (readIntCoding coding x) ++ " " ++ show y ++ ":" ++ show (readIntCoding coding y) ++ " " ++ show c ++ " " ++ show t 
+displaySolverError p coding cgraph (C.InconsistentGraph x y c tx ty) = "Inconsistent graph: " ++ (displayNodeOrType p coding cgraph x) ++ " " ++ (displayNodeOrType p coding cgraph y) ++ " " ++ show c ++ " " ++ show tx ++ " " ++ show ty 
 
 inferAndCheckProgram :: Program String (Maybe ValueType) -> Either (InferError) (Program String ValueType)
 inferAndCheckProgram p = runInfer p
@@ -572,5 +584,5 @@ inferAndCheckProgram p = runInfer p
         runInfer p = do
             let (prog, coding, cgraph) = runPosState $ computeNumbersAndConstraints p
             case C.verifyAndSolveBFS cgraph of
-                Left errs -> Left $ InferError $ unlines $ (map $ displaySolverError coding cgraph) errs
+                Left errs -> Left $ InferError $ unlines $ (map $ displaySolverError p coding cgraph) $ take 23 errs
                 Right intToType -> mapM (resolveTypeOrError intToType) prog

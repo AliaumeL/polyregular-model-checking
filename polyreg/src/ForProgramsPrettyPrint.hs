@@ -1,4 +1,4 @@
-module ForProgramsPrettyPrint (prettyPrintProgram, prettyPrintProgramWithNls, prettyPrintStmtWithNls) where
+module ForProgramsPrettyPrint  where
 
 import ForPrograms
 import ForProgramsTyping
@@ -193,3 +193,63 @@ prettyPrintFunctionWithNls (StmtFun name args stmt t) = "def " ++ name ++ "(" ++
 
 prettyPrintProgramWithNls :: Program String ValueType -> String
 prettyPrintProgramWithNls (Program stmts _) = stripFinalNewLine $ stripFinalNewLine $ unlines $ map prettyPrintFunctionWithNls stmts
+
+
+-- This is the equivaalent of pretty print program with newlines, but ignores types. 
+prettyPrintProgramWithNoTypes :: Program String t -> String
+prettyPrintProgramWithNoTypes (Program stmts _) = stripFinalNewLine $ unlines $ map prettyPrintFunctionWithNlsNoTypes stmts
+
+prettyPrintFunctionWithNlsNoTypes :: StmtFun String t -> String
+prettyPrintFunctionWithNlsNoTypes (StmtFun name args stmt t) = "def " ++ name ++ "(" ++ unwords (map (\(a, _, _) -> a) args) ++ ") := \n" ++ prettyPrintStmtWithNlsNoTypes 1 stmt ++ "\n"
+
+prettyPrintStmtWithNlsNoTypes :: Int -> Stmt String t -> String
+prettyPrintStmtWithNlsNoTypes n (SIf b s1 (SSeq [] _) _ ) = indent n ++ "if " ++ prettyPrintBExprWithNlsNoTypes n 0 b ++ " then\n" ++ prettyPrintStmtWithNlsNoTypes (n + 1) s1 ++ "\n" ++ indent n ++ "endif"
+prettyPrintStmtWithNlsNoTypes n (SIf b s1 s2 _) = indent n ++ "if " ++ prettyPrintBExprWithNlsNoTypes n 0 b ++ " then\n" ++ prettyPrintStmtWithNlsNoTypes (n + 1) s1 ++ "\n" ++ indent n ++ "else\n" ++ prettyPrintStmtWithNlsNoTypes (n + 1) s2 ++ "\n" ++ indent n ++ "endif"
+prettyPrintStmtWithNlsNoTypes n (SLetOutput (v, t) o s _) = indent n ++ "let " ++ v ++ " := " ++ prettyPrintOExprWithNlsNoTypes n o ++ " in\n" ++ prettyPrintStmtWithNlsNoTypes n s
+prettyPrintStmtWithNlsNoTypes n (SLetBoolean v s _) = indent n ++ "let mut " ++ v ++ " := False in \n" ++ prettyPrintStmtWithNlsNoTypes n s
+prettyPrintStmtWithNlsNoTypes n (SFor Forward (i, e, t) v s _) = indent n ++ "for (" ++ i ++ ", " ++ e ++ ") in enumerate(" ++ prettyPrintOExprWithNlsNoTypes n v ++ ") do\n" ++ prettyPrintStmtWithNlsNoTypes (n + 1) s ++ "\n" ++ indent n ++  "done"
+prettyPrintStmtWithNlsNoTypes n (SFor Backward (i, e, t) v s _) = indent n ++ "for (" ++ i ++ ", " ++ e ++ ") in reversed(enumerate(" ++ prettyPrintOExprWithNlsNoTypes n v ++ ")) do\n" ++ prettyPrintStmtWithNlsNoTypes (n + 1) s ++ "\n" ++ indent n ++  "done"
+prettyPrintStmtWithNlsNoTypes n (SSeq ss _) = stripFinalNewLine $ unlines $ map (prettyPrintStmtWithNlsNoTypes n) ss
+prettyPrintStmtWithNlsNoTypes n (SYield o _) = indent n ++ "yield " ++ prettyPrintOExprWithNlsNoTypes n o
+prettyPrintStmtWithNlsNoTypes n (SOReturn o _) = indent n ++ "return " ++ prettyPrintOExprWithNlsNoTypes n o
+prettyPrintStmtWithNlsNoTypes n (SBReturn b _) = indent n ++ "return " ++ prettyPrintBExprWithNlsNoTypes n 0 b
+prettyPrintStmtWithNlsNoTypes n (SSetTrue v _) = indent n ++ "setTrue " ++ v
+
+
+
+prettyPrintOExprWithNlsNoTypes :: Int -> OExpr String t -> String
+prettyPrintOExprWithNlsNoTypes indent (OVar v _) = v
+prettyPrintOExprWithNlsNoTypes indent (OConst c _) = prettyPrintCExprWithNlsNoTypes c
+prettyPrintOExprWithNlsNoTypes indent (OList os _) = "[" ++ unwords (map (\o -> prettyPrintOExprWithNlsNoTypes indent o) os) ++ "]"
+prettyPrintOExprWithNlsNoTypes indent (OApp v os _) = v ++ "(" ++ unwords (map (\(o, ps) -> prettyPrintOExprWithNlsNoTypes indent o ++ unwords (map prettyPrintPExprWithNlsNoTypes ps)) os) ++ ")"
+prettyPrintOExprWithNlsNoTypes i (OGen s _) = "{\n" ++ prettyPrintStmtWithNlsNoTypes (i + 1) s ++ "\n" ++ indent i  ++ "}"
+
+prettyPrintBExprWithNlsNoTypes :: Int -> Int -> BExpr String t -> String
+prettyPrintBExprWithNlsNoTypes indent priority (BConst b _) = show b
+prettyPrintBExprWithNlsNoTypes indent priority (BNot (BVar v _) _) = "!" ++ v
+prettyPrintBExprWithNlsNoTypes indent priority (BNot b _) = "!(" ++ prettyPrintBExprWithNlsNoTypes indent 0 b ++ ")"
+prettyPrintBExprWithNlsNoTypes indent priority (BOp Conj b1 b2 _) = "(" ++ b1' ++ " and " ++ b2' ++ ")" 
+    where b1' = prettyPrintBExprWithNlsNoTypes indent 1 b1
+          b2' = prettyPrintBExprWithNlsNoTypes indent 1 b2
+prettyPrintBExprWithNlsNoTypes indent priority (BOp Disj b1 b2 _) = "(" ++ b1' ++ " or " ++ b2' ++ ")"
+    where b1' = prettyPrintBExprWithNlsNoTypes indent 0 b1
+          b2' = prettyPrintBExprWithNlsNoTypes indent 0 b2
+prettyPrintBExprWithNlsNoTypes indent priority (BOp Impl b1 b2 _) = if priority > 0 then "(" ++ b1' ++ " => " ++ b2' ++ ")" else b1' ++ " => " ++ b2'
+    where b1' = prettyPrintBExprWithNlsNoTypes indent 0 b1
+          b2' = prettyPrintBExprWithNlsNoTypes indent 0 b2
+prettyPrintBExprWithNlsNoTypes indent priority (BOp Equiv b1 b2 _) = if priority > 0 then "(" ++ b1' ++ " <=> " ++ b2' ++ ")" else b1' ++ " <=> " ++ b2'
+    where b1' = prettyPrintBExprWithNlsNoTypes indent 0 b1
+          b2' = prettyPrintBExprWithNlsNoTypes indent 0 b2
+prettyPrintBExprWithNlsNoTypes indent priority (BComp comp p1 p2 _) = prettyPrintPExprWithNlsNoTypes p1 ++ " " ++ prettyPrintComp comp ++ " " ++ prettyPrintPExprWithNlsNoTypes p2
+prettyPrintBExprWithNlsNoTypes indent priority (BVar v _) = v
+prettyPrintBExprWithNlsNoTypes i priority (BGen s _) = "{\n" ++ prettyPrintStmtWithNlsNoTypes (i + 1) s ++ "\n" ++ indent i ++ "}"
+prettyPrintBExprWithNlsNoTypes i priority (BApp v es _) = v ++ "(" ++ unwords (map (\(e, ps) -> prettyPrintOExprWithNlsNoTypes i e ++ unwords (map prettyPrintPExprWithNlsNoTypes ps)) es) ++ ")"
+prettyPrintBExprWithNlsNoTypes i priority (BLitEq _ c e _) = prettyPrintOExprWithNlsNoTypes i e ++ " === " ++ prettyPrintCExprWithNlsNoTypes c
+
+prettyPrintCExprWithNlsNoTypes :: CExpr String t -> String
+prettyPrintCExprWithNlsNoTypes (CChar c _) = "'" ++ [c] ++ "'"
+prettyPrintCExprWithNlsNoTypes (CList s _) = "[" ++ unwords (map prettyPrintCExprWithNlsNoTypes s) ++ "]"
+
+prettyPrintPExprWithNlsNoTypes :: PExpr String t -> String
+prettyPrintPExprWithNlsNoTypes (PVar v _) = v
+
