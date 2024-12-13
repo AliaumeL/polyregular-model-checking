@@ -84,18 +84,12 @@ ifHasNotReturnedRet has_returned s = SIf (BNot (BVar has_returned TBool) TBool)
 retElimStmt :: (MonadFresh m) => Stmt String ValueType -> m (Stmt String ValueType)
 retElimStmt s@(SYield (OConst _ _) _) = pure s
 retElimStmt s@(SYield (OVar _ _) _) = pure s
-retElimStmt (SYield (OGen s (TOutput TOChar)) t) = do 
-    has_returned <- fresh "has_returned"
-    return $ SLetBoolean has_returned (updateReturnsChar has_returned s) t
-retElimStmt (SYield (OGen s ts@(TOutput (TOList _))) t) = SYield <$> (OGen <$> (retElimStmt s) <*> pure ts) <*> pure t
-{- do
-    has_returned <- fresh "has_returned"
-    updated <- updateReturnsList has_returned s
-    return $ SLetBoolean has_returned updated t
--}
-retElimStmt (SYield x _) = error $ "(retElimStmt) Invalid type for yield" ++ show x
+retElimStmt (SYield o@(OGen _ _) t) = do
+    o' <- retElimOExpr o
+    return $ SYield o' t
 retElimStmt (SIf b s1 s2 t) = SIf b <$> (retElimStmt s1) <*> (retElimStmt s2) <*> pure t
-retElimStmt (SOReturn x t) = SOReturn <$> (retElimOExpr x) <*> pure t
+retElimStmt s@(SOReturn (OConst (CList [] _) _) _) = pure s
+retElimStmt (SOReturn x t) = error $ "SOReturn : " ++ show x  -- SOReturn <$> (retElimOExpr x) <*> pure t
 retElimStmt (SBReturn x t) = pure $ SBReturn x t
 retElimStmt (SLetOutput v x s t) = SLetOutput v <$> (retElimOExpr x) <*> (retElimStmt s) <*> pure t
 retElimStmt (SLetBoolean x s t) = SLetBoolean x <$> (retElimStmt s) <*> pure t
@@ -108,7 +102,6 @@ retElimOExpr (OVar x t) = pure $ OVar x t
 retElimOExpr (OConst c t) = pure $ OConst c t
 retElimOExpr (OList xs t) = OList <$> (mapM retElimOExpr xs) <*> pure t
 retElimOExpr (OApp x xs t) = OApp x <$> (mapM (\(x, ys) -> (,) <$> (retElimOExpr x) <*> pure ys) xs) <*> pure t
-{- 
 retElimOExpr (OGen s (TOutput TOChar)) = do
     has_returned <- fresh "g-has_returned"
     let stmt' = updateReturnsChar has_returned s
@@ -121,9 +114,8 @@ retElimOExpr (OGen s (TOutput (TOList t))) = do
     stmt'' <- retElimStmt stmt'
     let new_stmt = SLetBoolean has_returned stmt'' (TOutput (TOList t))
     return $ OGen new_stmt (TOutput (TOList t))
--} 
-retElimOExpr (OGen s t) = OGen <$> (retElimStmt s) <*> pure t
---error $ "Invalid type for generator" ++ show s ++ " " ++ show t
+retElimOExpr (OGen s t) = error $ "Invalid type for generator" ++ show s ++ " " ++ show t
+--OGen <$> (retElimStmt s) <*> pure t
 
 
 -- this function substitutes the return statements with the appropriate

@@ -95,6 +95,13 @@ erasePositionTypes ::ValueType -> Maybe ValueType
 erasePositionTypes (TPos _) = Nothing
 erasePositionTypes t = Just t
 
+
+untypeExceptFunctions :: Program String ValueType -> Program String (Maybe ValueType)
+untypeExceptFunctions (Program fs main) = Program (map untypeFun fs) main 
+    where
+        untypeFun (StmtFun name args s t) = StmtFun name (map (\(a,t,ps) -> (a, Just t, ps)) args) (fmap (const Nothing) s) (Just t)
+
+
 main :: IO ()
 main = do
     opts <- execParser cmdParser
@@ -118,7 +125,10 @@ main = do
                     writeOutputFile (optOutputProg opts) (replicate 80 '-')
                     writeOutputFile (optOutputProg opts) (prettyPrintProgramWithNls transformedProg)
                     case inferAndCheckProgram (fmap erasePositionTypes transformedProg) of
-                        Left err -> putStrLn $ "Program stopped typechecking " ++ show err
+                        Left err ->  
+                            case inferAndCheckProgram (untypeExceptFunctions transformedProg) of
+                                Left err -> putStrLn $ "Program stopped typechecking (all together!)" ++ show err
+                                Right _  -> putStrLn $ "Program stopped typechecking (with our types, but otherwise it is fine) " ++ show err
                         Right _  -> putStrLn $ "Program still type checks"
                     case word of
                         Nothing -> return ()
@@ -129,3 +139,4 @@ main = do
                             writeOutputFile (optOutputWord opts) w
                             writeOutputFile (optOutputWord opts) (show wordBefore)
                             writeOutputFile (optOutputWord opts) (show wordAfter)
+                            writeOutputFile (optOutputWord opts) ("Is the same: " ++ (show $ wordBefore == wordAfter))

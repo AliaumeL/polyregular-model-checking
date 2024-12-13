@@ -46,7 +46,7 @@ reverseAndSimplify (SFor _ _ _ _ _) = error "SFor in reverseAndSimplify"
 forLoopExpansion :: Program String ValueType -> Either ForElimError (Program String ValueType)
 forLoopExpansion x = let z = (forLoopExpansionProg  (mapVarsProgram OldVar x)) in
                      let z' = (fmap (mapVarsProgram show)) z in  
-                     trace (either show prettyPrintProgramWithNls z') $ fmap eliminateExtVarsProg z
+                     fmap eliminateExtVarsProg z
 forLoopExpansionProg :: Program (ExtVars String ValueType) ValueType -> Either ForElimError (Program (ExtVars String ValueType) ValueType)
 forLoopExpansionProg p = runForElim (forLoopExpansionProgM p)
 
