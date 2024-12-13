@@ -26,7 +26,7 @@ import Debug.Trace
 -- Reverses all the generators (and checks that they are only on variables)
 -- removes all "letBool" and "setTrue" statements,
 -- and turns `ifs` into sequences.
-reverseAndSimplify :: Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
+reverseAndSimplify :: (Show v, Show t) => Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
 reverseAndSimplify (SYield o t) = SYield o t
 reverseAndSimplify (SOReturn (OConst (CList [] _) _) t) = SSeq [] t
 reverseAndSimplify (SOReturn _ _) = error "SOReturn in reverseAndSimplify"
@@ -36,17 +36,17 @@ reverseAndSimplify (SLetOutput _ _ _ _) = error "SLetOutput in reverseAndSimplif
 reverseAndSimplify (SLetBoolean _ s t) = reverseAndSimplify s
 reverseAndSimplify (SSetTrue _ t) = SSeq [] t
 reverseAndSimplify (SSeq ss t) = SSeq (reverse $ map reverseAndSimplify ss) t
-reverseAndSimplify (SFor dir (OldVar i, OldVar e, t) (OVar v t') body t'') = simplified
+reverseAndSimplify (SFor dir (OldVar i, OldVar e, t) v body t'') = simplified
     where
         body' = reverseAndSimplify body
-        simplified = SFor (reverseDirection dir) (OldVar i, OldVar e, t) (OVar v t') body' t''
-reverseAndSimplify (SFor _ _ _ _ _) = error "SFor in reverseAndSimplify"
+        simplified = SFor (reverseDirection dir) (OldVar i, OldVar e, t) v body' t''
+reverseAndSimplify s@(SFor _ _ _ _ _) = error $ "SFor in reverseAndSimplify" ++ show s
 
 
 forLoopExpansion :: Program String ValueType -> Either ForElimError (Program String ValueType)
 forLoopExpansion x = let z = (forLoopExpansionProg  (mapVarsProgram OldVar x)) in
                      let z' = (fmap (mapVarsProgram show)) z in  
-                     trace (either show prettyPrintProgramWithNls z') $ fmap eliminateExtVarsProg z
+                     fmap eliminateExtVarsProg z
 forLoopExpansionProg :: Program (ExtVars String ValueType) ValueType -> Either ForElimError (Program (ExtVars String ValueType) ValueType)
 forLoopExpansionProg p = runForElim (forLoopExpansionProgM p)
 

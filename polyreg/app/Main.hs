@@ -137,3 +137,4 @@ main = do
                             writeOutputFile (optOutputWord opts) w
                             writeOutputFile (optOutputWord opts) (show wordBefore)
                             writeOutputFile (optOutputWord opts) (simpleShowEitherError wordAfter)
+                            writeOutputFile (optOutputWord opts) ("Is the same: " ++ (show $ wordBefore == wordAfter))
