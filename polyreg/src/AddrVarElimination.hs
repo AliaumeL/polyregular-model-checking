@@ -21,6 +21,24 @@ data StmtZip v t =
                | ZBegin
                deriving (Show, Eq, Functor, Foldable, Traversable)
 
+
+mapVariablesZip :: (a -> b) -> StmtZip a t -> StmtZip b t 
+mapVariablesZip f (ZIfL x) = ZIfL (mapVariablesZip f x)
+mapVariablesZip f (ZIfR x) = ZIfR (mapVariablesZip f x)
+mapVariablesZip f (ZSeq a b x) = ZSeq a b (mapVariablesZip f x)
+mapVariablesZip f (ZFor dir n t x) = ZFor dir (f n) t (mapVariablesZip f x)
+mapVariablesZip _ ZBegin = ZBegin
+
+mapVariablesZipM :: (Monad m) => (a -> m b) -> StmtZip a t -> m (StmtZip b t)
+mapVariablesZipM f (ZIfL x) = ZIfL <$> (mapVariablesZipM f x)
+mapVariablesZipM f (ZIfR x) = ZIfR <$> (mapVariablesZipM f x)
+mapVariablesZipM f (ZSeq a b x) = ZSeq a b <$> (mapVariablesZipM f x)
+mapVariablesZipM f (ZFor dir n t x) = do
+    n' <- f n
+    x' <- mapVariablesZipM f x
+    return $ ZFor dir n' t x'
+mapVariablesZipM _ ZBegin = return ZBegin
+
 reverseStmtZip :: StmtZip v t -> StmtZip v t
 reverseStmtZip x = reverseStmtZip' x ZBegin
  where 
