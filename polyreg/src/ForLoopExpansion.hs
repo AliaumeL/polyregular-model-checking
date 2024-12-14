@@ -356,4 +356,9 @@ refreshForLoopsBExpr (BApp _ _ _) = throwWithCtx "BApp in refreshForLoopsBExpr"
 refreshForLoopsBExpr (BLitEq t c o t') = BLitEq t c <$> refreshForLoopsOExpr o <*> pure t'
 
 refreshForLoopsPExpr :: (MonadForElim m) => PExpr ExStr ValueType -> m (PExpr ExStr ValueType)
-refreshForLoopsPExpr (PVar v t) = return $ PVar v t
+refreshForLoopsPExpr (PVar (OldVar v) t) = PVar <$> getVarOrSame v <*> pure t
+-- trace ("refresh-for-loop: " ++ show v) $ return $ PVar (OldVar v) t
+refreshForLoopsPExpr (PVar v t) = trace (show v) $ return $ PVar v t
+    
+    
+    
