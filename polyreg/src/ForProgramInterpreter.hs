@@ -269,7 +269,7 @@ interpretOExpr (OGen stmt _) = do
         -- NOTE: for debug purposes, this 
         -- allows compiling sometimes incorrect code
         --StmtNoOp -> return $ CList [] ()
-        _ -> throwWithCtx $ "(OGen) Expected output value, got " ++ show v
+        _ -> throwWithCtx $ "(OGen) Expected output value, got " ++ show v ++ " in " ++ show stmt
 
 interpretCExpr :: (MonadInterpreter m) => CExpr String () -> m (CExpr String ())
 interpretCExpr (CChar c _) = return $ CChar c ()

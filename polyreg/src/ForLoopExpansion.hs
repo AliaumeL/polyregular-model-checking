@@ -9,7 +9,7 @@ module ForLoopExpansion where
 
 import QuantifierFree
 import ForPrograms
-import ForProgramsTyping (ValueType(..))
+import ForProgramsTyping (ValueType(..),OutputType(..))
 import ForProgramsPrettyPrint (prettyPrintStmtWithNls, prettyPrintProgramWithNls)
 
 import Control.Monad
@@ -23,18 +23,22 @@ import AddrVarElimination (StmtZip(..), ExtVars(..), eliminateExtVarsProg, rever
 
 import Debug.Trace
 
+
+emptyStmt :: t -> Stmt v t
+emptyStmt t = SYield (OConst (CList [] t) t) t
+
 -- Reverses all the generators (and checks that they are only on variables)
 -- removes all "letBool" and "setTrue" statements,
 -- and turns `ifs` into sequences.
 reverseAndSimplify :: (Show v, Show t) => Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
 reverseAndSimplify (SYield o t) = SYield o t
-reverseAndSimplify (SOReturn (OConst (CList [] _) _) t) = SSeq [] t
+reverseAndSimplify (SOReturn (OConst (CList [] _) _) t) = emptyStmt t 
 reverseAndSimplify (SOReturn _ _) = error "SOReturn in reverseAndSimplify"
 reverseAndSimplify (SBReturn _ _) = error "SBReturn in reverseAndSimplify"
 reverseAndSimplify (SIf _ s1 s2 t) = SSeq [reverseAndSimplify s2, reverseAndSimplify s1] t
 reverseAndSimplify (SLetOutput _ _ _ _) = error "SLetOutput in reverseAndSimplify"
 reverseAndSimplify (SLetBoolean _ s t) = reverseAndSimplify s
-reverseAndSimplify (SSetTrue _ t) = SSeq [] t
+reverseAndSimplify (SSetTrue _ t) = emptyStmt t
 reverseAndSimplify (SSeq ss t) = SSeq (reverse $ map reverseAndSimplify ss) t
 reverseAndSimplify (SFor dir (OldVar i, OldVar e, t) v body t'') = simplified
     where
@@ -153,7 +157,7 @@ forLoopExpansionStmtM (SLetBoolean (OldVar v) s t) = withVar v $ do
 forLoopExpansionStmtM (SSetTrue (OldVar v) t) = do
     v' <- getVar v
     return $ SSetTrue v' t
-forLoopExpansionStmtM (SFor _ _ (OConst (CList [] _) _) _ t) = return $ SSeq [] t
+forLoopExpansionStmtM (SFor _ _ (OConst (CList [] _) _) _ t) = return $ emptyStmt t -- SSeq [] t
 forLoopExpansionStmtM (SFor Forward (OldVar i, OldVar e, _) (OGen stmt _) body _) = do
     body' <- forLoopExpansionStmtM body
     stmt' <- forLoopExpansionStmtM stmt
@@ -170,7 +174,7 @@ forLoopExpansionStmtM (SFor Backward (OldVar i, OldVar e, _) (OGen stmt _) body 
     let guardedBody = (SIf (BComp Eq (PVar (OldVar i) t)
                                         (PVar (OldVar newVar) t) t)
                             body' 
-                            (SSeq [] t) t)
+                            (emptyStmt t) t)
     let expanded    = substituteYieldStmts AddrVar    i       e guardedBody stmt'
     let expandedRev = substituteYieldStmts AddrRevVar newVar  e expanded stmtRevSimpl'
     return expandedRev
@@ -232,7 +236,7 @@ subYieldStmt :: (Show v, Show t, Eq v, Eq t) =>
                 ((StmtZip v t) -> ExtVars v t) ->
                 StmtZip v t -> v -> v -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
 subYieldStmt cstr z v1 v2 s (SYield o t) = substOVarStmt cstr (ForParams v1 v2 o (reverseStmtZip z)) s
-subYieldStmt _    _ _ _ _   (SOReturn (OConst (CList [] _) _) t) = SSeq [] t
+subYieldStmt _    _ _ _ _   (SOReturn (OConst (CList [] _) _) t) = emptyStmt t
 subYieldStmt _    _ _ _ _   (SOReturn o t) = error "SOReturn in subYield"
 subYieldStmt _    _ _ _ _   (SBReturn b t) = error "SBReturn in subYield"
 subYieldStmt cstr z v1 v2 s (SIf b s1 s2 t) = SIf b (subYieldStmt cstr zleft v1 v2 s s1) (subYieldStmt cstr zright v1 v2 s s2) t
@@ -260,7 +264,7 @@ substOVarStmt :: (Eq v) =>
                  ((StmtZip v t) -> ExtVars v t) ->
                  ForParams v t -> Stmt (ExtVars v t) t -> Stmt (ExtVars v t) t
 substOVarStmt cstr p (SYield o' t) = SYield (substOVarOExpr cstr p o') t
-substOVarStmt cstr p (SOReturn (OConst (CList [] _) _) t) = SSeq [] t
+substOVarStmt cstr p (SOReturn (OConst (CList [] _) _) t) = emptyStmt t
 substOVarStmt cstr _ (SOReturn _ _) = error "SOReturn in substOVarStmt"
 substOVarStmt cstr _ (SBReturn _ _) = error "SBReturn in substOVarStmt"
 substOVarStmt cstr p (SIf b s1 s2 t) = SIf (substOVarBExpr cstr p b) (substOVarStmt cstr p s1) (substOVarStmt cstr p s2) t
