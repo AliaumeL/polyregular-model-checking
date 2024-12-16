@@ -1,0 +1,39 @@
+def square(w : [Char]) : [[Char]] := 
+    for (i, c) in enumerate(w) do
+        yield "@"
+        yield { for (j, d) in enumerate(w) do
+                    if i < j then 
+                        yield d
+                    endif
+                done
+             }
+    done
+
+def duplicate(w : [Char]) : [[Char]] := 
+    yield w
+    yield w
+
+def concatLines(w : [[Char]]) : [Char] := 
+    for (i, x) in enumerate(w) do
+        for (j,y) in enumerate(x) do
+            yield y
+        done
+    done
+
+def reverseLines(w : [[Char]]) : [[Char]] := 
+    for (i, x) in reversed(enumerate(w)) do
+        yield x
+    done
+
+def reverseWord(w : [Char]) : [Char] := 
+    for (i, x) in reversed(enumerate(w)) do
+        yield x
+    done
+
+def main ( w : [Char] ) : [Char] := 
+    return reverseWord(concatLines(square(w)))
+    # return concatLines(square(concatLines(reverseLines(square(w)))))
+    # return concatLines(square(reverseWord(concatLines(square(w)))))
+    # return concatLines(square(concatLines(square(w))))
+    # return concatLines(square(concatLines(reverseLines(square(w)))))
+    # return concatLines(duplicate(concatLines(reverseLines(square(w)))))

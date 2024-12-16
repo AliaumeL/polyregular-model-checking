@@ -24,7 +24,8 @@ import AddrVarElimination (StmtZip(..), ExtVars(..), eliminateExtVarsProg, rever
 import Debug.Trace
 
 emptyStmt :: t -> Stmt v t
-emptyStmt t = SYield (OConst (CList [] t) t) t
+emptyStmt t = SSeq [] t
+--emptyStmt t = SYield (OConst (CList [] t) t) t
 
 class Monad m => MonadForElim m where
     withVar       :: String -> m a -> m a
@@ -146,12 +147,14 @@ refreshBooleanVariablesBExpr (BVar (OldVar v) t) = do
     return $ BVar v' t
 refreshBooleanVariablesBExpr (BVar v t) = error $ "BVar in refreshBooleanVariablesBExpr " ++ show v
 refreshBooleanVariablesBExpr (BGen s t) = return $ BGen s t -- we do not go inside generators
+refreshBooleanVariablesBExpr (BApp _ _ _) = throwWithCtx "BApp in refreshBooleanVariablesBExpr"
+refreshBooleanVariablesBExpr ans@(BLitEq t c o t') = return ans
 
 
 
 forLoopExpansion :: Program String ValueType -> Either ForElimError (Program String ValueType)
 forLoopExpansion x = let z = (forLoopExpansionProg  (mapVarsProgram OldVar x)) in
-                     let z' = (fmap (mapVarsProgram show)) z in  
+                     --let z' = (fmap (mapVarsProgram show)) z in  
                      fmap eliminateExtVarsProg z
 forLoopExpansionProg :: Program (ExtVars String ValueType) ValueType -> Either ForElimError (Program (ExtVars String ValueType) ValueType)
 forLoopExpansionProg p = runForElim (forLoopExpansionProgM p)
@@ -169,6 +172,7 @@ forLoopExpansionFunM :: (MonadForElim m) =>
                         StmtFun (ExtVars String ValueType) ValueType ->
                         m (StmtFun (ExtVars String ValueType) ValueType)
 forLoopExpansionFunM (StmtFun v args s t) = do
+    traceM $ "Expanding for loop in function " ++ show v
     s' <- forLoopExpansionStmtM s
     return $ StmtFun v args s' t
 
@@ -191,19 +195,27 @@ forLoopExpansionStmtM (SIf b s1 s2 t) = do
     s2' <- forLoopExpansionStmtM s2
     return $ SIf b' s1' s2' t
 forLoopExpansionStmtM (SLetOutput _ _ _ _) = throwWithCtx "SLetOutput in forLoopExpansionStmtM"
-forLoopExpansionStmtM (SLetBoolean v s t) = return $ SLetBoolean v s t
+forLoopExpansionStmtM (SLetBoolean v s t) = do 
+    s' <- forLoopExpansionStmtM s
+    return $ SLetBoolean v s' t
 forLoopExpansionStmtM (SSetTrue v t) = return $ SSetTrue v t
 forLoopExpansionStmtM (SFor _ _ (OConst (CList [] _) _) _ t) = return $ emptyStmt t
 forLoopExpansionStmtM (SFor Forward (OldVar i, OldVar e, _) (OGen stmt _) body _) = do
+    traceM "Here!!!"
+    stmtRefreshedFors <- refreshForLoopsStmt stmt
+    stmtRefreshedBools <- refreshBooleanVariablesStmt stmtRefreshedFors
+    stmt' <- forLoopExpansionStmtM stmtRefreshedBools
     body' <- forLoopExpansionStmtM body
-    stmt' <- forLoopExpansionStmtM stmt >>= refreshBooleanVariablesStmt 
     --traceM $ "Expanding for loop. Generator stmt:\n " ++ prettyPrintStmtWithNls 0 (mapVarsStmt show stmt') 
     --traceM $ "Expanding for loop. Body stmt:\n " ++ prettyPrintStmtWithNls 0 (mapVarsStmt show body')
     let expansion = substituteYieldStmts AddrVar i e body' stmt'
     return expansion
 forLoopExpansionStmtM (SFor Backward (OldVar i, OldVar e, _) (OGen stmt _) body t) = do
+    traceM "Here, but backward!!!"
     body'  <- forLoopExpansionStmtM body
-    stmt'  <- forLoopExpansionStmtM stmt >>= refreshBooleanVariablesStmt
+    stmtRefreshedFors <- refreshForLoopsStmt stmt
+    stmtRefreshedBools  <- refreshBooleanVariablesStmt stmtRefreshedFors
+    stmt' <- forLoopExpansionStmtM stmtRefreshedBools
     newVar <- freshVar i
     let stmtRevSimpl = reverseAndSimplify stmt' 
     stmtRevSimpl' <- refreshForLoopsStmt stmtRevSimpl
@@ -216,8 +228,8 @@ forLoopExpansionStmtM (SFor Backward (OldVar i, OldVar e, _) (OGen stmt _) body 
     return expandedRev
 forLoopExpansionStmtM (SFor dir (OldVar i, OldVar e, t) (OVar (OldVar v) t') body t'') = do
     body' <- forLoopExpansionStmtM body
-    v'    <- getVarOrSame v
-    return $ SFor dir (OldVar i, OldVar e, t) (OVar v' t') body' t''
+    --v'    <- getVarOrSame v
+    return $ SFor dir (OldVar i, OldVar e, t) (OVar (OldVar v) t') body' t''
 forLoopExpansionStmtM (SFor dir (OldVar i, OldVar e, t) (OVar _ t') body t'') = error "SFor in forLoopExpansionStmtM"
 forLoopExpansionStmtM (SSeq ss t) = do
     ss' <- mapM forLoopExpansionStmtM ss
@@ -397,6 +409,46 @@ refreshForLoopsPExpr :: (MonadForElim m) => PExpr ExStr ValueType -> m (PExpr Ex
 refreshForLoopsPExpr (PVar (OldVar v) t) = PVar <$> getVarOrSame v <*> pure t
 -- trace ("refresh-for-loop: " ++ show v) $ return $ PVar (OldVar v) t
 refreshForLoopsPExpr (PVar v t) = trace (show v) $ return $ PVar v t
-    
-    
-    
+
+
+hasForLoopOverGenProgram :: Program s t -> Bool
+hasForLoopOverGenProgram (Program fs _) = any hasForLoopOverGenFun fs
+
+hasForLoopOverGenFun :: StmtFun s t -> Bool
+hasForLoopOverGenFun (StmtFun _ _ s _) = hasForLoopOverGenStmt s
+
+hasForLoopOverGenStmt :: Stmt s t -> Bool
+hasForLoopOverGenStmt (SFor _ _ (OGen _ _) _ _) = True
+hasForLoopOverGenStmt (SFor _ _ e s _) = hasForLoopOverGenStmt s || hasForLoopOverGenOExpr e
+hasForLoopOverGenStmt (SSeq ss _) = any hasForLoopOverGenStmt ss
+hasForLoopOverGenStmt (SIf b s1 s2 _) = hasForLoopOverGenStmt s1 || hasForLoopOverGenStmt s2 || hasForLoopOverGenBExpr b
+hasForLoopOverGenStmt (SLetBoolean _ s _) = hasForLoopOverGenStmt s
+hasForLoopOverGenStmt (SLetOutput _ e s _) = hasForLoopOverGenStmt s || hasForLoopOverGenOExpr e
+hasForLoopOverGenStmt (SYield o _) = hasForLoopOverGenOExpr o
+hasForLoopOverGenStmt (SOReturn o _) = hasForLoopOverGenOExpr o
+hasForLoopOverGenStmt (SBReturn b _) = hasForLoopOverGenBExpr b
+hasForLoopOverGenStmt _ = False
+
+hasForLoopOverGenOExpr :: OExpr s t -> Bool
+hasForLoopOverGenOExpr (OGen s _) = hasForLoopOverGenStmt s
+hasForLoopOverGenOExpr (OApp _ args _) = any hasForLoopOverGenOExpr args'
+    where args' = map fst args
+hasForLoopOverGenOExpr (OList os _) = any hasForLoopOverGenOExpr os
+hasForLoopOverGenOExpr _ = False
+
+hasForLoopOverGenBExpr :: BExpr s t -> Bool
+hasForLoopOverGenBExpr (BGen stmt _) = hasForLoopOverGenStmt stmt
+hasForLoopOverGenBExpr (BOp _ b1 b2 _) = hasForLoopOverGenBExpr b1 || hasForLoopOverGenBExpr b2
+hasForLoopOverGenBExpr _ = False
+
+-- This works in the for-loop expansion monad 
+forLoopExpansionFixM :: (MonadForElim m) => Program String ValueType -> m (Program String ValueType)
+forLoopExpansionFixM p 
+    | hasForLoopOverGenProgram p = do
+        p' <- forLoopExpansionProgM $ mapVarsProgram OldVar p
+        let p'' = eliminateExtVarsProg p' 
+        forLoopExpansionFixM p''
+    | otherwise = return p
+
+forLoopExpansionFix :: Program String ValueType -> Either ForElimError (Program String ValueType)
+forLoopExpansionFix p = runForElim (forLoopExpansionFixM p)

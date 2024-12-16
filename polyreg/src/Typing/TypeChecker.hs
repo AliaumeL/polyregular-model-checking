@@ -16,6 +16,7 @@ class (Monad m) => TypeCheckingMonad m where
     withVar :: String -> ValueType -> m a -> m a
     withVars :: [(String, ValueType)] -> m a -> m a
     withFunc :: String -> (ValueType,  [(ValueType, Int)]) -> m a -> m a
+    withForgetBools :: m a -> m a
     throwError :: String -> m a
 
 data TypeCheckerData = TypeCheckerData {
@@ -44,6 +45,7 @@ instance TypeCheckingMonad TypeChecker where
     withVars [] m = m
     withVars ((x, t):xs) m = withVar x t (withVars xs m)
     withFunc x t (TypeChecker m) = TypeChecker $ local (\s -> s { functions = M.insert x t (functions s) }) m
+    withForgetBools (TypeChecker m) = TypeChecker $ local (\s -> s { variables = M.filter (/= TBool) (variables s) }) m
     throwError = TypeChecker . lift . Left
 
 
@@ -167,7 +169,7 @@ typeCheckBExprM (BVar x t) = do
     t' <- getVarType x
     expectBool t' 
     guardOrError (t == TBool) $ "Boolean variable " ++ x ++ " typed as " ++ show t
-typeCheckBExprM (BGen s t) = do
+typeCheckBExprM (BGen s t) = withForgetBools $ do
     t' <- typeCheckStmtM s
     expectBool t'
     guardOrError (t' == t) $ "Boolean generator typed as " ++ show t   
@@ -221,7 +223,7 @@ typeCheckOExprM (OApp x es t) = do
             guardOrError (t2 == Position (fmap (const ()) e)) $ "Argument " ++ show p ++ " has type " ++ show t2 ++ " but expected " ++ show (Position (fmap (const ()) e))
     ans <- expectOutputType t
     return ans
-typeCheckOExprM (OGen s t) = do
+typeCheckOExprM (OGen s t) = withForgetBools $ do
     t' <- typeCheckStmtM s
     ans <- expectOutputType t
     guardOrError (t' == t) $ "Generator has type " ++ show t' ++ " but expected " ++ show t

@@ -9,7 +9,7 @@ import BooleanElimination (removeBooleanGen)
 import FunctionElimination (eliminateFunctionCalls)
 import LiteralElimination (eliminateLiterals)
 import LetElimination (eliminateLetProgram)
-import ForLoopExpansion (forLoopExpansion)
+import ForLoopExpansion (forLoopExpansion, forLoopExpansionFix)
 import ReturnElimination (retElimProgram)
 import ReductionLitEq (removeBLitEq)
 import ForProgramsPrettyPrint
@@ -54,7 +54,7 @@ applyTransform LiteralElimination p = eliminateLiterals p
 applyTransform LitEqElimination p = removeBLitEq p
 applyTransform LetOutputElimination p = eliminateLetProgram p
 applyTransform ReturnElimination p = retElimProgram p
-applyTransform ForLoopExpansion p = case forLoopExpansion p of  
+applyTransform ForLoopExpansion p = case forLoopExpansionFix p of  
     Left err -> error $ "Error in for loop expansion: " ++ show err
     Right p' -> p'
 
@@ -96,6 +96,13 @@ erasePositionTypes ::ValueType -> Maybe ValueType
 erasePositionTypes (TPos _) = Nothing
 erasePositionTypes t = Just t
 
+eraseTypesInFunctions :: Program String ValueType -> Program String (Maybe ValueType)
+eraseTypesInFunctions (Program fs main) = Program (map eraseTypesInFunctionsFun fs) main
+
+eraseTypesInFunctionsFun :: StmtFun String ValueType -> StmtFun String (Maybe ValueType)
+eraseTypesInFunctionsFun (StmtFun name args s t) = StmtFun name args' (fmap (const Nothing) s) (Just t)
+    where args' = map (\(a, b, c) -> (a, Just b, c)) args
+
 simpleShowInterpreterError :: InterpretError -> String
 simpleShowInterpreterError (InterpretError s _) = s
 
@@ -126,7 +133,12 @@ main = do
                     writeOutputFile (optOutputProg opts) (replicate 80 '-')
                     writeOutputFile (optOutputProg opts) (prettyPrintProgramWithNls transformedProg)
                     case typeCheckProgram transformedProg of
-                        Left err -> putStrLn $ "Program stopped typechecking:\n " ++ err
+                        Left err -> do 
+                            putStrLn $ "Program stopped typechecking:\n " ++ err
+                            let transformedProg' = eraseTypesInFunctions transformedProg
+                            case inferAndCheckProgram transformedProg' of
+                                Left err' -> putStrLn $ "Program still does not type check: " ++ show err'
+                                Right _ -> putStrLn $ "Program could be type checked after erasing types"
                         Right _  -> putStrLn $ "Program still type checks"
                     case word of
                         Nothing -> return ()

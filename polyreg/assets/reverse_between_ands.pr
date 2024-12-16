@@ -1,0 +1,14 @@
+def square(wsq : [Char]) :[[Char]] :=
+    for (isquare, csquare) in enumerate(wsq) do 
+        yield wsq
+    done
+
+def main(input : [Char]) : [Char] :=
+    let ws  := square(input) in
+    for (i1, w1) in enumerate(ws) do
+        for (i2, w2) in enumerate(ws) do
+            if i1 < i2 then
+                return w1
+            endif
+        done
+    done
