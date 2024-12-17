@@ -10,7 +10,7 @@ let
     # and dependencies, which is nice.
     # do not run tests and build docs!
     polyreg-dev = pkgs.haskellPackages.developPackage {
-        name = "polycheck";
+        name = "polyreg-dev";
         root  = ./polyreg;
         modifier = drv: 
             hl.dontHaddock (
@@ -32,7 +32,7 @@ let
     # created by polyreg-dev derivation 
     # and puts it in the /bin directory 
     polyreg = pkgs.stdenv.mkDerivation {
-        name = "polyreg";
+        name = "polyreg-exe";
         buildInputs = [ polyreg-dev ];
         src = polyreg-dev.src;
         installPhase = ''
@@ -52,8 +52,8 @@ let
 
     # build the docker image for the polyreg project
     # it contains the polyreg executable,
-    polyregDocker = pkgs.dockerTools.buildImage {
-        name = "polycheck-docker";
+    polyreg-img-small = pkgs.dockerTools.buildImage {
+        name = "polyreg-docker-small";
         tag  = "latest";
         copyToRoot = pkgs.buildEnv { 
             name = "image-root";
@@ -70,8 +70,35 @@ let
         };
     };
 
+    # a docker image with all the dev dependencies,
+    # *without* the polyreg package
+    polyreg-img-dev = pkgs.dockerTools.buildImage {
+        name = "polyreg-docker-dev";
+        tag  = "dev";
+        copyToRoot = pkgs.buildEnv { 
+            name = "image-root";
+            paths = [
+                mona
+                pkgs.haskellPackages.stack
+                pkgs.haskellPackages.BNFC
+                pkgs.gmp
+                pkgs.zlib
+                pkgs.cvc5
+                pkgs.z3
+                pkgs.fish
+            ];
+            pathsToLink = ["/bin"];
+        };
+        config = {
+            Cmd = [ "${pkgs.fish}/bin/fish" ];
+            # create a volume for the "assets" directory
+            Volumes = [ "/assets" ];
+        };
+    };
+
 in {
     polyreg-exe = polyreg;
     polyreg-env = polyreg-env;
-    polyreg-img = polyregDocker;
+    polyreg-img = polyreg-img-small;
+    polyreg-dev = polyreg-img-dev;
 }
