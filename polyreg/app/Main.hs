@@ -47,7 +47,7 @@ data Transformation = LitEqElimination
                     deriving (Eq,Show,Read,Ord,Enum)
 
 transformationsInOrder :: [Transformation]
-transformationsInOrder = [LitEqElimination .. ForLoopExpansion]
+transformationsInOrder = [LitEqElimination .. LetBoolsToTop]
 
 
 applyTransform :: Transformation -> Program String ValueType -> Program String ValueType

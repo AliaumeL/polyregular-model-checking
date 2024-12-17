@@ -12,7 +12,16 @@ bringLetBoolsToTopFun (StmtFun n args s t) =
     StmtFun n args s'' t
 
 getLabel :: Stmt s t -> t
-getLabel = undefined 
+getLabel (SIf _ _ _ t) = t
+getLabel (SYield _ t) = t
+getLabel (SOReturn _ t) = t
+getLabel (SBReturn _ t) = t
+getLabel (SLetOutput _ _ _ t) = t
+getLabel (SLetBoolean _ _ t) = t
+getLabel (SSetTrue _ t) = t
+getLabel (SFor _ _ _ _ t) = t
+getLabel (SSeq _ t) = t
+
 
 withVars :: [s] -> Stmt s t -> Stmt s t 
 withVars [] s = s 
