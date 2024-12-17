@@ -9,9 +9,6 @@ pkgs.buildEnv {
     # bncf parser haskell
     pkgs.haskellPackages.BNFC
     pkgs.gmp
-    pkgs.haskellPackages.hgmp
-    pkgs.pkg-config
-    pkgs.zlib
     # alt-ergo prover (non-free)
     # pkgs.alt-ergo
     # cvc5 prover
