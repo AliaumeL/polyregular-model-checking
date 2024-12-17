@@ -169,3 +169,50 @@ interpretProgram p s = runInterM (interpretProgramM p) s
 
 runProgram :: ForProgram -> String -> Either InterpreterError String
 runProgram  p s = interpretProgram p (InterpreterState s M.empty M.empty M.empty)
+
+
+
+prettyPrintForProgram :: ForProgram -> String
+prettyPrintForProgram (ForProgram bs stmt) = prettyPrintBoolList 0 bs ++ prettyPrintForStmt 0 stmt
+
+indentStr :: Int -> String -> String
+indentStr n s = replicate n ' ' ++ s
+
+-- prints comma separated list of boolean variables
+-- with indentation level n
+-- knowing that lines cannot be longer than 80 characters (so we split them)
+prettyPrintBoolList :: Int -> [BName] -> String
+prettyPrintBoolList n bs = 
+    let indent = replicate n ' ' in
+    let sizes  = scanl (\acc (BName b) -> acc + length b + 2) (length indent) bs in
+    let bs' = zipWith (\size (BName b) -> if size > 80 then "\n" ++ indent ++ b else b ++ "; ") sizes bs in
+    concat bs' ++ "\n"
+
+prettyPrintForStmt :: Int -> ForStmt -> String
+prettyPrintForStmt n (SetTrue (BName b)) = indentStr n $ b ++ " := true;"
+prettyPrintForStmt n (If e t f) = 
+    let indent = replicate n ' ' in
+    let e' = prettyPrintBoolExpr e in
+    let t' = prettyPrintForStmt (n + 1) t in
+    let f' = prettyPrintForStmt (n + 1) f in
+    indent ++ "if " ++ e' ++ " then\n" ++ t' ++ "\n" ++ indent ++ "else\n" ++ f'
+prettyPrintForStmt n (For (PName p) d bs stmt) =
+    let indent = replicate n ' ' in
+    let d' = case d of
+            LeftToRight -> "forward"
+            RightToLeft -> "backward" in
+    let bs'   = prettyPrintBoolList (n + 1) bs in
+    let stmt' = prettyPrintForStmt (n + 1) stmt in
+    indent ++ "for[" ++ d' ++ "]" ++ p ++  " do\n" ++ bs' ++ stmt'
+prettyPrintForStmt n (PrintPos (PName p)) = indentStr n $ "print " ++ p ++ ";"
+prettyPrintForStmt n (PrintLbl l) = indentStr n $ "print " ++ show l ++ ";"
+prettyPrintForStmt n (Seq stmts) = concatMap (prettyPrintForStmt n) stmts
+prettyPrintForStmt _ _ = error "prettyPrintForStmt: not implemented"
+
+prettyPrintBoolExpr :: BoolExpr -> String 
+prettyPrintBoolExpr (BConst b) = show b
+prettyPrintBoolExpr (BVar (BName b)) = b
+prettyPrintBoolExpr (BTest op (PName p1) (PName p2)) = p1 ++ " " ++ show op ++ " " ++ p2
+prettyPrintBoolExpr (BLabelAt (PName p) l) = p ++ " == " ++ show l
+prettyPrintBoolExpr (BNot e) = "not " ++ prettyPrintBoolExpr e
+prettyPrintBoolExpr (BBin op e1 e2) = prettyPrintBoolExpr e1 ++ " " ++ show op ++ " " ++ prettyPrintBoolExpr e2

@@ -24,6 +24,8 @@ module ToSimpleForProgram where
 import ForPrograms        as FP
 import SimpleForPrograms  as SFP
 
+import Debug.Trace (traceM)
+
 import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.Except
@@ -55,7 +57,7 @@ newtype TSFPMonad a = TSFPMonad (ReaderT (Map String PName) (Except ToSimpleForP
 
 instance MonadTSF TSFPMonad where
     guardOrThrow e b = unless b $ throwError e
-    withPosition i e m = local (M.insert i (SFP.PName e)) m
+    withPosition i e m = local (M.insert e (SFP.PName i)) m
     getPosition i = do
         pos <- asks (M.lookup i)
         case pos of
@@ -73,10 +75,10 @@ findMainFunction (StmtFun name args body outputType :fs) main =
     else findMainFunction fs main
 
 
-toSimpleForProgram :: FP.Program String t -> Either ToSimpleForProgramError SFP.ForProgram
+toSimpleForProgram :: (Show t) => FP.Program String t -> Either ToSimpleForProgramError SFP.ForProgram
 toSimpleForProgram p = runTSFPMonad (toSimpleForProgramM p)
 
-toSimpleForProgramM :: FP.Program String t -> TSFPMonad SFP.ForProgram
+toSimpleForProgramM :: (Show t) => FP.Program String t -> TSFPMonad SFP.ForProgram
 toSimpleForProgramM (FP.Program funcs main) = do
     FP.StmtFun _ args body outputType <- findMainFunction funcs main
     (bools, stmt) <- forLoopBodyToSimpleForProgram body
@@ -86,18 +88,18 @@ toSimpleForProgramM (FP.Program funcs main) = do
 collectBooleans :: FP.Stmt String t -> TSFPMonad ([SFP.BName], FP.Stmt String t)
 collectBooleans (FP.SLetBoolean v e _) = do
     (bools, stmt) <- collectBooleans e
-    return (BName v :bools, stmt)
+    return (BName v : bools, stmt)
 collectBooleans stmt = return ([], stmt)
 
 -- This function extracts all the "let booleans" and extracts them
-forLoopBodyToSimpleForProgram :: FP.Stmt String t -> TSFPMonad ([SFP.BName], SFP.ForStmt)
+forLoopBodyToSimpleForProgram :: (Show t) => FP.Stmt String t -> TSFPMonad ([SFP.BName], SFP.ForStmt)
 forLoopBodyToSimpleForProgram body = do
     (bools, stmt) <- collectBooleans body
     stmt' <- stmtToSimpleForStmt stmt
     return (reverse bools, stmt')
 
 
-stmtToSimpleForStmt :: FP.Stmt String t -> TSFPMonad SFP.ForStmt
+stmtToSimpleForStmt :: (Show t) => FP.Stmt String t -> TSFPMonad SFP.ForStmt
 stmtToSimpleForStmt (FP.SBReturn _ _) = throwError ReturnStatement
 stmtToSimpleForStmt (FP.SOReturn _ _) = throwError ReturnStatement
 stmtToSimpleForStmt (FP.SYield (OConst (CChar c _) _) _) = return $ SFP.PrintLbl c
@@ -116,18 +118,21 @@ stmtToSimpleForStmt (FP.SIf c t e _) = do
     t' <- stmtToSimpleForStmt t
     e' <- stmtToSimpleForStmt e
     return $ SFP.If c' t' e'
-stmtToSimpleForStmt (FP.SFor dir (i, e, _) _ s _) = do 
+stmtToSimpleForStmt (FP.SFor dir (i, e, _) (OVar "ssmain" _) s _) = do 
     let dir' = case dir of
             FP.Forward -> SFP.LeftToRight
             FP.Backward -> SFP.RightToLeft
     withPosition i e $ do
         (bs, s') <- forLoopBodyToSimpleForProgram s
         return $ SFP.For (PName i) dir' bs s'
+stmtToSimpleForStmt (FP.SFor _ _ v _ _) = do
+    traceM $ "Iterating over " ++ show v
+    throwError IteratorOverNonVariable
 
-bExprToSimpleForBExpr :: FP.BExpr String t -> TSFPMonad SFP.BoolExpr
+bExprToSimpleForBExpr :: (Show t) => FP.BExpr String t -> TSFPMonad SFP.BoolExpr
 bExprToSimpleForBExpr (FP.BConst b _) = return $ SFP.BConst b
 bExprToSimpleForBExpr (FP.BVar v _) = return $ SFP.BVar (BName v)
-bExprToSimpleForBExpr (FP.BComp op p1 p2 _) = undefined
+bExprToSimpleForBExpr (FP.BComp op (PVar p1 _) (PVar p2 _) _) = return $ SFP.BTest op (PName p1) (PName p2)
 bExprToSimpleForBExpr (FP.BNot b _) = SFP.BNot <$> bExprToSimpleForBExpr b
 bExprToSimpleForBExpr (FP.BOp op b1 b2 _) = SFP.BBin op <$> bExprToSimpleForBExpr b1 <*> bExprToSimpleForBExpr b2
 bExprToSimpleForBExpr (FP.BGen _ _) = throwError GeneratorExpression

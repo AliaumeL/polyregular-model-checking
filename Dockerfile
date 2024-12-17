@@ -18,5 +18,6 @@ WORKDIR /app
 
 COPY --from=builder /tmp/nix-polyreg-env/ /nix/store
 COPY --from=builder /tmp/polyreg-src/result /
+COPY . /polyreg-sources/
 
 ENTRYPOINT ["/bin/fish"]

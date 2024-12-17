@@ -18,7 +18,10 @@ import Typing.TypeChecker (typeCheckProgram)
 import FinalConditions (finalConditions, displayBrokenConditions)
 import ToSimpleForProgram (toSimpleForProgram)
 import SimpleForPrograms (runProgram)
-import LetBoolsToTop (bringLetBoolsToTop)
+import qualified SimpleForPrograms as SFP
+import LetBoolsToTop (bringLetBoolsToTopAndRefresh)
+
+import Debug.Trace (traceM)
 
 import Options.Applicative
 
@@ -62,7 +65,7 @@ applyTransform ReturnElimination p = retElimProgram p
 applyTransform ForLoopExpansion p = case forLoopExpansionFix p of  
     Left err -> error $ "Error in for loop expansion: " ++ show err
     Right p' -> p'
-applyTransform LetBoolsToTop p = bringLetBoolsToTop p
+applyTransform LetBoolsToTop p = bringLetBoolsToTopAndRefresh p
 
 
 data Options = Options
@@ -165,6 +168,7 @@ main = do
                         Right sfp -> case word of 
                             Nothing -> putStrLn "Converted to a simple for program, but nothing to be run on it"
                             Just w -> do
+                                traceM $ SFP.prettyPrintForProgram sfp
                                 let result = runProgram sfp w
                                 writeOutputFile (optOutputWord opts) (replicate 80 '-')
                                 writeOutputFile (optOutputWord opts) w

@@ -58,15 +58,15 @@ executables:
     dependencies:
       - polyreg
       - optparse-applicative
-#tests:
-#  polyreg-test:
-#    main: Spec.hs
-#    source-dirs: test
-#    ghc-options:
-#      - -threaded
-#      - -rtsopts
-#      - -with-rtsopts=-N
-#    dependencies:
-#      - polyreg
-#      - hspec
-#      - QuickCheck
+tests:
+  polyreg-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - polyreg
+      - hspec
+      - QuickCheck

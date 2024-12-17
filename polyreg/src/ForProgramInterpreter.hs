@@ -216,6 +216,8 @@ interpretBExpr (BConst b _) = return b
 interpretBExpr (BNot b _) = not <$> interpretBExpr b
 interpretBExpr (BOp Conj b1 b2 _) = (&&) <$> interpretBExpr b1 <*> interpretBExpr b2
 interpretBExpr (BOp Disj b1 b2 _) = (||) <$> interpretBExpr b1 <*> interpretBExpr b2
+interpretBExpr (BOp Impl b1 b2 _) = (||) <$> (not <$> interpretBExpr b1) <*> interpretBExpr b2
+interpretBExpr (BOp Equiv b1 b2 _) = (==) <$> interpretBExpr b1 <*> interpretBExpr b2
 interpretBExpr (BComp Eq p1 p2 _) = (==) <$> interpretPExpr p1 <*> interpretPExpr p2
 interpretBExpr (BComp Neq p1 p2 _) = (/=) <$> interpretPExpr p1 <*> interpretPExpr p2
 interpretBExpr (BComp Lt p1 p2 _) = (<) <$> interpretPExpr p1 <*> interpretPExpr p2

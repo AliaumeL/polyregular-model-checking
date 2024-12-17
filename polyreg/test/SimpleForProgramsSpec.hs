@@ -45,11 +45,10 @@ exampleProgramWithBoolansHandCrafted :: String -> String
 exampleProgramWithBoolansHandCrafted x = drop 2 x
 
 exampleReverseProgram :: ForProgram
-exampleReverseProgram = ForProgram [] [
-        For (PName "i") RightToLeft [] (
+exampleReverseProgram = ForProgram []
+        For (PName "i") RightToLeft [] (Seq [
             PrintPos (PName "i")
-        )
-    ]
+        ])
 
 exampleReverseProgramHandCrafted :: String -> String
 exampleReverseProgramHandCrafted x = reverse x
