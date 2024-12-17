@@ -2,11 +2,11 @@ FROM nixos/nix:latest AS builder
 
 RUN nix-channel --update
 
-COPY . /tmp/poly
+COPY . /tmp/polyreg-src/
 
-WORKDIR /tmp/poly
+WORKDIR /tmp/polyreg-src/
 
-RUN nix-build polyregular.nix -A polyreg-env -o result 
+RUN nix-build polyreg.nix -A polyreg-env -o result 
 
 RUN mkdir -p /tmp/nix-polyreg-env/
 

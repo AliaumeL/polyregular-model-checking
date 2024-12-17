@@ -16,6 +16,8 @@ import ForProgramsPrettyPrint
 import Parser.ParseHighLevel (parseHighLevel)
 import Typing.TypeChecker (typeCheckProgram)
 import FinalConditions (finalConditions, displayBrokenConditions)
+import ToSimpleForProgram (toSimpleForProgram)
+import SimpleForPrograms (runProgram)
 import LetBoolsToTop (bringLetBoolsToTop)
 
 import Options.Applicative
@@ -157,3 +159,15 @@ main = do
                             writeOutputFile (optOutputWord opts) (show wordBefore)
                             writeOutputFile (optOutputWord opts) (simpleShowEitherError wordAfter)
                             writeOutputFile (optOutputWord opts) ("Is the same: " ++ (show $ wordBefore == wordAfter))
+                    let simpleForProg = toSimpleForProgram transformedProg
+                    case simpleForProg of
+                        Left err  -> putStrLn $ "Error in converting to simple for program: " ++ show err
+                        Right sfp -> case word of 
+                            Nothing -> putStrLn "Converted to a simple for program, but nothing to be run on it"
+                            Just w -> do
+                                let result = runProgram sfp w
+                                writeOutputFile (optOutputWord opts) (replicate 80 '-')
+                                writeOutputFile (optOutputWord opts) w
+                                writeOutputFile (optOutputWord opts) (show result)
+                                return ()
+

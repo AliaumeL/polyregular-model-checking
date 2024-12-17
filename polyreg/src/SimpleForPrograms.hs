@@ -51,7 +51,7 @@ data ForStmt  =
              | Seq [ForStmt]
              deriving (Eq, Show)
 
-data ForProgram = ForProgram [BName] [ForStmt] deriving(Eq, Show)
+data ForProgram = ForProgram [BName] ForStmt deriving(Eq, Show)
 
 
 class (Monad m) => MonadInterpreter m where
@@ -161,7 +161,7 @@ interpretStmtM (PrintLbl l) = return [l]
 interpretStmtM (Seq stmts) = concat <$> mapM interpretStmtM stmts
 
 interpretProgramM :: (MonadInterpreter m) => ForProgram -> m String
-interpretProgramM (ForProgram bs stmts) = withBools bs $ (concat <$> mapM interpretStmtM stmts)
+interpretProgramM (ForProgram bs stmt) = withBools bs $ interpretStmtM stmt
 
 interpretProgram :: ForProgram -> InterpreterState -> Either InterpreterError String
 interpretProgram p s = runInterM (interpretProgramM p) s
