@@ -9,7 +9,7 @@ let
     # note that this automatically uses the `stack` build tool 
     # and dependencies, which is nice.
     # do not run tests and build docs!
-    polyreg-dev = pkgs.haskellPackages.developPackage {
+    polyreg-pkg = pkgs.haskellPackages.developPackage {
         name = "polyreg-dev";
         root  = ./polyreg;
         modifier = drv: 
@@ -31,20 +31,33 @@ let
     # create a derivation that only exctracts the polyreg executable
     # created by polyreg-dev derivation 
     # and puts it in the /bin directory 
-    polyreg = pkgs.stdenv.mkDerivation {
+    polyreg-exe = pkgs.stdenv.mkDerivation {
         name = "polyreg-exe";
-        buildInputs = [ polyreg-dev ];
-        src = polyreg-dev.src;
+        buildInputs = [ polyreg-pkg ];
+        src = polyreg-pkg.src;
         installPhase = ''
             mkdir -p $out/bin
-            cp ${polyreg-dev}/bin/polyreg-exe $out/bin
+            cp ${polyreg-pkg}/bin/polyreg-exe $out/bin
         '';
     };
 
-    polyreg-env = pkgs.buildEnv {
-        name = "polyreg-env";
-        paths = [ polyreg
+    polyreg-runtime = pkgs.buildEnv {
+        name = "polyreg-runtime";
+        paths = [ polyreg-exe
                   mona
+                  pkgs.cvc5
+                  pkgs.z3
+        ];
+    };
+
+    polyreg-devenv = pkgs.buildEnv {
+        name = "polyreg-dev-env";
+        paths = [ 
+                  mona
+                  pkgs.haskellPackages.stack
+                  pkgs.haskellPackages.BNFC
+                  pkgs.gmp
+                  pkgs.zlib
                   pkgs.cvc5
                   pkgs.z3
         ];
@@ -56,9 +69,9 @@ let
         name = "polyreg-docker-small";
         tag  = "latest";
         copyToRoot = pkgs.buildEnv { 
-            name = "image-root";
+            name = "image-root-small";
             paths = [
-                polyreg-env
+                polyreg-runtime
                 pkgs.fish
             ];
             pathsToLink = ["/bin"];
@@ -74,31 +87,17 @@ let
     # *without* the polyreg package
     polyreg-img-dev = pkgs.dockerTools.buildImage {
         name = "polyreg-docker-dev";
-        tag  = "dev";
-        copyToRoot = pkgs.buildEnv { 
-            name = "image-root";
-            paths = [
-                mona
-                pkgs.haskellPackages.stack
-                pkgs.haskellPackages.BNFC
-                pkgs.gmp
-                pkgs.zlib
-                pkgs.cvc5
-                pkgs.z3
-                pkgs.fish
-            ];
-            pathsToLink = ["/bin"];
-        };
+        tag  = "latest";
+        copyToRoot = polyreg-devenv;
         config = {
             Cmd = [ "${pkgs.fish}/bin/fish" ];
-            # create a volume for the "assets" directory
-            Volumes = [ "/assets" ];
         };
     };
 
 in {
-    polyreg-exe = polyreg;
-    polyreg-env = polyreg-env;
-    polyreg-img = polyreg-img-small;
-    polyreg-dev = polyreg-img-dev;
+    polyreg-exe     = polyreg-exe;
+    polyreg-runtime = polyreg-runtime;
+    polyreg-img     = polyreg-img-small;
+    polyreg-dev     = polyreg-img-dev;
+    polyreg-devenv  = polyreg-devenv;
 }

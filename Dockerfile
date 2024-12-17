@@ -6,7 +6,7 @@ COPY . /tmp/polyreg-src/
 
 WORKDIR /tmp/polyreg-src/
 
-RUN nix-build polyreg.nix -A polyreg-env -o result 
+RUN nix-build polyreg.nix -A polyreg-devenv -o result 
 
 RUN mkdir -p /tmp/nix-polyreg-env/
 
@@ -17,6 +17,6 @@ FROM scratch
 WORKDIR /app
 
 COPY --from=builder /tmp/nix-polyreg-env/ /nix/store
-COPY --from=builder /tmp/poly/result /app
+COPY --from=builder /tmp/polyreg-src/result /
 
-ENTRYPOINT ["/app/bin/fish"]
+ENTRYPOINT ["/bin/fish"]
