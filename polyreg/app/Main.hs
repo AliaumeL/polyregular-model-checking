@@ -15,6 +15,7 @@ import ReductionLitEq (removeBLitEq)
 import ForProgramsPrettyPrint
 import Parser.ParseHighLevel (parseHighLevel)
 import Typing.TypeChecker (typeCheckProgram)
+import FinalConditions (finalConditions, displayBrokenConditions)
 
 import Options.Applicative
 
@@ -140,6 +141,9 @@ main = do
                                 Left err' -> putStrLn $ "Program still does not type check: " ++ show err'
                                 Right _ -> putStrLn $ "Program could be type checked after erasing types"
                         Right _  -> putStrLn $ "Program still type checks"
+                    case finalConditions transformedProg of
+                        False -> putStrLn $ "The following conditions are broken:\n" ++ displayBrokenConditions transformedProg
+                        True -> putStrLn $ "Final conditions are satisfied"
                     case word of
                         Nothing -> return ()
                         Just w -> do
