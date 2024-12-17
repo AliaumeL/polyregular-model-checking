@@ -3,6 +3,7 @@ module SimpleForProgramsSpec where
 import Test.Hspec
 
 import SimpleForPrograms
+import QuantifierFree
 
 -- | example program
 -- that prints everything and replaces "a" by "b"s 
@@ -10,15 +11,13 @@ import SimpleForPrograms
 -- print ’a’ but with normal quotes: 
 exampleProgram :: ForProgram
 exampleProgram = ForProgram []
-    [
-        For (PName "i") LeftToRight [] (
+        (For (PName "i") LeftToRight [] (
             If (BLabelAt (PName "i") 'a') (
                 PrintLbl 'b'
             ) (
                 PrintPos (PName "i")
             )
-        )
-    ]
+        ))
 
 exampleProgramHandCrafted :: String -> String
 exampleProgramHandCrafted [] = []
@@ -27,7 +26,7 @@ exampleProgramHandCrafted (x:xs) = if x == 'a' then 'b' : exampleProgramHandCraf
 
 -- | this program skips the first two letters using booleans
 exampleProgramWithBoolans :: ForProgram
-exampleProgramWithBoolans = ForProgram [BName "seen1", BName "seen2"] [
+exampleProgramWithBoolans = ForProgram [BName "seen1", BName "seen2"] (
         For (PName "i") LeftToRight [] (
             If (BNot (BVar (BName "seen1"))) 
             (
@@ -39,19 +38,35 @@ exampleProgramWithBoolans = ForProgram [BName "seen1", BName "seen2"] [
                     (PrintPos (PName "i"))
             )
         )
-    ]
+    )
+
 
 exampleProgramWithBoolansHandCrafted :: String -> String
 exampleProgramWithBoolansHandCrafted x = drop 2 x
 
 exampleReverseProgram :: ForProgram
 exampleReverseProgram = ForProgram []
-        For (PName "i") RightToLeft [] (Seq [
+        (For (PName "i") RightToLeft [] (Seq [
             PrintPos (PName "i")
-        ])
+        ]))
 
 exampleReverseProgramHandCrafted :: String -> String
 exampleReverseProgramHandCrafted x = reverse x
+
+
+
+
+skipLastLetterProgram :: ForProgram
+skipLastLetterProgram = ForProgram [] mainLoop
+    where
+        mainLoop   = For (PName "i") LeftToRight [b1] secondLoop
+        secondLoop = For (PName "j") RightToLeft [] ifs
+        ifs = If (BVar b1) conditionalPrintPos (SetTrue b1)
+        conditionalPrintPos = If (BTest Eq (PName "i") (PName "j")) (PrintPos (PName "j")) (Seq [])
+        b1 = BName "b"
+
+skipLastLetterProgramHandCrafted :: String -> String
+skipLastLetterProgramHandCrafted x = take (length x - 1) x
 
 
 checkEquality :: String -> Bool
@@ -80,3 +95,7 @@ spec = do
             runProgram exampleReverseProgram "a" `shouldBe` (Right $ exampleReverseProgramHandCrafted "a")
             runProgram exampleReverseProgram "b" `shouldBe` (Right $ exampleReverseProgramHandCrafted "b")
             runProgram exampleReverseProgram "naruiste nbélopedt bnrest n" `shouldBe` (Right $ exampleReverseProgramHandCrafted "naruiste nbélopedt bnrest n")
+        it "runs correctly the a program that skips the last letter" $ do 
+            runProgram skipLastLetterProgram "abc" `shouldBe` (Right $ skipLastLetterProgramHandCrafted "abc")
+            runProgram skipLastLetterProgram "a" `shouldBe` (Right $ skipLastLetterProgramHandCrafted "a")
+            runProgram skipLastLetterProgram "" `shouldBe` (Right $ skipLastLetterProgramHandCrafted "")

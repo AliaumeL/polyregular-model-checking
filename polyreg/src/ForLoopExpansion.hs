@@ -419,6 +419,7 @@ hasForLoopOverGenFun (StmtFun _ _ s _) = hasForLoopOverGenStmt s
 
 hasForLoopOverGenStmt :: Stmt s t -> Bool
 hasForLoopOverGenStmt (SFor _ _ (OGen _ _) _ _) = True
+hasForLoopOverGenStmt (SFor _ _ (OConst _ _) _ _) = True
 hasForLoopOverGenStmt (SFor _ _ e s _) = hasForLoopOverGenStmt s || hasForLoopOverGenOExpr e
 hasForLoopOverGenStmt (SSeq ss _) = any hasForLoopOverGenStmt ss
 hasForLoopOverGenStmt (SIf b s1 s2 _) = hasForLoopOverGenStmt s1 || hasForLoopOverGenStmt s2 || hasForLoopOverGenBExpr b

@@ -1,0 +1,19 @@
+def main(w : [Char]) : [Char] := 
+  for (i16, c16) in enumerate(w) do
+    let mut b_refresh_1 := False in
+    let mut b_refresh_2 := False in
+    let mut b_refresh_3 := False in   
+    for (i10, c10) in reversed(enumerate(w)) do
+      if not b_refresh_3 then
+        if b_refresh_2 then
+          if not b_refresh_1 then
+            if (i10 = i16) then
+                yield c10
+            endif 
+          endif  
+        else
+          b_refresh_2  := True
+        endif   
+      endif  
+    done 
+  done    

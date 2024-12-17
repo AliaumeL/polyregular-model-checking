@@ -154,7 +154,7 @@ interpretStmtM (If e t f) = do
     b <- interpretBoolExprM e
     if b then interpretStmtM t else interpretStmtM f
 interpretStmtM (For p d bs stmt) = do
-    strings <- withBools bs (withLoopPos p d (interpretStmtM stmt))
+    strings <- withLoopPos p d (withBools bs (interpretStmtM stmt))
     return . concat $ strings
 interpretStmtM (PrintPos p) = pure <$> getCharAt p
 interpretStmtM (PrintLbl l) = return [l]
@@ -195,7 +195,7 @@ prettyPrintForStmt n (If e t f) =
     let e' = prettyPrintBoolExpr e in
     let t' = prettyPrintForStmt (n + 1) t in
     let f' = prettyPrintForStmt (n + 1) f in
-    indent ++ "if " ++ e' ++ " then\n" ++ t' ++ "\n" ++ indent ++ "else\n" ++ f'
+    indent ++ "if " ++ e' ++ " then\n" ++ t' ++ "\n" ++ indent ++ "else\n" ++ f' ++ indent ++ "endif;\n"
 prettyPrintForStmt n (For (PName p) d bs stmt) =
     let indent = replicate n ' ' in
     let d' = case d of
@@ -203,9 +203,10 @@ prettyPrintForStmt n (For (PName p) d bs stmt) =
             RightToLeft -> "backward" in
     let bs'   = prettyPrintBoolList (n + 1) bs in
     let stmt' = prettyPrintForStmt (n + 1) stmt in
-    indent ++ "for[" ++ d' ++ "]" ++ p ++  " do\n" ++ bs' ++ stmt'
+    indent ++ "for[" ++ d' ++ "]" ++ p ++  " do\n" ++ bs' ++ stmt' ++ indent ++ "done;\n"
 prettyPrintForStmt n (PrintPos (PName p)) = indentStr n $ "print " ++ p ++ ";"
 prettyPrintForStmt n (PrintLbl l) = indentStr n $ "print " ++ show l ++ ";"
+prettyPrintForStmt n (Seq []) = indentStr n $ "skip;\n"
 prettyPrintForStmt n (Seq stmts) = concatMap (prettyPrintForStmt n) stmts
 prettyPrintForStmt _ _ = error "prettyPrintForStmt: not implemented"
 

@@ -118,7 +118,7 @@ stmtToSimpleForStmt (FP.SIf c t e _) = do
     t' <- stmtToSimpleForStmt t
     e' <- stmtToSimpleForStmt e
     return $ SFP.If c' t' e'
-stmtToSimpleForStmt (FP.SFor dir (i, e, _) (OVar "ssmain" _) s _) = do 
+stmtToSimpleForStmt (FP.SFor dir (i, e, _) (OVar v _) s _) = do 
     let dir' = case dir of
             FP.Forward -> SFP.LeftToRight
             FP.Backward -> SFP.RightToLeft
