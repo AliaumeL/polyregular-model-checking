@@ -16,6 +16,7 @@ import ForProgramsPrettyPrint
 import Parser.ParseHighLevel (parseHighLevel)
 import Typing.TypeChecker (typeCheckProgram)
 import FinalConditions (finalConditions, displayBrokenConditions)
+import LetBoolsToTop (bringLetBoolsToTop)
 
 import Options.Applicative
 
@@ -42,6 +43,7 @@ data Transformation = LitEqElimination
                     | LetOutputElimination
                     | ReturnElimination
                     | ForLoopExpansion
+                    | LetBoolsToTop
                     deriving (Eq,Show,Read,Ord,Enum)
 
 transformationsInOrder :: [Transformation]
@@ -58,6 +60,7 @@ applyTransform ReturnElimination p = retElimProgram p
 applyTransform ForLoopExpansion p = case forLoopExpansionFix p of  
     Left err -> error $ "Error in for loop expansion: " ++ show err
     Right p' -> p'
+applyTransform LetBoolsToTop p = bringLetBoolsToTop p
 
 
 data Options = Options
