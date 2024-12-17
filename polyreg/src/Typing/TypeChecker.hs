@@ -41,7 +41,12 @@ instance TypeCheckingMonad TypeChecker where
         case M.lookup x m of
             Just t -> return t
             Nothing -> throwError $ "Function " ++ x ++ " not found"
-    withVar x t (TypeChecker m) = TypeChecker $ local (\s -> s { variables = M.insert x t (variables s) }) m
+    withVar x t (TypeChecker m) = TypeChecker $ do
+        vars <- ask 
+        if M.member x (variables vars) then
+            lift $ Left $ "Variable " ++ x ++ " already defined"
+        else
+            local (\s -> s { variables = M.insert x t (variables s) }) m
     withVars [] m = m
     withVars ((x, t):xs) m = withVar x t (withVars xs m)
     withFunc x t (TypeChecker m) = TypeChecker $ local (\s -> s { functions = M.insert x t (functions s) }) m
