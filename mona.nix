@@ -8,7 +8,7 @@
     pkg-config,
     m4,
     flex,
-    yacc
+    bison
 }:
 stdenv.mkDerivation {
     pname = "mona";
@@ -28,7 +28,7 @@ stdenv.mkDerivation {
        pkg-config 
        m4
        flex
-       yacc
+       bison
     ];
     buildPhase = ''
         ./configure --prefix=$out
