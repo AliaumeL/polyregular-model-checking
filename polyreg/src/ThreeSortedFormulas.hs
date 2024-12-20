@@ -37,9 +37,9 @@ data Formula tag  =
     -- Boolean variables
     | FVar Var
     -- Binary operations
-    | FBin BinOp (Formula tag ) (Formula tag )
+    | FBin BinOp (Formula tag) (Formula tag )
     -- Unary negation
-    | FNot (Formula tag )
+    | FNot (Formula tag)
     -- Q x : T. φ. /!\ the "string" is only for debug purposes /!\
     | FQuant Quant String Sort (Formula tag )
     -- l(x)  (tag Variable x equals tag l)
@@ -48,6 +48,15 @@ data Formula tag  =
     | FLetter Var Char
     -- Position tests (equality, <=, <, >, >=)
     | FTestPos TestOp Var Var
+    -- We have to be able to test if a position is "real"
+    -- This is needed for the later "pullBack" construction
+    -- where we will quantify over "real+imaginary" positions
+    | FRealPos Var 
+    -- It will also be super useful to have a "predecessor"
+    -- relation for positions: this can be efficiently
+    -- converted in MONA using (p - 1) = q
+    -- and also in most SMT solvers
+    | FPredPos Var Var
   deriving (Show, Eq, Ord)
 
 andList :: [Formula tag ] -> Formula tag 
@@ -304,8 +313,8 @@ ifThenElse b (ProgramFormula φ iφ oφ) (ProgramFormula ψ iψ oψ) = ProgramFo
 
 
 
-iterOverVar :: String -> ProgramFormula tag  -> ProgramFormula tag
-iterOverVar p (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
+iterOverVar :: Direction -> String -> ProgramFormula tag  -> ProgramFormula tag
+iterOverVar dir p (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
     where
         -- the number of output variables of φ, i.e., the ones
         -- that can actually *change* by computing φ
@@ -361,18 +370,27 @@ iterOverVar p (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
 
         correctφ = andList $ [ subφ i | i <- [0 .. unum - 1] ]
 
-        condLessThan 0 _ = FConst True
-        condLessThan i x = FTestPos Gt x (Local (1 + (posVarMap M.! i)) p)
-
-        condGreaterThan n _ | n == unum + 1 = FConst True
-        condGreaterThan i x = FTestPos Lt x (Local (1 + (posVarMap M.! i)) p)
+        condIntermediate LeftToRight 0 x = 
+            FTestPos Lt x (Local (1 + (posVarMap M.! 1)) p)
+        condIntermediate RightToLeft 0 x = 
+            FTestPos Gt x (Local (1 + (posVarMap M.! 1)) p)
+        condIntermediate LeftToRight i x | i == unum =
+            FTestPos Gt x (Local (1 + (posVarMap M.! unum)) p)
+        condIntermediate RightToLeft i x | i == unum =
+            FTestPos Lt x (Local (1 + (posVarMap M.! unum)) p)
+        condIntermediate LeftToRight i x = andList [
+            FTestPos Lt x (Local (1 + (posVarMap M.! i)) p),
+            FTestPos Gt x (Local (1 + (posVarMap M.! (i+1))) p)
+            ]
+        condIntermediate RightToLeft i x = andList [
+            FTestPos Gt x (Local (1 + (posVarMap M.! i)) p),
+            FTestPos Lt x (Local (1 + (posVarMap M.! (i+1))) p)
+            ]
         
+
         quantifyIntermediatePos i λ = quantifyList [("pj", Pos, Forall)] $
                 mapInVars (\d x -> if x == p then Local d "pj" else In x) $ 
-                    FBin Impl (andList [
-                        condLessThan    i     (Local 0 "pj"),
-                        condGreaterThan (i+1) (Local 0 "pj")
-                    ]) λ
+                    FBin Impl (condIntermediate dir i (Local 0 "pj")) λ
 
         completenessAtStep i = mapInVars (getUpdtVar i) . mapOutVars (getUpdtVar i) $ 
                                 quantifyIntermediatePos i φ
@@ -381,10 +399,13 @@ iterOverVar p (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
 
 
         orderedPositions = andList $ do 
-            i <- [1.. (unum - 1)]
+            i <- [1 .. (unum - 1)]
             let pi = Local (posVarMap M.! i) p
             let pj = Local (posVarMap M.! (i+1)) p
-            return $ FTestPos Le pi pj
+            if dir == LeftToRight then 
+                return $ FTestPos Le pi pj
+            else
+                return $ FTestPos Ge pi pj
 
         ξ = quantifyList (map (\(_,x,s) -> (x,s, Exists)) $ reverse allVars) $
                andList [correctφ, orderedPositions, completeness]
@@ -393,6 +414,38 @@ iterOverVar p (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
         oξ = oφ
 
 
+-- the same as "iterOverVar" except we stop *before* the variable pmax
+-- given in argument. Note that depending on the direction, this means
+-- "before" or "after" in the order of the word ^^.
+iterOverVarBefore :: Direction -> String -> String -> ProgramFormula tag  -> ProgramFormula tag
+iterOverVarBefore dir p pmax (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
+    where
+        ξ  = undefined
+        iξ = undefined
+        oξ = undefined
+
+
+-- computeUntil path prog
+-- is what happens to the variable once we follow path "path" inside the program "prog"
+computeUntil :: [SFP.Movement] -> SFP.ForStmt -> ProgramFormula () 
+computeUntil [] stmt = mempty
+computeUntil (SFP.MoveIfL _ : xs) (SFP.If _ s1 _ ) = computeUntil xs s1
+computeUntil (SFP.MoveIfR _ : xs) (SFP.If _ _  s2) = computeUntil xs s2
+computeUntil (SFP.MoveSeq 0 : xs) (SFP.Seq ss)   = computeUntil xs (ss !! 0)
+computeUntil (SFP.MoveSeq n : xs) (SFP.Seq ss)   = before <> computeUntil xs after
+    where
+        after = ss !! n
+        before = mconcat $ map sfpStmtToProgramFormula $ take (n-1) ss
+computeUntil (SFP.MoveFor (PName pm) dirm bsm : xs) (SFP.For (PName p) dir bs stmt) 
+    | dirm == dirm && bsm == bs = iterOverVarBefore dir p pm pStmtB <> computeUntil xs stmt
+        where
+            pStmt  = sfpStmtToProgramFormula stmt
+            pStmtB = withNewBoolVars [ x | BName x <- bsm ] pStmt
+computeUntil _ _ = error "computeUntil: invalid path"
+
+
+
+-- PRETTY PRINTING
 
 
 prettyPrintQuant :: Quant -> String
@@ -418,6 +471,8 @@ prettyPrintFormula (FQuant q x s l) = prettyPrintQuant q ++ " " ++ x ++ " : " ++
 prettyPrintFormula (FTag x t) = prettyPrintVar x ++ " ∈ " ++ show t
 prettyPrintFormula (FLetter x l) = [l] ++ "(" ++ prettyPrintVar x ++ ")"
 prettyPrintFormula (FTestPos t x y) = prettyPrintVar x ++ " " ++ prettyPrintOp t ++ " " ++ prettyPrintVar y
+prettyPrintFormula (FRealPos x) = "real(" ++ prettyPrintVar x ++ ")"
+prettyPrintFormula (FPredPos x y) = prettyPrintVar x ++ " = " ++ prettyPrintVar y ++ " - 1"
 
 
 
@@ -432,17 +487,24 @@ sfpStmtToProgramFormula (SFP.If b s1 s2) = ifThenElse b (sfpStmtToProgramFormula
 sfpStmtToProgramFormula (SFP.PrintPos _) = mempty
 sfpStmtToProgramFormula (SFP.PrintLbl _) = mempty
 sfpStmtToProgramFormula (SFP.Seq ss) = mconcat $ map sfpStmtToProgramFormula ss
-sfpStmtToProgramFormula (SFP.For (PName p) LeftToRight bs stmt) = iterOverVar p subProgram
+sfpStmtToProgramFormula (SFP.For (PName p) dir bs stmt) = iterOverVar dir p subProgram
     where
         boolVars = [ x | BName x <- bs ]
         subProgram = withNewBoolVars boolVars $ sfpStmtToProgramFormula stmt
-sfpStmtToProgramFormula (SFP.For _ _ _ _) = error $ "only forward loops are supported"
 
 
 -- check if there is "a" in the input
 verySimpleForProgram :: SFP.ForProgram
 verySimpleForProgram = SFP.ForProgram [BName "seen_a"] $ 
     SFP.For (SFP.PName "i") SFP.LeftToRight [] $
+        SFP.If (SFP.BLabelAt (SFP.PName "i") 'a')
+               (SFP.SetTrue $ BName "seen_a")
+               (SFP.Seq [])
+
+-- check if there is "a" in the input
+verySimpleForProgramRev :: SFP.ForProgram
+verySimpleForProgramRev = SFP.ForProgram [BName "seen_a"] $ 
+    SFP.For (SFP.PName "i") SFP.RightToLeft [] $
         SFP.If (SFP.BLabelAt (SFP.PName "i") 'a')
                (SFP.SetTrue $ BName "seen_a")
                (SFP.Seq [])
@@ -458,4 +520,6 @@ verySimpleForProgramAA  = SFP.ForProgram [BName "seen_a1", BName "seen_a2"] $
                    (SFP.SetTrue $ BName "seen_a1")
                    (SFP.Seq [])
                 ]
-        
+
+
+--- MONA EXPORT

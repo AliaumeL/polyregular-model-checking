@@ -54,6 +54,16 @@ data ForStmt  =
 data ForProgram = ForProgram [BName] ForStmt deriving(Eq, Show)
 
 
+data Movement = MoveIfL  BoolExpr
+              | MoveIfR  BoolExpr
+              | MoveSeq  Int
+              | MoveFor  PName Direction [BName]
+              | MoveProg [BName]
+              deriving(Eq, Show)
+
+data Path = Path [Movement] deriving(Eq, Show)
+
+
 class (Monad m) => MonadInterpreter m where
     throwWithCtx :: String -> m a
 
