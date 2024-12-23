@@ -27,6 +27,7 @@ dependencies:
   - mtl
   - text
   - array
+  - temporary
 
 build-tools:
   - alex

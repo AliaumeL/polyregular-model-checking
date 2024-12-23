@@ -21,6 +21,9 @@ import Control.Monad.State
 type PosVarName = String
 type TagVarName = String
 
+-- TODO: use ThreeSortedFormulas instead of TwoSortedFormulas.
+
+
 -- We also want to be able to inject directly FOI.Formula into TSF.Formula.
 
 inject :: FOI.Formula PosVarName alphabet -> Formula tag alphabet

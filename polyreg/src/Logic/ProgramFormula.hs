@@ -1,162 +1,15 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module ThreeSortedFormulas where
 
-import QuantifierFree
+module Logic.ProgramFormula where
 
-import Control.Monad.Reader
-import Control.Monad.Extra (anyM, allM)
-
-import SimpleForPrograms as SFP
+import qualified SimpleForPrograms as SFP
+import SimpleForPrograms (Direction(..), BName(..), PName(..), Movement(..))
 
 import Data.Map (Map)
 import qualified Data.Map as M
 
-import Data.Set (Set)
-import qualified Data.Set as S
-
--- This module contains a (First-order) logic with three sorts:
--- a sort     (Pos) of positions, 
--- a sort     (Boolean) of booleans (True, False)
--- and a sort (Tag) of finitely many tags.
-
-data Sort = Pos | Tag | Boolean
-  deriving (Show, Eq, Ord)
-
-data Quant = Exists | Forall 
-  deriving (Show, Eq, Ord)
-
-data Var   = In    String 
-           | Out   String 
-           | Local Int String 
-    deriving (Show, Eq, Ord) 
-
-
-data Formula tag  = 
-    -- Constants
-      FConst Bool
-    -- Boolean variables
-    | FVar Var
-    -- Binary operations
-    | FBin BinOp (Formula tag) (Formula tag )
-    -- Unary negation
-    | FNot (Formula tag)
-    -- Q x : T. φ. /!\ the "string" is only for debug purposes /!\
-    | FQuant Quant String Sort (Formula tag )
-    -- l(x)  (tag Variable x equals tag l)
-    | FTag Var tag
-    -- a(x)  (position Variable x has letter a)
-    | FLetter Var Char
-    -- Position tests (equality, <=, <, >, >=)
-    | FTestPos TestOp Var Var
-    -- We have to be able to test if a position is "real"
-    -- This is needed for the later "pullBack" construction
-    -- where we will quantify over "real+imaginary" positions
-    | FRealPos Var 
-    -- It will also be super useful to have a "predecessor"
-    -- relation for positions: this can be efficiently
-    -- converted in MONA using (p - 1) = q
-    -- and also in most SMT solvers
-    | FPredPos Var Var
-  deriving (Show, Eq, Ord)
-
-andList :: [Formula tag ] -> Formula tag 
-andList [] = FConst True
-andList [x] = x
-andList (x:xs) = FBin Conj x (andList xs)
-
-orList :: [Formula tag ] -> Formula tag 
-orList [] = FConst False
-orList [x] = x
-orList (x:xs) = FBin Disj x (orList xs)
-
-quantifyList :: [(String, Sort, Quant)] -> Formula tag  -> Formula tag 
-quantifyList [] f = f
-quantifyList ((x, s, q):xs) f = FQuant q x s (quantifyList xs f)
-
-
-
-substituteBooleanVar :: (Var -> Formula tag ) -> Formula tag  -> Formula tag 
-substituteBooleanVar f (FConst x) = FConst x
-substituteBooleanVar f (FVar x) = f x
-substituteBooleanVar f (FBin op l r) = FBin op (substituteBooleanVar f l) (substituteBooleanVar f r)
-substituteBooleanVar f (FNot l) = FNot (substituteBooleanVar f l)
-substituteBooleanVar f (FQuant q x s l) = FQuant q x s (substituteBooleanVar f l)
-substituteBooleanVar f (FTag x t) = FTag x t
-substituteBooleanVar f (FLetter x l) = FLetter x l
-substituteBooleanVar f (FTestPos t x y) = FTestPos t x y
-
-
-
-
--- | apply f to every Variable in the formula
--- f is given the current quantifier depth and the Variable name
-mapVars :: (Int -> Var -> Var) -> Formula tag  -> Formula tag 
-mapVars f = mapVars' f 0
-    where
-        mapVars' :: (Int -> Var -> Var) -> Int -> Formula tag  -> Formula tag 
-        mapVars' f d (FConst b) = FConst b
-        mapVars' f d (FVar x) = FVar $ f d x
-        mapVars' f d (FBin op l r) = FBin op (mapVars' f d l) (mapVars' f d r)
-        mapVars' f d (FNot l) = FNot (mapVars' f d l)
-        mapVars' f d (FQuant q x s l) = FQuant q x s (mapVars' f (d+1) l)
-        mapVars' f d (FTag x t) = FTag (f d x) t
-        mapVars' f d (FLetter x l) = FLetter (f d x) l
-        mapVars' f d (FTestPos t x y) = FTestPos t (f d x) (f d y)
-
-mapOutVars :: (Int -> String -> Var) -> Formula tag  -> Formula tag
-mapOutVars f = mapVars g
-    where
-        g :: Int -> Var -> Var
-        g d (Out x) = f d x
-        g d x = x
-
-mapInVars :: (Int -> String -> Var) -> Formula tag  -> Formula tag
-mapInVars f = mapVars g
-    where
-        g :: Int -> Var -> Var
-        g d (In x) = f d x
-        g d x = x
-
--- | remap output Variables to either the identity or a "new" Variable
--- given by a string (for debugging purposes) and an integer (for de bruin indices)
-quantOutVars :: (String -> Maybe (Int, String)) -> Formula tag  -> Formula tag 
-quantOutVars f = mapOutVars g
-    where
-        g :: Int -> String -> Var
-        g d x = case f x of
-                    Just (i, y) -> Local (i + d) y
-                    Nothing     -> Out x
-
-quantInVars :: (String -> Maybe (Int, String)) -> Formula tag  -> Formula tag 
-quantInVars f = mapInVars g
-    where
-        g :: Int -> String -> Var
-        g d x = case f x of
-                    Just (i, y) -> Local (i + d) y
-                    Nothing     -> In x
-
-
-freeVars :: Formula tag  -> (Map String Sort, Map String Sort)
-freeVars (FVar (In x))  = (M.singleton x Boolean, M.empty)
-freeVars (FVar (Out x)) = (M.empty, M.singleton x Boolean)
-freeVars (FBin _ l r) = (sIn, sOut)
-    where
-        (sInL, sOutL) = freeVars l
-        (sInR, sOutR) = freeVars r
-        sIn = sInL `M.union` sInR
-        sOut = sOutL `M.union` sOutR
-freeVars (FNot l) = freeVars l
-freeVars (FQuant _ _ _ l) = freeVars l
-freeVars (FTag (In x) _) = (M.singleton x Tag, M.empty)
-freeVars (FTag (Out x) _) = (M.empty, M.singleton x Tag)
-freeVars (FLetter (In x) _) = (M.singleton x Pos, M.empty)
-freeVars (FLetter (Out x) _) = (M.empty, M.singleton x Pos)
-freeVars (FTestPos _ (In x) (In y)) =  (M.singleton x Pos `M.union` M.singleton y Pos, M.empty)
-freeVars (FTestPos _ (Out x) (In y)) =  (M.singleton y Pos, M.singleton x Pos)
-freeVars (FTestPos _ (In x) (Out y)) = (M.singleton x Pos, M.singleton y Pos)
-freeVars (FTestPos _ (Out x) (Out y)) =  (M.empty, M.singleton x Pos `M.union` M.singleton y Pos)
-freeVars _ = (M.empty, M.empty)
-
+import Logic.Formulas
+import QuantifierFree
 
 -- | A formula seen as a morphism in the category of something
 -- so that they can be composed.
@@ -445,37 +298,6 @@ computeUntil _ _ = error "computeUntil: invalid path"
 
 
 
--- PRETTY PRINTING
-
-
-prettyPrintQuant :: Quant -> String
-prettyPrintQuant Exists = "∃"
-prettyPrintQuant Forall = "∀"
-
-prettyPrintSort :: Sort -> String
-prettyPrintSort Pos = "P"
-prettyPrintSort Tag = "T"
-prettyPrintSort Boolean = "B"
-
-prettyPrintVar :: Var -> String
-prettyPrintVar (In x) = x ++ show "[in]"
-prettyPrintVar (Out x) = x  ++ show "[out]"
-prettyPrintVar (Local i x) = show i ++ "(" ++ x ++ ")"
-
-prettyPrintFormula :: Show tag => Formula tag  -> String
-prettyPrintFormula (FConst b) = if b then "⊤" else "⊥"
-prettyPrintFormula (FVar x) = prettyPrintVar x
-prettyPrintFormula (FBin op l r) = "(" ++ prettyPrintFormula l ++ prettyPrintBin op ++ prettyPrintFormula r ++ ")"
-prettyPrintFormula (FNot l) = "¬" ++ prettyPrintFormula l
-prettyPrintFormula (FQuant q x s l) = prettyPrintQuant q ++ " " ++ x ++ " : " ++ prettyPrintSort s ++ ". " ++ prettyPrintFormula l
-prettyPrintFormula (FTag x t) = prettyPrintVar x ++ " ∈ " ++ show t
-prettyPrintFormula (FLetter x l) = [l] ++ "(" ++ prettyPrintVar x ++ ")"
-prettyPrintFormula (FTestPos t x y) = prettyPrintVar x ++ " " ++ prettyPrintOp t ++ " " ++ prettyPrintVar y
-prettyPrintFormula (FRealPos x) = "real(" ++ prettyPrintVar x ++ ")"
-prettyPrintFormula (FPredPos x y) = prettyPrintVar x ++ " = " ++ prettyPrintVar y ++ " - 1"
-
-
-
 sfpToProgramFormula :: SFP.ForProgram -> ProgramFormula ()
 sfpToProgramFormula (SFP.ForProgram bs stmt) = withFalseInputs boolVars $ sfpStmtToProgramFormula stmt
     where 
@@ -520,6 +342,3 @@ verySimpleForProgramAA  = SFP.ForProgram [BName "seen_a1", BName "seen_a2"] $
                    (SFP.SetTrue $ BName "seen_a1")
                    (SFP.Seq [])
                 ]
-
-
---- MONA EXPORT

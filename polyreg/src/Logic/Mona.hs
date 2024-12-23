@@ -1,14 +1,19 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module MonaExport where
+module Logic.Mona where
 
 import QuantifierFree
-import ThreeSortedFormulas
 
 import Control.Monad
 import Control.Monad.State
 
 import Data.Map (Map)
 import qualified Data.Map as M
+
+import System.IO.Temp (withSystemTempFile)
+import System.Process (readProcess)
+import Data.List (isInfixOf)
+
+import Logic.Formulas
 
 intersperse :: a -> [a] -> [a]
 intersperse _ [] = []
@@ -43,7 +48,7 @@ instance MonadExport ExportM where
         return $ stack !! i
 
 runExportM :: ExportM a -> a
-runExportM (ExportM m) = evalState m (ExportState M.empty 0 0)
+runExportM (ExportM m) = evalState m (ExportState [] 0)
 
 
 binOpToMona :: BinOp -> String
@@ -66,11 +71,11 @@ varToMona (In x) = return ("in_" ++ x)
 varToMona (Out x) = return ("out_" ++ x)
 varToMona (Local i _) = getVarName i
 
-tagToMona :: (MonadExport m) => String -> m String
-tagToMona (Tag x) = return ("T" ++ lower x)
+tagToMona ::  String -> String
+tagToMona x = "T" ++ x
 
-letterToMona :: (MonadExport m) => Char -> m String
-letterToMona x = return ("L" ++ [x])
+letterToMona :: Char -> String
+letterToMona x = "L" ++ [x]
 
 boolSetMona :: String
 boolSetMona = "B"
@@ -94,11 +99,11 @@ sortToMona Tag = tagSetMona
 formulaToMona :: (MonadExport m) => Formula String -> m String
 formulaToMona (FConst True) = return "true"
 formulaToMona (FConst False) = return "false"
-formulaToMona (FVar x) = return x
+formulaToMona (FVar x) = varToMona x
 formulaToMona (FBin op left right) = do
     l <- formulaToMona left
     r <- formulaToMona right
-    let op' = opToMona op
+    let op' = binOpToMona op
     return $ "( " ++ l ++ " " ++ op' ++ " " ++ r ++ " )"
 formulaToMona (FNot inner) = do
     i <- formulaToMona inner
@@ -110,11 +115,11 @@ formulaToMona (FTestPos op x y) = do
     return $ "( " ++ vx ++ " " ++ op' ++ " " ++ vy ++ " )"
 formulaToMona (FTag x tag) = do
     vx <- varToMona x
-    tx <- tagToMona tag
+    let tx = tagToMona tag
     return $ "( " ++ vx ++ " in " ++ tx ++ " )"
 formulaToMona (FLetter x letter) = do
     vx <- varToMona x
-    lx <- letterToMona letter
+    let lx = letterToMona letter
     return $ "( " ++ vx ++ " in " ++ lx ++ " )"
 formulaToMona (FPredPos p x) = do
     px <- varToMona p
@@ -123,12 +128,12 @@ formulaToMona (FPredPos p x) = do
 formulaToMona (FRealPos x) = do
     vx <- varToMona x
     return $ "( " ++ vx ++ " in " ++ realPosSetMona ++ " )"
-formulaToMona (FQuant Exists s inner) = do
+formulaToMona (FQuant Exists _ s inner) = do
     withVariable s $ do
         n <- getVarName 0
         i <- formulaToMona inner
         return $ "ex1 " ++ n ++ ": ( " ++ n ++ " in " ++ sortToMona s ++ " ) & ( " ++ i ++ " )"
-formulaToMona (FQuant Forall s inner) = do
+formulaToMona (FQuant Forall _ s inner) = do
     withVariable s $ do
         n <- getVarName 0
         i <- formulaToMona inner
@@ -140,7 +145,7 @@ data EncodeParams = EncodeParams {
 } deriving (Eq,Show)
 
 encodeMona :: EncodeParams -> Formula String -> String
-encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetVarsDef, tagsVarsDef, wordVars, labelsAt, labelsUnion, wordUnion, disjoint, wordDisjoint, covering, formula']
+encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetVarsDef, tagsVarsDef, layoutvarsDef, boolVarsPositions, tagVarsPositions, fakePosPosition, boolSortConstraint, tagSortConstraint, realPosConstraints, lettersAreDisjoint, layoutDisjoint, covering, formula']
     where
         -- layout 
         -- | tt | ff | t1 | t2 | ... | tn | ε | w1 | w2 | ... | wk |
@@ -151,10 +156,16 @@ encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetV
         -- empty word.
         preamble = "m2l-str;"
 
+        layoutVars :: [String]
         layoutVars   = [realPosSetMona, boolSetMona, tagSetMona, posSetMona]
+
         alphabetVars :: [String]
         alphabetVars = map letterToMona alphabet
+
+        tagsVars     :: [String]
         tagsVars     = map tagToMona tags
+
+        boolVars     :: [String]
         boolVars     = ["BTrue", "BFalse"]
     
         alphabetVarsDef = "var2 " ++ unwords (intersperse "," alphabetVars) ++ ";"
@@ -163,11 +174,11 @@ encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetV
 
         boolVarsPositions = unlines $ do
             (i, name) <- zip [0..] boolVars
-            return $ "assert ( " ++ name ++ " = {" ++ show i ++ "});"
+            ["assert ( " ++ name ++ " = {" ++ show i ++ "});"]
 
         tagVarsPositions = unlines $ do 
             (i, name) <- zip [2..] tagsVars
-            return $ "assert ( " ++ name ++ " = {" ++ show i ++ "});"
+            ["assert ( " ++ name ++ " = {" ++ show i ++ "});"]
 
         fakePositionNumber = length (boolVars) + length (tagsVars)
 
@@ -177,15 +188,15 @@ encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetV
         tagSortConstraint  = "assert (" ++ tagSetMona ++ " = " ++ unwords (intersperse " union " tagsVars) ++ ");"
         realPosConstraints  = "assert (" ++ realPosSetMona ++ " = " ++ unwords (intersperse " union " (alphabetVars)) ++ ");"
             
-        lettersAreDisjoint :: [String]
-        lettersAreDisjoint = unlines $ do
-            a <- alphabet
-            b <- alphabet
-            if a == b then
-                []
-            else 
-                return $ "assert (" ++ (letterToMona a) ++ " inter " ++ (letterToMona b) ++ " = empty);"
+        lettersAreDisjoint :: String
+        lettersAreDisjoint = unlines $ [
+                "assert (" ++ (letterToMona a) ++ " inter " ++ (letterToMona b) ++ " = empty);" |
+                a <- alphabet,
+                b <- alphabet,
+                a /= b
+            ]
 
+        layoutDisjoint :: String
         layoutDisjoint = unlines $ [
             "assert(" ++ boolSetMona ++ " inter " ++ tagSetMona ++ " = empty);",
             "assert(" ++ boolSetMona ++ " inter " ++ posSetMona ++ " = empty);",
@@ -193,4 +204,19 @@ encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetV
             ]
  
         covering = "assert (all1 x: (x in " ++ tagSetMona ++ ") | (x in " ++ boolSetMona ++ ") | (x in "++ posSetMona ++"));"
-        formula' = runExportM $ formulaToMona formula
+        formula' = (runExportM $ formulaToMona formula) ++ ";"
+
+
+data MonaResult = Sat | Unsat | Unknown
+  deriving (Show, Eq)
+
+
+
+parseMonaOutput :: String -> MonaResult
+parseMonaOutput output = if "Formula is valid" `isInfixOf` output then Sat else if "A satisfying example" `isInfixOf` output then Sat else if "Formula is unsatisfiable" `elem` lines output then Unsat else Unknown
+
+runMona :: String -> IO MonaResult
+runMona input = withSystemTempFile "tmp.mona" $ \name _ -> do
+    writeFile name input
+    output <- readProcess "mona" ["-q", name] ""
+    return $ parseMonaOutput output
