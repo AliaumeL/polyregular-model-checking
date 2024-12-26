@@ -223,6 +223,9 @@ iterOverVar dir p (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
 
         correctφ = andList $ [ subφ i | i <- [0 .. unum - 1] ]
 
+        -- condIntermediate => pi < p < p{i+1} 
+        -- or                     >   >
+        -- with p0 = 0 and pn = infty
         condIntermediate LeftToRight 0 x = 
             FTestPos Lt x (Local (1 + (posVarMap M.! 1)) p)
         condIntermediate RightToLeft 0 x = 
@@ -270,20 +273,155 @@ iterOverVar dir p (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
 -- the same as "iterOverVar" except we stop *before* the variable pmax
 -- given in argument. Note that depending on the direction, this means
 -- "before" or "after" in the order of the word ^^.
+iterOverVarBeforeLazy :: Direction -> String -> String -> ProgramFormula tag  -> ProgramFormula tag
+iterOverVarBeforeLazy dir p pmax (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
+    where
+        -- the number of output variables of φ, i.e., the ones
+        -- that can actually *change* by computing φ
+        unum :: Int
+        unum = M.size oφ
+
+        -- for every number 1 <= i <= unum
+        -- we create a Position variable p_i
+        iterPosVars :: [(Int, String, Sort)]
+        iterPosVars = do
+            i <- [1 .. unum]
+            return (i, "p_" ++ show i, Pos)
+
+        -- and variables "x_i" for all output variables x of φ
+        iterUpdtVars :: [(Int, String, Sort)]
+        iterUpdtVars = do
+            i <- [1 .. (unum-1)]
+            (x, s) <- M.toList oφ
+            return (i, x, s)
+
+        -- all quantified vars
+        allVars :: [(Int, String, Sort)]
+        allVars = iterUpdtVars ++ iterPosVars
+
+        -- allVars as a map from (i, s) to the number of the quantified variable
+        updtVarMap :: Map (Int, String) Int
+        updtVarMap = M.fromList $ zip (map (\(i, x, _) -> (i, x)) iterUpdtVars) [0..]
+
+        posVarMap  :: Map Int Int
+        posVarMap  = M.fromList $ zip (map (\(i, _, _) -> i) iterPosVars) [length iterUpdtVars ..]
+
+        -- finds the corresponding boolean variable
+        -- for the variable x at iteration i
+        getUpdtVar :: Int -> Int -> String -> Var 
+        getUpdtVar 0    depth x = In x
+        getUpdtVar n    depth x | n == unum = Out x
+        getUpdtVar step depth x = case M.lookup (step, x) updtVarMap of
+                                    Just i  -> Local (depth + i) x
+                                    Nothing -> error $ "iterUntil: variable " ++ x ++ " not found"
+
+        getPosVar :: Int -> Int -> String -> Var 
+        getPosVar step depth x | x == p = case M.lookup step posVarMap of
+                                            Just i  -> Local (depth + i) x
+                                            Nothing -> error $ "iterUntil: variable " ++ x ++ " not found"
+        getPosVar step depth x = In x
+
+        -- Now, we construct the formulas [φ_i] for 0 <= i <= unum - 1
+        -- where φ_i is φ with input   variables (updtVarMap i)
+        -- and                 output  variables (updtVarMap i+1)
+        subφ i = mapInVars (getUpdtVar i) $ 
+                    mapOutVars (getUpdtVar (i+1)) $ 
+                        mapInVars (getPosVar (i+1)) φ
+
+        correctφ = andList $ [ subφ i | i <- [0 .. unum - 1] ]
+
+        -- condIntermediate => pi < p < p{i+1} 
+        -- or                     >   >
+        -- with p0 = 0 and pn = p if LTR
+        -- p0 = p and pn = +infty otherwise
+        condIntermediate LeftToRight 0 x = 
+            FTestPos Lt x (Local (1 + (posVarMap M.! 1)) p)
+        condIntermediate RightToLeft 0 x = 
+            FTestPos Gt x (Local (1 + (posVarMap M.! 1)) p)
+        condIntermediate LeftToRight i x | i == unum = andList [
+                FTestPos Gt x (Local (1 + (posVarMap M.! unum)) p)
+            ,   FTestPos Lt x (In pmax)
+            ]
+        condIntermediate RightToLeft i x | i == unum = andList [
+                FTestPos Lt x (Local (1 + (posVarMap M.! unum)) p)
+            ,   FTestPos Gt x (In pmax)
+            ]
+        condIntermediate LeftToRight i x = andList [
+            FTestPos Lt x (Local (1 + (posVarMap M.! i)) p),
+            FTestPos Gt x (Local (1 + (posVarMap M.! (i+1))) p)
+            ]
+        condIntermediate RightToLeft i x = andList [
+            FTestPos Gt x (Local (1 + (posVarMap M.! i)) p),
+            FTestPos Lt x (Local (1 + (posVarMap M.! (i+1))) p)
+            ]
+
+        -- every position is at most pmax (RTL)
+        -- or at least pmax (LTR)
+        constraintIntermediatePos = andList $ do 
+            j <- [1 .. unum]
+            let pj = Local (posVarMap M.! j) p
+            if dir == LeftToRight then 
+                return $ FTestPos Le pj (In pmax)
+            else
+                return $ FTestPos Ge pj (In pmax)
+        
+
+        quantifyIntermediatePos i λ = quantifyList [("pj", Pos, Forall)] $
+                mapInVars (\d x -> if x == p then Local d "pj" else In x) $ 
+                    FBin Conj constraintIntermediatePos (
+                         FBin Impl (condIntermediate dir i (Local 0 "pj")) λ)
+
+
+        completenessAtStep i = mapInVars (getUpdtVar i) . mapOutVars (getUpdtVar i) $ 
+                                quantifyIntermediatePos i φ
+
+        completeness = andList [ completenessAtStep i | i <- [0 .. unum] ]
+
+
+        orderedPositions = andList $ do 
+            i <- [1 .. (unum - 1)]
+            let pi = Local (posVarMap M.! i) p
+            let pj = Local (posVarMap M.! (i+1)) p
+            if dir == LeftToRight then 
+                return $ FTestPos Le pi pj
+            else
+                return $ FTestPos Ge pi pj
+
+        ξ = quantifyList (map (\(_,x,s) -> (x,s, Exists)) $ reverse allVars) $
+               andList [correctφ, orderedPositions, completeness]
+
+        iξ = (M.delete p iφ) `M.union` M.singleton pmax Pos
+        oξ = oφ
+
+
+-- Test if
+-- LeftToRight: exists y before pmax
+-- RightToLeft: exists y after pmax
+-- if the condition holds, call iterOverVarBeforeLazy,
+-- otherwise, the program formula is "every input is mapped to the same output"
 iterOverVarBefore :: Direction -> String -> String -> ProgramFormula tag  -> ProgramFormula tag
 iterOverVarBefore dir p pmax (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
     where
-        ξ  = undefined
-        iξ = undefined
-        oξ = undefined
+        cond = if dir == LeftToRight then FTestPos Lt (Local 0 "y") (In pmax)
+                                     else FTestPos Gt (Local 0 "y") (In pmax)
+        qcond = quantifyList [("y", Pos, Exists)] cond
 
+        (ProgramFormula θ iθ oθ) = iterOverVarBeforeLazy dir p pmax (ProgramFormula φ iφ oφ)
+
+        identityFormula = andList $ do
+            (x, s) <- M.toList oφ
+            return $ FBin Equiv (FVar $ Out x) (FVar $ In x)
+
+        ξ = FBin Conj (FBin Impl qcond θ) (FBin Impl (FNot qcond) identityFormula)
+        iξ = iθ
+        oξ = oθ
 
 -- computeUntil path prog
 -- is what happens to the variable once we follow path "path" inside the program "prog"
 computeUntil :: [SFP.Movement] -> SFP.ForStmt -> ProgramFormula () 
 computeUntil [] stmt = mempty
-computeUntil (SFP.MoveIfL _ : xs) (SFP.If _ s1 _ ) = computeUntil xs s1
-computeUntil (SFP.MoveIfR _ : xs) (SFP.If _ _  s2) = computeUntil xs s2
+computeUntil (SFP.MoveIfL _ : xs) (SFP.If b s1 _ ) = ifThenElse b (computeUntil xs s1) (ProgramFormula (FConst False) M.empty M.empty)
+computeUntil (SFP.MoveIfR _ : xs) (SFP.If b _  s2) = ifThenElse b (ProgramFormula (FConst False) M.empty M.empty) (computeUntil xs s2)
 computeUntil (SFP.MoveSeq 0 : xs) (SFP.Seq ss)   = computeUntil xs (ss !! 0)
 computeUntil (SFP.MoveSeq n : xs) (SFP.Seq ss)   = before <> computeUntil xs after
     where

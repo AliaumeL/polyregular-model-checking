@@ -10,6 +10,10 @@ import Control.Monad.Except
 import Data.Map (Map)
 import qualified Data.Map as M
 
+import Data.Set (Set)
+import qualified Data.Set as S
+
+import Data.List
 
 newtype PName = PName String deriving(Eq, Show,Ord)
 newtype BName = BName String deriving(Eq, Show,Ord)
@@ -61,7 +65,106 @@ data Movement = MoveIfL  BoolExpr
               | MoveProg [BName]
               deriving(Eq, Show)
 
-data Path = Path [Movement] deriving(Eq, Show)
+data Path = Path [Movement] deriving (Eq, Show)
+
+
+pathBVars :: Path -> [BName]
+pathBVars (Path []) = []
+pathBVars (Path (MoveIfL e : ms)) = pathBVars (Path ms)
+pathBVars (Path (MoveIfR e : ms)) = pathBVars (Path ms)
+pathBVars (Path (MoveSeq _ : ms)) = pathBVars (Path ms)
+pathBVars (Path (MoveFor _ _ bs : ms)) = bs ++ pathBVars (Path ms)
+pathBVars (Path (MoveProg bs : ms)) = bs ++ pathBVars (Path ms)
+
+pathPVars :: Path -> [PName]
+pathPVars (Path []) = []
+pathPVars (Path (MoveIfL e : ms)) = pathPVars (Path ms)
+pathPVars (Path (MoveIfR e : ms)) = pathPVars (Path ms)
+pathPVars (Path (MoveSeq _ : ms)) = pathPVars (Path ms)
+pathPVars (Path (MoveFor p _ _ : ms)) = p : pathPVars (Path ms)
+pathPVars (Path (MoveProg _ : ms)) = pathPVars (Path ms)
+
+
+pathToTag :: Path -> String
+pathToTag (Path ms) = concat . intersperse ":" . map movementToTag $ ms
+    where
+        movementToTag (MoveIfL e) = "l"
+        movementToTag (MoveIfR e) = "r"
+        movementToTag (MoveSeq n) = show n  
+        movementToTag (MoveFor p d bs) = "f"
+        movementToTag (MoveProg bs) = "/"
+
+tagToPath :: String -> Path
+tagToPath s = Path $ map tagToMovement s
+    where
+        tagToMovement 'l' = MoveIfL (BConst True)
+        tagToMovement 'r' = MoveIfR (BConst True)
+        tagToMovement 'f' = MoveFor (PName "p") LeftToRight []
+        tagToMovement '/' = MoveProg []
+        tagToMovement c = MoveSeq (read [c])
+
+followPath :: Path -> ForStmt -> ForStmt
+followPath (Path []) stmt = stmt
+followPath (Path (MoveIfL e : ms)) (If e' t f) = followPath (Path ms) t
+followPath (Path (MoveIfR e : ms)) (If e' t f) = followPath (Path ms) f
+followPath (Path (MoveSeq n : ms)) (Seq stmts) = followPath (Path ms) (stmts !! n)
+followPath (Path (MoveFor p d bs : ms)) (For p' d' bs' stmt) = followPath (Path ms) stmt
+
+followPathProg :: Path -> ForProgram -> ForStmt
+followPathProg (Path (_ : p)) (ForProgram bs stmt) = followPath (Path p) stmt
+followPathProg (Path []) (ForProgram bs stmt) = stmt
+
+
+listPrintStatements :: ForProgram -> [Path]
+listPrintStatements prog = do 
+    pos <- listPositions prog
+    let stmt = followPathProg pos prog
+    case stmt of
+        PrintPos _ -> return pos
+        PrintLbl _ -> return pos
+        _ -> []
+
+-- TODO: remove duplicates 
+listAlphabet :: ForProgram -> String
+listAlphabet (ForProgram _ stmt) = S.toList $ listAlphabet' stmt
+    where
+        listAlphabet' :: ForStmt -> Set Char
+        listAlphabet' (SetTrue _) = S.empty
+        listAlphabet' (If e t f) = listAlphabetBExpr e `S.union` listAlphabet' t `S.union` listAlphabet' f
+        listAlphabet' (For _ _ _ stmt) = listAlphabet' stmt
+        listAlphabet' (PrintPos _) = S.empty
+        listAlphabet' (PrintLbl l) = S.singleton l
+        listAlphabet' (Seq stmts) = S.unions $ map listAlphabet' stmts
+
+        listAlphabetBExpr :: BoolExpr -> Set Char
+        listAlphabetBExpr (BConst _) = S.empty
+        listAlphabetBExpr (BVar _) = S.empty
+        listAlphabetBExpr (BTest _ _ _) = S.empty
+        listAlphabetBExpr (BLabelAt _ l) = S.singleton l
+        listAlphabetBExpr (BNot e) = listAlphabetBExpr e
+        listAlphabetBExpr (BBin _ e1 e2) = listAlphabetBExpr e1 `S.union` listAlphabetBExpr e2
+
+
+
+
+listMovements :: ForProgram -> [[Movement]]
+listMovements (ForProgram bs stmt) = map (\p -> (MoveProg bs) : p) . movements' $ stmt
+    where
+        movements' :: ForStmt -> [[Movement]]
+        movements' (SetTrue b) = [[]]
+        movements' (If e t f) = map (MoveIfL e :) (movements' t) ++ map (MoveIfR e :) (movements' f)
+        movements' (For p d bs stmt) = map (MoveFor p d bs :) (movements' stmt)
+        movements' (PrintPos _) = [[]]
+        movements' (PrintLbl _) = [[]]
+        movements' (Seq stmts) = do
+            (i, stmt) <- zip [0..] stmts
+            ms <- movements' stmt
+            return $ MoveSeq i : ms
+
+listPositions :: ForProgram -> [Path]
+listPositions p = map Path $ listMovements p
+
+
 
 
 class (Monad m) => MonadInterpreter m where
