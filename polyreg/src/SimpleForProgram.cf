@@ -1,0 +1,38 @@
+-- Translate to haskell with `bnfc --haskell -d -p Parser SimpleForProgram.cf`
+-- Remember to remove the Test.hs file, which breaks the build
+
+comment "#" ;
+
+separator nonempty Stmt "" ;
+separator nonempty Ident "," ;
+
+Program . Program ::= VarStmt ; 
+
+VarStmt . VarStmt ::= "let" [Ident] ":=" "false" "in" [Stmt] ;
+NoVarStmt . VarStmt ::= [Stmt] ;
+
+FInput . FORInput ::= "input" ; 
+FRevInput . FORInput ::= "reversed" "(" "input" ")" ;
+
+SFor. Stmt ::= "for" Ident "in" FORInput "do" VarStmt "done" ;
+SSetTrue. Stmt ::= Ident ":=" "true" ;
+SIfElse. Stmt ::= "if" BExpr "then" [Stmt] "else" [Stmt] "endif" ;
+SIf. Stmt ::= "if" BExpr "then" [Stmt] "endif" ;
+SPrintChar . Stmt ::= "print" "'" Char "'" ;
+SPrintLabel . Stmt ::= "print" Ident ;
+
+BTrue . BExpr2 ::= "true" ;
+BFalse . BExpr2 ::= "false" ; 
+BVar . BExpr2 ::= Ident ; 
+BNot . BExpr2 ::= "not" BExpr2 ; 
+BTest . BExpr2 ::= Ident BTest Ident ;
+BAnd . BExpr1 ::= BExpr2 "and" BExpr1 ; 
+BOr .  BExpr ::= BExpr1 "or" BExpr ;
+coercions BExpr 2 ;
+
+TLe . BTest ::= "<=" ; 
+TLt . BTest ::= "<" ; 
+TGe . BTest ::= ">=" ; 
+TGt . BTest ::= ">" ; 
+TEq . BTest ::= "==" ; 
+TNeq . BTest ::= "!=" ;
