@@ -1,0 +1,16 @@
+let x := false in 
+for i in input do 
+    if label(i) == 'a' then 
+        x := true 
+    endif 
+done 
+
+if not x then 
+    for i in input do 
+        print i
+    done 
+else 
+    for i in reversed(input) do 
+        print i 
+    done
+endif
