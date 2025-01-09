@@ -10,11 +10,13 @@ pkgs.buildEnv {
     pkgs.haskellPackages.BNFC
     pkgs.gmp
     # alt-ergo prover (non-free)
-    # pkgs.alt-ergo
+    pkgs.alt-ergo
     # cvc5 prover
     pkgs.cvc5
     # z3 prover
     pkgs.z3
+    # yices prover
+    pkgs.yices
     # latex building environment
     # only light version 
     # pkgs.texlive.combined.scheme-small
