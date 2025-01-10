@@ -21,7 +21,7 @@ import Logic.Interpretation
 -- [ x is real pos ] = error
 -- [ x pred pos    ] = error
 pullBack :: Interpretation tag -> Formula () -> Formula tag
-pullBack (Interpretation tags alph dom ord lab cop ar mar) φ = pb φ
+pullBack (Interpretation tags alph dom ord labCop ar) φ = pb φ
     where
         pb (FConst True) = FConst True
         pb (FConst False) = FConst False

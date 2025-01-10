@@ -49,6 +49,7 @@ transBExpr x = case x of
   Parser.SimpleForProgram.Abs.BVar ident -> failure x
   Parser.SimpleForProgram.Abs.BNot bexpr -> failure x
   Parser.SimpleForProgram.Abs.BTest ident1 btest ident2 -> failure x
+  Parser.SimpleForProgram.Abs.BLabelAt ident char -> failure x
   Parser.SimpleForProgram.Abs.BAnd bexpr1 bexpr2 -> failure x
   Parser.SimpleForProgram.Abs.BOr bexpr1 bexpr2 -> failure x
 

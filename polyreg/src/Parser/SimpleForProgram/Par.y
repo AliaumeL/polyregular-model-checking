@@ -42,26 +42,26 @@ import Parser.SimpleForProgram.Lex
 %tokentype {Token}
 %token
   '!='       { PT _ (TS _ 1)  }
-  '\''       { PT _ (TS _ 2)  }
-  '('        { PT _ (TS _ 3)  }
-  ')'        { PT _ (TS _ 4)  }
-  ','        { PT _ (TS _ 5)  }
-  ':='       { PT _ (TS _ 6)  }
-  '<'        { PT _ (TS _ 7)  }
-  '<='       { PT _ (TS _ 8)  }
-  '=='       { PT _ (TS _ 9)  }
-  '>'        { PT _ (TS _ 10) }
-  '>='       { PT _ (TS _ 11) }
-  'and'      { PT _ (TS _ 12) }
-  'do'       { PT _ (TS _ 13) }
-  'done'     { PT _ (TS _ 14) }
-  'else'     { PT _ (TS _ 15) }
-  'endif'    { PT _ (TS _ 16) }
-  'false'    { PT _ (TS _ 17) }
-  'for'      { PT _ (TS _ 18) }
-  'if'       { PT _ (TS _ 19) }
-  'in'       { PT _ (TS _ 20) }
-  'input'    { PT _ (TS _ 21) }
+  '('        { PT _ (TS _ 2)  }
+  ')'        { PT _ (TS _ 3)  }
+  ','        { PT _ (TS _ 4)  }
+  ':='       { PT _ (TS _ 5)  }
+  '<'        { PT _ (TS _ 6)  }
+  '<='       { PT _ (TS _ 7)  }
+  '=='       { PT _ (TS _ 8)  }
+  '>'        { PT _ (TS _ 9)  }
+  '>='       { PT _ (TS _ 10) }
+  'and'      { PT _ (TS _ 11) }
+  'do'       { PT _ (TS _ 12) }
+  'done'     { PT _ (TS _ 13) }
+  'else'     { PT _ (TS _ 14) }
+  'endif'    { PT _ (TS _ 15) }
+  'false'    { PT _ (TS _ 16) }
+  'for'      { PT _ (TS _ 17) }
+  'if'       { PT _ (TS _ 18) }
+  'in'       { PT _ (TS _ 19) }
+  'input'    { PT _ (TS _ 20) }
+  'label'    { PT _ (TS _ 21) }
   'let'      { PT _ (TS _ 22) }
   'not'      { PT _ (TS _ 23) }
   'or'       { PT _ (TS _ 24) }
@@ -105,7 +105,7 @@ Stmt
   | Ident ':=' 'true' { Parser.SimpleForProgram.Abs.SSetTrue $1 }
   | 'if' BExpr 'then' ListStmt 'else' ListStmt 'endif' { Parser.SimpleForProgram.Abs.SIfElse $2 $4 $6 }
   | 'if' BExpr 'then' ListStmt 'endif' { Parser.SimpleForProgram.Abs.SIf $2 $4 }
-  | 'print' '\'' Char '\'' { Parser.SimpleForProgram.Abs.SPrintChar $3 }
+  | 'print' Char { Parser.SimpleForProgram.Abs.SPrintChar $2 }
   | 'print' Ident { Parser.SimpleForProgram.Abs.SPrintLabel $2 }
 
 BExpr2 :: { Parser.SimpleForProgram.Abs.BExpr }
@@ -115,6 +115,7 @@ BExpr2
   | Ident { Parser.SimpleForProgram.Abs.BVar $1 }
   | 'not' BExpr2 { Parser.SimpleForProgram.Abs.BNot $2 }
   | Ident BTest Ident { Parser.SimpleForProgram.Abs.BTest $1 $2 $3 }
+  | 'label' '(' Ident ')' '==' Char { Parser.SimpleForProgram.Abs.BLabelAt $3 $6 }
   | '(' BExpr ')' { $2 }
 
 BExpr1 :: { Parser.SimpleForProgram.Abs.BExpr }

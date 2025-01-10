@@ -6,12 +6,12 @@ import Data.Either
 
 
 testProgramString :: IO String
-testProgramString = readFile "assets/word_split.pr"
+testProgramString = readFile "assets/bibtex.pr"
 
 spec :: Spec
 spec = do 
     testProgram <- runIO testProgramString
     describe "The parser should be able to parse programs" $ do 
-        it "Parses a simple program" $ do
+        it "Parses the bibtex program" $ do
             let parsed = parseHighLevel testProgram
             parsed `shouldSatisfy` isRight

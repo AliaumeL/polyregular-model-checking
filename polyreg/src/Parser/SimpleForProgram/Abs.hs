@@ -34,6 +34,7 @@ data BExpr
     | BVar Ident
     | BNot BExpr
     | BTest Ident BTest Ident
+    | BLabelAt Ident Char
     | BAnd BExpr BExpr
     | BOr BExpr BExpr
   deriving (C.Eq, C.Ord, C.Show, C.Read)

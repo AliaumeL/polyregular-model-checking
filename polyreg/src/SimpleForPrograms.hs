@@ -84,7 +84,6 @@ pathPVars (Path (MoveSeq _ : ms)) = pathPVars (Path ms)
 pathPVars (Path (MoveFor p _ _ : ms)) = p : pathPVars (Path ms)
 pathPVars (Path (MoveProg _ : ms)) = pathPVars (Path ms)
 
-
 pathToTag :: Path -> String
 pathToTag (Path ms) = concat . intersperse ":" . map movementToTag $ ms
     where

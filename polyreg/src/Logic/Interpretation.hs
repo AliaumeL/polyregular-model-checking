@@ -10,16 +10,18 @@ import SimpleForPrograms (Movement(..))
 
 
 data Interpretation tag = Interpretation {
-    tags       :: [tag],
-    alphabet   :: String,
-    domain     :: tag -> [String] -> Formula tag,
-    order      :: tag -> tag -> [String] -> [String] -> Formula tag,
-    -- TODO: remove [String] from label and copy: it is useless
-    label      :: tag -> Char -> [String] -> Formula tag,
-    copy       :: tag -> Int  -> [String] -> Formula tag,
-    arity      :: tag -> Int,
-    maxArity   :: Int
+    tags        :: [tag],
+    alphabet    :: String,
+    domain      :: tag -> [String] -> Formula tag,
+    order       :: tag -> tag -> [String] -> [String] -> Formula tag,
+    -- Label the tag with a character, return a constant character,
+    -- or copy the label of the i-th variable in context. 
+    labelOrCopy :: tag -> Either Char Int, 
+    arity       :: tag -> Int
 }
+
+maxArity :: Interpretation tag -> Int
+maxArity interp = maximum $ map (arity interp) $ tags interp
 
 
 -- -- tags      = program positions 

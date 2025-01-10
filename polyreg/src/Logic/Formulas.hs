@@ -1,8 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Logic.Formulas (Sort(..), Quant(..), Var(..), Formula(..), 
+module Logic.Formulas (Sort(..), Quant(..), Var(..), Formula(..), Value(..),
 andList, orList, quantifyList, mapInVars, mapOutVars, mapVars,
 substituteBooleanVar, freeVars, prettyPrintFormula, 
-quantOutVars, quantInVars, injectTags, evalFormula)
+quantOutVars, quantInVars, injectTags, evalFormula, evalFormulaWithFreeVars)
 where
 
 import QuantifierFree
@@ -210,12 +210,14 @@ data Value = PosVal Int | BoolVal Bool | TagVal String deriving(Eq,Show)
 newtype DBIndex = DBIndex Int deriving(Eq,Show,Num)
 
 class (Monad m) => MonadEval m where
+    getFreeVar    :: String -> m Value
     withVariable  :: Value -> m a -> m a
     quantify      :: Quant -> Sort -> m Bool -> m Bool
-    getVar        :: DBIndex -> m Value
+    getBoundVar   :: DBIndex -> m Value
     getCharAt     :: DBIndex -> m Char
 
 data EvalState = EvalState {
+    freeVarsDict :: Map String Value,
     word :: String,
     vars :: [Value],
     tags :: [String]
@@ -244,9 +246,15 @@ instance MonadEval EvalM where
         w <- gets word
         return (w !! i)
 
-    getVar (DBIndex i) = do
+    getBoundVar (DBIndex i) = do
         vars <- gets vars
         return (vars !! i)
+
+    getFreeVar x = do
+        dict <- gets freeVarsDict
+        case M.lookup x dict of
+            Just v -> return v
+            Nothing -> error $ "Free variable " ++ x ++ " not found"
 
     quantify quant Pos m = do
         w <- gets word 
@@ -263,11 +271,16 @@ instance MonadEval EvalM where
         bs  <- mapM (\t -> withVariable (TagVal t) m) tgs
         return . quantToAgg quant $ bs
 
+getVar :: (MonadEval m) => Var -> m Value
+getVar (In x) = getFreeVar x
+getVar (Out x) = error "Free output variable"
+getVar (Local i _) = getBoundVar (DBIndex i)
+
 
 evalFormulaM :: (MonadEval m) => Formula String -> m Bool
 evalFormulaM (FConst b) = return b
-evalFormulaM (FVar (Local i _)) = do
-    v <- getVar (DBIndex i)
+evalFormulaM (FVar v) = do
+    v <- getVar v
     case v of
         BoolVal b -> return b
         _ -> error "Type error"
@@ -285,28 +298,33 @@ evalFormulaM (FNot l) = do
     l' <- evalFormulaM l
     return $ not l'
 evalFormulaM (FQuant q _ s l) = quantify q s (evalFormulaM l)
-evalFormulaM (FTag (Local x _) t) = do
-    v <- getVar (DBIndex x)
+evalFormulaM (FTag v t) = do
+    v <- getVar v
     case v of
         TagVal t' -> return $ t == t'
         _ -> error "Type error"
-evalFormulaM (FLetter (Local x _) l) = do
-    c <- getCharAt (DBIndex x)
-    return $ c == l
-evalFormulaM (FTestPos op (Local x _) (Local y _)) = do
-    x' <- getVar (DBIndex x)
-    y' <- getVar (DBIndex y)
+evalFormulaM (FLetter v l) = do
+    v <- getVar v
+    case v of 
+        PosVal x -> do
+            c <- getCharAt (DBIndex x)
+            return $ c == l
+        _ -> error "Type error"
+    
+evalFormulaM (FTestPos op v1 v2) = do
+    x' <- getVar v1
+    y' <- getVar v2
     case (x', y') of
         (PosVal x'', PosVal y'') -> return $ testOpSemantics op x'' y''
         _ -> error "Type error"
-evalFormulaM (FRealPos (Local x _)) = do
-    x' <- getVar (DBIndex x)
+evalFormulaM (FRealPos v) = do
+    x' <- getVar v
     case x' of
         PosVal x'' -> return $ x'' >= 0
         _ -> error "Type error"
-evalFormulaM (FPredPos (Local x _) (Local y _)) = do
-    x' <- getVar (DBIndex x)
-    y' <- getVar (DBIndex y)
+evalFormulaM (FPredPos v1 v2) = do
+    x' <- getVar v1
+    y' <- getVar v2
     case (x', y') of
         (PosVal x'', PosVal y'') -> return $ x'' == y'' + 1
         _ -> error "Type error"
@@ -314,4 +332,10 @@ evalFormulaM f = error $ "Not implemented: " ++ show f
 
 
 evalFormula :: Formula String -> [String] ->  String -> Bool
-evalFormula f tags w = runEvalM (evalFormulaM f) (EvalState w [] tags)
+evalFormula f tags w = runEvalM (evalFormulaM f) (EvalState M.empty w [] tags)
+
+evalFormulaWithFreeVars :: Formula String -> [(String, Value)] -> [String] -> String -> Bool
+evalFormulaWithFreeVars f freeVars tags w = runEvalM (evalFormulaM f) (EvalState (M.fromList freeVars) w [] tags)
+
+
+-- TODO: Extract the values of free variables

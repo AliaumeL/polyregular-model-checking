@@ -169,7 +169,7 @@ instance Print Parser.SimpleForProgram.Abs.Stmt where
     Parser.SimpleForProgram.Abs.SSetTrue id_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString ":="), doc (showString "true")])
     Parser.SimpleForProgram.Abs.SIfElse bexpr stmts1 stmts2 -> prPrec i 0 (concatD [doc (showString "if"), prt 0 bexpr, doc (showString "then"), prt 0 stmts1, doc (showString "else"), prt 0 stmts2, doc (showString "endif")])
     Parser.SimpleForProgram.Abs.SIf bexpr stmts -> prPrec i 0 (concatD [doc (showString "if"), prt 0 bexpr, doc (showString "then"), prt 0 stmts, doc (showString "endif")])
-    Parser.SimpleForProgram.Abs.SPrintChar c -> prPrec i 0 (concatD [doc (showString "print"), doc (showString "'"), prt 0 c, doc (showString "'")])
+    Parser.SimpleForProgram.Abs.SPrintChar c -> prPrec i 0 (concatD [doc (showString "print"), prt 0 c])
     Parser.SimpleForProgram.Abs.SPrintLabel id_ -> prPrec i 0 (concatD [doc (showString "print"), prt 0 id_])
 
 instance Print Parser.SimpleForProgram.Abs.BExpr where
@@ -179,6 +179,7 @@ instance Print Parser.SimpleForProgram.Abs.BExpr where
     Parser.SimpleForProgram.Abs.BVar id_ -> prPrec i 2 (concatD [prt 0 id_])
     Parser.SimpleForProgram.Abs.BNot bexpr -> prPrec i 2 (concatD [doc (showString "not"), prt 2 bexpr])
     Parser.SimpleForProgram.Abs.BTest id_1 btest id_2 -> prPrec i 2 (concatD [prt 0 id_1, prt 0 btest, prt 0 id_2])
+    Parser.SimpleForProgram.Abs.BLabelAt id_ c -> prPrec i 2 (concatD [doc (showString "label"), doc (showString "("), prt 0 id_, doc (showString ")"), doc (showString "=="), prt 0 c])
     Parser.SimpleForProgram.Abs.BAnd bexpr1 bexpr2 -> prPrec i 1 (concatD [prt 2 bexpr1, doc (showString "and"), prt 1 bexpr2])
     Parser.SimpleForProgram.Abs.BOr bexpr1 bexpr2 -> prPrec i 0 (concatD [prt 1 bexpr1, doc (showString "or"), prt 0 bexpr2])
 

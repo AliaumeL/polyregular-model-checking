@@ -28,7 +28,7 @@ $u = [. \n]          -- universal: any character
 
 -- Symbols and non-identifier-like reserved words
 
-@rsyms = \, | \: \= | \( | \) | \' | \< \= | \< | \> \= | \> | \= \= | \! \=
+@rsyms = \, | \: \= | \( | \) | \= \= | \< \= | \< | \> \= | \> | \! \=
 
 :-
 
@@ -151,18 +151,18 @@ eitherResIdent tv s = treeFind resWords
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
-  b "else" 15
-    (b "<=" 8
-       (b ")" 4
-          (b "'" 2 (b "!=" 1 N N) (b "(" 3 N N))
-          (b ":=" 6 (b "," 5 N N) (b "<" 7 N N)))
-       (b "and" 12
-          (b ">" 10 (b "==" 9 N N) (b ">=" 11 N N))
-          (b "done" 14 (b "do" 13 N N) N)))
+  b "endif" 15
+    (b "==" 8
+       (b "," 4
+          (b "(" 2 (b "!=" 1 N N) (b ")" 3 N N))
+          (b "<" 6 (b ":=" 5 N N) (b "<=" 7 N N)))
+       (b "do" 12
+          (b ">=" 10 (b ">" 9 N N) (b "and" 11 N N))
+          (b "else" 14 (b "done" 13 N N) N)))
     (b "let" 22
-       (b "if" 19
-          (b "false" 17 (b "endif" 16 N N) (b "for" 18 N N))
-          (b "input" 21 (b "in" 20 N N) N))
+       (b "in" 19
+          (b "for" 17 (b "false" 16 N N) (b "if" 18 N N))
+          (b "label" 21 (b "input" 20 N N) N))
        (b "reversed" 26
           (b "or" 24 (b "not" 23 N N) (b "print" 25 N N))
           (b "true" 28 (b "then" 27 N N) N)))

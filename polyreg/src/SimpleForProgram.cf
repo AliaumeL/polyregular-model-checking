@@ -18,7 +18,7 @@ SFor. Stmt ::= "for" Ident "in" FORInput "do" VarStmt "done" ;
 SSetTrue. Stmt ::= Ident ":=" "true" ;
 SIfElse. Stmt ::= "if" BExpr "then" [Stmt] "else" [Stmt] "endif" ;
 SIf. Stmt ::= "if" BExpr "then" [Stmt] "endif" ;
-SPrintChar . Stmt ::= "print" "'" Char "'" ;
+SPrintChar . Stmt ::= "print" Char ; 
 SPrintLabel . Stmt ::= "print" Ident ;
 
 BTrue . BExpr2 ::= "true" ;
@@ -26,6 +26,7 @@ BFalse . BExpr2 ::= "false" ;
 BVar . BExpr2 ::= Ident ; 
 BNot . BExpr2 ::= "not" BExpr2 ; 
 BTest . BExpr2 ::= Ident BTest Ident ;
+BLabelAt . BExpr2 ::= "label" "(" Ident ")" "==" Char ;
 BAnd . BExpr1 ::= BExpr2 "and" BExpr1 ; 
 BOr .  BExpr ::= BExpr1 "or" BExpr ;
 coercions BExpr 2 ;

@@ -43,6 +43,7 @@ parsedToBExpr (P.BFalse) = T.BConst False
 parsedToBExpr (P.BVar v) = T.BVar $ identToBName v
 parsedToBExpr (P.BNot b) = T.BNot $ parsedToBExpr b
 parsedToBExpr (P.BTest p1 op p2) = T.BTest (parsedToBTest op) (identToPName p1) (identToPName p2)
+parsedToBExpr (P.BLabelAt l c) = T.BLabelAt (identToPName l) c
 parsedToBExpr (P.BAnd e1 e2) = T.BBin Conj (parsedToBExpr e1) (parsedToBExpr e2)
 parsedToBExpr (P.BOr e1 e2) = T.BBin Disj (parsedToBExpr e1) (parsedToBExpr e2) 
 

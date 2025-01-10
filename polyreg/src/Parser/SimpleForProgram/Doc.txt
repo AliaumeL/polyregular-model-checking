@@ -28,14 +28,14 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 The reserved words used in SimpleForProgram are the following:
   | ``and`` | ``do`` | ``done`` | ``else``
   | ``endif`` | ``false`` | ``for`` | ``if``
-  | ``in`` | ``input`` | ``let`` | ``not``
-  | ``or`` | ``print`` | ``reversed`` | ``then``
-  | ``true`` |  |  |
+  | ``in`` | ``input`` | ``label`` | ``let``
+  | ``not`` | ``or`` | ``print`` | ``reversed``
+  | ``then`` | ``true`` |  |
 
 The symbols used in SimpleForProgram are the following:
   | , | := | ( | )
-  | ' | <= | < | >=
-  | > | == | != |
+  | == | <= | < | >=
+  | > | != |  |
 
 ===Comments===
 Single-line comments begin with #.There are no multiple-line comments in the grammar.
@@ -59,13 +59,14 @@ All other symbols are terminals.
   |  |  **|**  | //Ident// ``:=`` ``true``
   |  |  **|**  | ``if`` //BExpr// ``then`` //[Stmt]// ``else`` //[Stmt]// ``endif``
   |  |  **|**  | ``if`` //BExpr// ``then`` //[Stmt]// ``endif``
-  |  |  **|**  | ``print`` ``'`` //Char// ``'``
+  |  |  **|**  | ``print`` //Char//
   |  |  **|**  | ``print`` //Ident//
   | //BExpr2// | -> | ``true``
   |  |  **|**  | ``false``
   |  |  **|**  | //Ident//
   |  |  **|**  | ``not`` //BExpr2//
   |  |  **|**  | //Ident// //BTest// //Ident//
+  |  |  **|**  | ``label`` ``(`` //Ident// ``)`` ``==`` //Char//
   |  |  **|**  | ``(`` //BExpr// ``)``
   | //BExpr1// | -> | //BExpr2// ``and`` //BExpr1//
   |  |  **|**  | //BExpr2//
