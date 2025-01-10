@@ -10,14 +10,12 @@ import SimpleForPrograms (Movement(..))
 
 
 data Interpretation tag = Interpretation {
-    tags        :: [tag],
-    alphabet    :: String,
-    domain      :: tag -> [String] -> Formula tag,
-    order       :: tag -> tag -> [String] -> [String] -> Formula tag,
-    -- Label the tag with a character, return a constant character,
-    -- or copy the label of the i-th variable in context. 
-    labelOrCopy :: tag -> Either Char Int, 
-    arity       :: tag -> Int
+    tags         :: [tag],
+    alphabet     :: String,
+    domain       :: tag -> [Var] -> Formula tag,
+    order        :: tag -> tag -> [Var] -> [Var] -> Formula tag,
+    labelOrCopy  :: tag -> Either Char Int,
+    arity        :: tag -> Int
 }
 
 maxArity :: Interpretation tag -> Int

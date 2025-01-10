@@ -29,21 +29,21 @@ prepareUniverse interpretation input = do
     pos <- positions
     return (tag, pos)
 
-runDomainFormula :: (Tag -> [String] -> Formula String) -> [Tag] -> String -> Tag -> [Int] -> Bool
+runDomainFormula :: (Tag -> [Var] -> Formula String) -> [Tag] -> String -> Tag -> [Int] -> Bool
 runDomainFormula formula tags inputWord inputTag inputPs =
     let names = map (\i -> "x" ++ show i) [0..length inputPs - 1] in
     let vars = zip names (PosVal <$> inputPs) in
-    evalFormulaWithFreeVars (formula inputTag names) vars tags inputWord
+    evalFormulaWithFreeVars (formula inputTag (map In names)) vars tags inputWord
 
-runOrderFormula :: (Tag -> Tag -> [String] -> [String] -> Formula String) -> [Tag] -> String -> Tag -> Tag -> [Int] -> [Int] -> Bool
+runOrderFormula :: (Tag -> Tag -> [Var] -> [Var] -> Formula String) -> [Tag] -> String -> Tag -> Tag -> [Int] -> [Int] -> Bool
 runOrderFormula formula tags inputWord inputTag1 inputTag2 inputPs1 inputPs2 =
     let names1 = map (\i -> "x" ++ show i) [0..length inputPs1 - 1] in
     let names2 = map (\i -> "y" ++ show i) [0..length inputPs2 - 1] in
     let vars1 = zip names1 (PosVal <$> inputPs1) in
     let vars2 = zip names2 (PosVal <$> inputPs2) in
-    evalFormulaWithFreeVars (formula inputTag1 inputTag2 names1 names2) (vars1 ++ vars2) tags inputWord
+    evalFormulaWithFreeVars (formula inputTag1 inputTag2 (map In names1) (map In names2)) (vars1 ++ vars2) tags inputWord
 
-comparePositions :: Interpretation Tag ->String -> (Tag, [Int]) -> (Tag, [Int]) -> Ordering
+comparePositions :: Interpretation Tag -> String -> (Tag, [Int]) -> (Tag, [Int]) -> Ordering
 comparePositions interpretation word (tag1, ps1) (tag2, ps2) =
     let test = runOrderFormula (order interpretation) (tags interpretation) word tag1 tag2 ps1 ps2 in
     if tag1 == tag2 && ps1 == ps2 then EQ
