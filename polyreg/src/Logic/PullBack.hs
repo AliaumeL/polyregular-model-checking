@@ -26,6 +26,9 @@ class (Monad m) => MonadPB m where
 
 newtype PBMonad a = PBMonad (Reader PBState a) deriving (Functor, Applicative, Monad, MonadReader PBState)
 
+runPBMonad :: PBMonad a -> a
+runPBMonad (PBMonad m) = runReader m (PBState [])
+
 instance MonadPB PBMonad where
     withNewPosVar q x n f = do
         let tx  = Local n (x ++ "_t")
@@ -43,7 +46,7 @@ instance MonadPB PBMonad where
 -- testing whether two position variables are equal / less / greater etc
 -- > guess tags
 -- > call the corresponding order relation
-testPosVarExp :: Interpretation String -> TestOp -> VarExpansion -> VarExpansion -> Formula String
+testPosVarExp :: Interpretation tag -> TestOp -> VarExpansion -> VarExpansion -> Formula tag
 testPosVarExp i Eq (VarExpansion tx xs) (VarExpansion ty ys) = 
     orList $ do
         t <- tags i
@@ -64,7 +67,7 @@ testPosVar i Neq x y = FNot $ testPosVar i Eq x y
 -- > check whether it is "copied" or "labelled" print
 -- > in case "copied", test the corresponding letter on the variable
 -- > in case "labelled", answer directly true/false
-letterVarExp :: Interpretation String -> Char -> VarExpansion -> Formula String
+letterVarExp :: Interpretation tag -> Char -> VarExpansion -> Formula tag
 letterVarExp i c (VarExpansion tx xs) = 
     orList $ do
         t <- tags i
@@ -74,7 +77,7 @@ letterVarExp i c (VarExpansion tx xs) =
 
 
 
-pullBackM :: (MonadPB m) => Interpretation String -> Formula () -> m (Formula String)
+pullBackM :: (MonadPB m) => Interpretation tag -> Formula () -> m (Formula tag)
 pullBackM i (FTag x tag) = error "pullBackM: tag"
 pullBackM i (FPredPos p x) = error "pullBackM: pred pos"
 pullBackM i (FRealPos x) = error "pullBackM: real pos"
@@ -123,4 +126,4 @@ pullBackM i (FQuant q x Pos φ) = do
 -- [ x is real pos ] = error
 -- [ x pred pos    ] = error
 pullBack :: Interpretation tag -> Formula () -> Formula tag
-pullBack = undefined
+pullBack i φ = runPBMonad $ pullBackM i φ
