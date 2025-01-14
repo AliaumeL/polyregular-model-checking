@@ -1,6 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Logic.Formulas (Sort(..), Quant(..), Var(..), Formula(..), Value(..),
 andList, orList, quantifyList, mapInVars, mapOutVars, mapVars,
+nestQuantVars, nestQuantVar, mapTags,
 substituteBooleanVar, freeVars, prettyPrintFormula, 
 quantOutVars, quantInVars, injectTags, evalFormula, evalFormulaWithFreeVars)
 where
@@ -76,6 +77,18 @@ injectTags (FLetter x l) = FLetter x l
 injectTags (FTestPos t x y) = FTestPos t x y
 injectTags (FRealPos x) = FRealPos x
 injectTags (FPredPos x y) = FPredPos x y
+
+mapTags :: (t -> s) -> Formula t -> Formula s
+mapTags _ (FConst b) = FConst b
+mapTags _ (FVar x) = FVar x
+mapTags f (FBin op l r) = FBin op (mapTags f l) (mapTags f r)
+mapTags f (FNot l) = FNot (mapTags f l)
+mapTags f (FQuant q x s l) = FQuant q x s (mapTags f l)
+mapTags f (FTag v t) = FTag v (f t)
+mapTags _ (FLetter x l) = FLetter x l
+mapTags _ (FTestPos t x y) = FTestPos t x y
+mapTags _ (FRealPos x) = FRealPos x
+mapTags _ (FPredPos x y) = FPredPos x y
 
 
 
@@ -276,6 +289,13 @@ getVar (In x) = getFreeVar x
 getVar (Out x) = error "Free output variable"
 getVar (Local i _) = getBoundVar (DBIndex i)
 
+nestQuantVar :: Int -> Var -> Var
+nestQuantVar _ (In x) = In x
+nestQuantVar _ (Out x) = Out x
+nestQuantVar i (Local x s) = Local (x+i) s
+
+nestQuantVars :: Int -> [Var] -> [Var]
+nestQuantVars i = map (nestQuantVar i)
 
 evalFormulaM :: (MonadEval m) => Formula String -> m Bool
 evalFormulaM (FConst b) = return b

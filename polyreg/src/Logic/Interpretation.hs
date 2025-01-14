@@ -8,12 +8,15 @@ import qualified Logic.ProgramFormula as PF
 import qualified SimpleForPrograms as SFP
 import SimpleForPrograms (Movement(..))
 
+import Data.Map (Map)
+import qualified Data.Map as M
+
 
 data Interpretation tag = Interpretation {
     tags         :: [tag],
     alphabet     :: String,
     domain       :: tag -> [Var] -> Formula tag,
-    order        :: tag -> tag -> [Var] -> [Var] -> Formula tag,
+    order        :: tag -> tag   -> [Var] -> [Var] -> Formula tag,
     labelOrCopy  :: tag -> Either Char Int,
     arity        :: tag -> Int
 }
@@ -21,129 +24,69 @@ data Interpretation tag = Interpretation {
 maxArity :: Interpretation tag -> Int
 maxArity interp = maximum $ map (arity interp) $ tags interp
 
+stringify :: (tag -> String) -> Interpretation tag -> Interpretation String
+stringify η (Interpretation τ sig δ ο λ α) = Interpretation τ1 sig δ1 ο1 λ1 α1
+    where
+        τ1 = [ η t | t <- τ ]
 
--- -- tags      = program positions 
--- -- alphabet  = all strings in the program
--- -- domain    = whether the program position should be considered
--- --      => existentially quantify the output of PF.computeUntil position
--- -- order     = comparing two positions, this is simply a mix of legicographic
--- -- label     = if a position is a print statement
--- -- copy      = if a position is a copy statement
--- -- arity     = how many for loop variables are visible on this position
--- -- maxArity  = max of arities over positions
+        mstrs = M.fromList $ zip τ1 τ
 
--- normalizeMovement :: Movement -> Movement
--- normalizeMovement (MoveIfL _) = MoveSeq 0
--- normalizeMovement (MoveIfR _) = MoveSeq 1
--- normalizeMovement (MoveSeq n) = MoveSeq n
--- normalizeMovement (MoveFor p d b) = MoveFor p d b
+        δ1 s vs = mapTags η $ δ (mstrs M.! s) vs
+        ο1 s1 s2 vs1 vs2 = mapTags η $ ο (mstrs M.! s1) (mstrs M.! s2) vs1 vs2
+        λ1 s = λ (mstrs M.! s)
+        α1 s = α (mstrs M.! s)
 
+normalizeMovement :: Movement -> Movement
+normalizeMovement (MoveIfL _) = MoveSeq 0
+normalizeMovement (MoveIfR _) = MoveSeq 1
+normalizeMovement (MoveSeq n) = MoveSeq n
+normalizeMovement (MoveFor p d b) = MoveFor p d b
 
--- -- whether "x" `happensBefore` "y"
--- -- input variables  are taken from the left  movement,
--- -- output variables are taken from the right movement
--- happensBefore :: [Movement] -> [Movement] -> Formula ()
--- happensBefore [] [] = FConst True
--- happensBefore (MoveSeq i : ms) (MoveSeq j : ns) 
---     | i < j = FConst True
---     | i > j = FConst False
---     | otherwise = happensBefore ms ns
--- happensBefore (MoveFor p SFP.LeftToRight _ : ms) (MoveFor q SFP.LeftToRight _ : ns) = 
---     andList [FTestPos Le (In p) (Out q), happensBefore ms ns]
--- happensBefore (MoveFor p SFP.RightToLeft _ : ms) (MoveFor q SFP.RightToLeft _ : ns) =
---     andList [FTestPos Ge (In p) (Out q), happensBefore ms ns]
--- happensBefore _ _ = error $ "happensBefore: incompatible movements"
+normalizeMovements :: [Movement] -> [Movement]
+normalizeMovements = map normalizeMovement
 
-
--- -- labelFormula
--- labelFormula :: SFP.ForStmt -> Char -> [String] -> Formula ()
--- labelFormula (SFP.PrintLbl c) c' _ = FConst $ c == c'
--- labelFormula _ _ _ = FConst False
-
--- -- copyFormula
--- copyFormula :: SFP.ForStmt -> Int -> [String] -> Formula ()
--- copyFormula (SFP.PrintPos (SFP.PName p)) i ps = FConst $ ps !! i == p
--- copyFormula _ _ _ = FConst False
-
--- toInterpretation :: SFP.ForProgram -> Interpretation SFP.Path
--- toInterpretation prog = Interpretation tags alphabet domain order label copy arity maxArity
---     where
---         -- print positions
---         tags = SFP.listPrintStatements prog
---         -- all characters in the program
---         alphabet = SFP.listAlphabet prog
---         -- print statements
---         label = \tag c vars -> labelFormula tag c vars
---         copy = \tag i vars -> copyFormula tag i vars
---         -- domain formula => compute until + exists
---         domain = \tag vars -> PF.computeUntil tag prog vars
---         -- order formula -> happens before
---         order = \(SFP.Path p1) (SFP.Path p2) vars1 vars2 -> happensBefore p1 p2
---         -- arities
---         arity = length . SFP.pathPVars
---         maxArity = maximum $ map arity $ tags
+-- whether "x" `happensBefore` "y"
+happensBefore :: [Movement] -> [Movement] -> [Var] -> [Var] -> Formula ()
+happensBefore [] [] _ _  = FConst True
+happensBefore (MoveSeq i : ms) (MoveSeq j : ns) vm vn
+    | i < j = FConst True
+    | i > j = FConst False
+    | otherwise = happensBefore ms ns vm vn
+happensBefore (MoveFor _ SFP.LeftToRight _ : ms) (MoveFor _ SFP.LeftToRight _ : ns) (vm : vms) (vn : vns) = 
+    andList [FTestPos Le vm vn, happensBefore ms ns vms vns]
+happensBefore (MoveFor _ SFP.RightToLeft _ : ms) (MoveFor _ SFP.RightToLeft _ : ns) (vm : vms) (vn : vns) =
+    andList [FTestPos Ge vm vn, happensBefore ms ns vms vns]
+happensBefore _ _ _ _ = error $ "happensBefore: incompatible movements"
 
 
--- {-
+labelFormula :: SFP.ForProgram -> SFP.Path -> Either Char Int
+labelFormula prog path = case stmt of 
+                            SFP.PrintPos v -> Right $ vnum v path
+                            SFP.PrintLbl c -> Left c
+                            _          -> error "invalid stmt"
+    where
+        stmt = SFP.followPathProg path prog
+        vars = SFP.pathPVars path
 
--- evalInterpretation :: Interpretation String -> String -> String
--- evalInterpretation interp word = map (\(_,_,c) -> c) $ positionsFilteredSortedWithChars
---     where
---         comparePositions :: (String, [Int]) -> (String, [Int]) -> Ordering
---         comparePositions (t1,p1) (t2,p2) = if t1 == t2 && p1 == p2 then 
---                                             EQ
---                                            else case cmp of 
---                                             True -> LT
---                                             False -> GT
---             where
---                 vars1 = map (\i -> "x" ++ show i) [0..length p1 -1]
---                 vars2 = map (\i -> "y" ++ show i) [0..length p2 -1]
---                 vars  = vars1 ++ vars2
---                 state = FormulaState (Map.fromList $ zip vars (p1 ++ p2)) word
---                 cmp = evalFormulaInContext state $ orderFormula interp t1 t2 vars1 vars2
+        vnumrec n _ [] = error "variable not found"
+        vnumrec n i (x : xs) = if x == n then i else vnumrec n (i+1) xs
 
---         computePresence :: (TagName, [Int]) -> Bool
---         computePresence (tag, pos) = evalFormulaInContext state $ domainFormula interp tag vars
---             where
---                 vars = map (\i -> "x" ++ show i) [0..length pos - 1]
---                 state = FormulaState (Map.fromList $ zip vars pos) word
+        vnum :: SFP.PName -> SFP.Path -> Int
+        vnum n (SFP.Path p) = vnumrec n 0 (reverse vars)
 
---         computeChar :: (TagName, [Int]) -> Char
---         computeChar (tag, pos) = fst . head . filter snd $ shouldCopy ++ letters
---             where
---                 vars = map (\i -> "x" ++ show i) [0..length pos - 1]
---                 state = FormulaState (Map.fromList $ zip vars pos) word
+toInterpretation :: SFP.ForProgram -> Interpretation SFP.Path
+toInterpretation prog = Interpretation tags alphabet domain order labelOrCopy arity
+    where
+        -- print positions
+        tags = SFP.listPrintStatements prog
+        -- all characters in the program
+        alphabet = SFP.listAlphabet prog
+        -- print statements
+        labelOrCopy = \tag -> labelFormula prog tag 
+        -- domain formula => compute until + exists
+        domain = \tag vars -> injectTags $ PF.formula $ PF.computeUntilProg tag prog
+        -- order formula -> happens before
+        order = \(SFP.Path p1) (SFP.Path p2) vars1 vars2 -> injectTags $ happensBefore p1 p2 vars1 vars2
+        -- arities
+        arity = length . SFP.pathPVars
 
---                 shouldCopy :: [(Char, Bool)]
---                 shouldCopy = do 
---                     i <- [0..length pos - 1]
---                     let c = word !! (pos !! i)
---                     return $ (c, evalFormulaInContext state $ copyFormula interp tag i vars)
-
---                 letters :: [(Char, Bool)]
---                 letters    = do 
---                     c <- outputLetters interp
---                     return $ (c, evalFormulaInContext state $ labelFormula interp tag c vars)
-                    
-
---         positionsTag :: TagName -> [[Int]]
---         positionsTag tag = 
---             let n = arity interp tag
---             in  sequence $ replicate n [0..length word - 1]
-
---         positions :: [(TagName, [Int])]
---         positions = concatMap (\tag -> map (\pos -> (tag, pos)) $ positionsTag tag) $ tags interp
-
---         positionsFiltered :: [(TagName, [Int])]
---         positionsFiltered = filter computePresence positions
-
-        
---         positionsFilteredSorted :: [(TagName, [Int])]
---         positionsFilteredSorted = sortBy comparePositions positionsFiltered
-
-
---         positionsFilteredSortedWithChars :: [(TagName, [Int], Char)]
---         positionsFilteredSortedWithChars = do
---             (tag, pos) <- positionsFilteredSorted
---             return (tag, pos, computeChar (tag, pos))
--- -}

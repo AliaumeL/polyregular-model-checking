@@ -434,6 +434,8 @@ computeUntil (SFP.MoveFor (PName pm) dirm bsm : xs) (SFP.For (PName p) dir bs st
             pStmtB = withNewBoolVars [ x | BName x <- bsm ] pStmt
 computeUntil _ _ = error "computeUntil: invalid path"
 
+computeUntilProg :: SFP.Path -> SFP.ForProgram -> ProgramFormula ()
+computeUntilProg = undefined
 
 
 sfpToProgramFormula :: SFP.ForProgram -> ProgramFormula ()
