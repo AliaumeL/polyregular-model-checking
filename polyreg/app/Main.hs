@@ -20,6 +20,7 @@ import ToSimpleForProgram (toSimpleForProgram)
 import SimpleForPrograms (runProgram)
 import qualified SimpleForPrograms as SFP
 import LetBoolsToTop (bringLetBoolsToTopAndRefresh)
+import SimpleForProgramSimplification (simplifyForProgram)
 
 import Debug.Trace (traceM)
 
@@ -39,6 +40,7 @@ import Options.Applicative
 -- -h --help: the help message
 -- -v --version: the version of the program
 -- -l --list: list all the transformations
+-- -f --no-simplify : don't optimize the resulting simple for program 
 
 
 data Transformation = LitEqElimination
@@ -74,6 +76,7 @@ data Options = Options
     , optTransformations :: Maybe Int
     , optOutputProg :: Maybe FilePath
     , optOutputWord :: Maybe String
+    , optNoSimplify :: Bool
     , optList :: Bool
     } deriving (Eq,Show)
 
@@ -84,7 +87,9 @@ options = Options
     <*> optional (option auto (long "transformation" <> short 't' <> metavar "TRANSFORMATION" <> help "The transformation to apply"))
     <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE" <> help "The output file"))
     <*> optional (strOption (long "output-word" <> short 'W' <> metavar "WORD" <> help "The output word"))
+    <*> switch (long "no-simplify" <> short 'f' <> help "Do not simplify the resulting simple for program")
     <*> switch (long "list" <> short 'l' <> help "List all the transformations")
+
 
 
 cmdParser :: ParserInfo Options
@@ -165,10 +170,15 @@ main = do
                     let simpleForProg = toSimpleForProgram transformedProg
                     case simpleForProg of
                         Left err  -> putStrLn $ "Error in converting to simple for program: " ++ show err
-                        Right sfp -> case word of 
+                        Right sfp' ->
+                            let sfp = if optNoSimplify opts then sfp' else simplifyForProgram sfp' in
+                            case word of 
                             Nothing -> putStrLn "Converted to a simple for program, but nothing to be run on it"
                             Just w -> do
-                                traceM $ SFP.prettyPrintForProgram sfp
+                                writeOutputFile (optOutputWord opts) (replicate 80 '-')
+                                writeOutputFile (optOutputWord opts) (SFP.prettyPrintForProgram sfp)
+                                -- traceM $ show $ optNoSimplify opts
+                                --traceM $ SFP.prettyPrintForProgram sfp
                                 let result = runProgram sfp w
                                 writeOutputFile (optOutputWord opts) (replicate 80 '-')
                                 writeOutputFile (optOutputWord opts) w

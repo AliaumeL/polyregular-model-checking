@@ -294,20 +294,25 @@ indentStr n s = replicate n ' ' ++ s
 -- with indentation level n
 -- knowing that lines cannot be longer than 80 characters (so we split them)
 prettyPrintBoolList :: Int -> [BName] -> String
-prettyPrintBoolList n bs = 
-    let indent = replicate n ' ' in
-    let sizes  = scanl (\acc (BName b) -> acc + length b + 2) (length indent) bs in
-    let bs' = zipWith (\size (BName b) -> if size > 80 then "\n" ++ indent ++ b else b ++ "; ") sizes bs in
-    concat bs' ++ "\n"
+prettyPrintBoolList n bs = ans ++ "\n"
+  where 
+    (ans, _) = foldl' f ("", length indent) bs
+    indent = replicate n ' '
+    initLen = length indent
+    f :: (String, Int) -> BName -> (String, Int)
+    f (ans, size) (BName b) = 
+        let bsize = length b in
+        let size' = size + bsize + 2 in
+        if size' > 80 then (ans ++ "\n" ++ indent ++ b ++ ", ", initLen + bsize + 2) else (ans ++ b ++ ", ", size')
 
 prettyPrintForStmt :: Int -> ForStmt -> String
-prettyPrintForStmt n (SetTrue (BName b)) = indentStr n $ b ++ " := true;"
+prettyPrintForStmt n (SetTrue (BName b)) = indentStr n $ b ++ " := true;" ++ "\n"
 prettyPrintForStmt n (If e t f) = 
     let indent = replicate n ' ' in
     let e' = prettyPrintBoolExpr e in
     let t' = prettyPrintForStmt (n + 1) t in
     let f' = prettyPrintForStmt (n + 1) f in
-    indent ++ "if " ++ e' ++ " then\n" ++ t' ++ "\n" ++ indent ++ "else\n" ++ f' ++ indent ++ "endif;\n"
+    indent ++ "if " ++ e' ++ " then\n" ++ t' ++ indent ++ "else\n" ++ f' ++ indent ++ "endif;\n"
 prettyPrintForStmt n (For (PName p) d bs stmt) =
     let indent = replicate n ' ' in
     let d' = case d of
@@ -316,8 +321,8 @@ prettyPrintForStmt n (For (PName p) d bs stmt) =
     let bs'   = prettyPrintBoolList (n + 1) bs in
     let stmt' = prettyPrintForStmt (n + 1) stmt in
     indent ++ "for[" ++ d' ++ "]" ++ p ++  " do\n" ++ bs' ++ stmt' ++ indent ++ "done;\n"
-prettyPrintForStmt n (PrintPos (PName p)) = indentStr n $ "print " ++ p ++ ";"
-prettyPrintForStmt n (PrintLbl l) = indentStr n $ "print " ++ show l ++ ";"
+prettyPrintForStmt n (PrintPos (PName p)) = indentStr n $ "print " ++ p ++ ";" ++ "\n"
+prettyPrintForStmt n (PrintLbl l) = indentStr n $ "print " ++ show l ++ ";" ++ "\n"
 prettyPrintForStmt n (Seq []) = indentStr n $ "skip;\n"
 prettyPrintForStmt n (Seq stmts) = concatMap (prettyPrintForStmt n) stmts
 prettyPrintForStmt _ _ = error "prettyPrintForStmt: not implemented"

@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module SimpleForProgramSimplification where 
+module SimpleForProgramSimplification (simplifyForProgram, eliminateUnusedVars, eliminateInconsequentialStmts, bconstSimplForProgram, staticVarCompForProgramFO) where 
 
 import SimpleForPrograms 
 
@@ -8,8 +8,9 @@ import qualified Data.Set as S
 import Control.Monad.State
 import Control.Monad
 
-import QuantifierFree
+import Debug.Trace
 
+import QuantifierFree
 
 iterateToFix :: (Eq a) => (a -> a) -> a -> a 
 iterateToFix f a
@@ -17,7 +18,11 @@ iterateToFix f a
     | otherwise = iterateToFix f (f a)
 
 oneSimplification :: ForProgram -> ForProgram 
-oneSimplification =  bconstSimplForProgram . staticVarCompForProgramFO
+oneSimplification =  simplifyConditionalSets . eliminateUnusedVars . bconstSimplForProgram . staticVarCompForProgramFO . eliminateInconsequentialStmts 
+--eliminateUnusedVars . eliminateInconsequentialStmts . bconstSimplForProgram . staticVarCompForProgramFO
+
+simplifyForProgram :: ForProgram -> ForProgram
+simplifyForProgram = iterateToFix oneSimplification
 
 -- | Boolean constant simplification -- in this step we propagate constants, and eliminate dead code 
 
@@ -25,13 +30,36 @@ bconstSimplForProgram :: ForProgram -> ForProgram
 bconstSimplForProgram (ForProgram vars stmts) = ForProgram vars $ bconstSimplStmt stmts
 
 bconstSimplStmt :: ForStmt -> ForStmt
-bconstSimplStmt (Seq stmts) = Seq $ map bconstSimplStmt stmts
-bconstSimplStmt (If e s1 s2) =
-    case bconstSimplExpr e of 
+bconstSimplStmt (Seq stmts) =
+    let stmts' = filter (not . isEmpty) $ map bconstSimplStmt stmts in
+    case stmts' of
+        [stmt] -> stmt
+        _ -> Seq stmts'
+bconstSimplStmt (If e s1 s2) = 
+    let s1' = bconstSimplStmt s1 in 
+    let s2' = bconstSimplStmt s2 in 
+    if s1' == s2' then s1' else
+    case bconstSimplExprRec e of 
         BConst True -> bconstSimplStmt s1
         BConst False -> bconstSimplStmt s2
-        e -> If e (bconstSimplStmt s1) (bconstSimplStmt s2)
+        BNot e' -> If e' (bconstSimplStmt s2) (bconstSimplStmt s1)
+        e' -> If e' (bconstSimplStmt s1) (bconstSimplStmt s2)
+bconstSimplStmt (For v d vars s) = 
+    let s' = bconstSimplStmt s in
+    if isEmpty s' then Seq [] else
+    For v d vars $ bconstSimplStmt s
 bconstSimplStmt s = s
+
+isEmpty :: ForStmt -> Bool
+isEmpty (Seq []) = True
+isEmpty _ = False
+
+bconstSimplExprRec :: BoolExpr -> BoolExpr
+bconstSimplExprRec e@(BBin op e1 e2) = bconstSimplExpr $ BBin op (bconstSimplExprRec e1) (bconstSimplExprRec e2)
+bconstSimplExprRec e@(BTest _ _ _) = bconstSimplExpr e
+bconstSimplExprRec (BNot e) = bconstSimplExpr $ BNot $ bconstSimplExprRec e
+bconstSimplExprRec e = e 
+
 
 bconstSimplExpr :: BoolExpr -> BoolExpr 
 bconstSimplExpr e@(BTest op e1 e2) 
@@ -182,3 +210,91 @@ getModifiedVars (If _ s1 s2) = getModifiedVars s1 `S.union` getModifiedVars s2
 getModifiedVars (For _ _ vars s) = getModifiedVars s `S.difference` (S.fromList vars)
 getModifiedVars (SetTrue v) = S.singleton v
 getModifiedVars _ = S.empty
+
+-- Now we eliminate unused variables. 
+
+eliminateUnusedVars :: ForProgram -> ForProgram
+eliminateUnusedVars (ForProgram vars stmt) = 
+    let (stmt', usedVars) = eliminateUnusedAndComputeUsedStmt stmt in
+    let newVars = filter (`S.member` usedVars) vars in
+    ForProgram newVars stmt'
+
+eliminateUnusedAndComputeUsedStmt :: ForStmt -> (ForStmt, S.Set BName)
+eliminateUnusedAndComputeUsedStmt (Seq stmts) = 
+    let (stmts', usedVars) = unzip $ map eliminateUnusedAndComputeUsedStmt stmts in
+    (Seq stmts', S.unions usedVars)
+eliminateUnusedAndComputeUsedStmt (If e s1 s2) =
+    let varsE = getTestedVarsExpr e in
+    let (s1', usedVars1) = eliminateUnusedAndComputeUsedStmt s1 in
+    let (s2', usedVars2) = eliminateUnusedAndComputeUsedStmt s2 in
+    (If e s1' s2', S.unions [varsE, usedVars1, usedVars2])
+eliminateUnusedAndComputeUsedStmt (For v d vars s) =
+    let (s', usedVars) = eliminateUnusedAndComputeUsedStmt s in
+    let newVars = S.fromList vars `S.intersection` usedVars in
+    (For v d (S.toList newVars) s', usedVars `S.difference` S.fromList vars)
+eliminateUnusedAndComputeUsedStmt (SetTrue v) = (SetTrue v, S.singleton v)
+eliminateUnusedAndComputeUsedStmt s = (s, S.empty)
+
+getTestedVarsExpr :: BoolExpr -> S.Set BName
+getTestedVarsExpr (BVar v) = S.singleton v
+getTestedVarsExpr (BNot e) = getTestedVarsExpr e
+getTestedVarsExpr (BBin _ e1 e2) = S.union (getTestedVarsExpr e1) (getTestedVarsExpr e2)
+getTestedVarsExpr _ = S.empty
+
+-- Finally, we show how to eliminate inconsequential statements -- a statement is inconsequential if it modifies a variable after all tests on it have been performed.
+
+eliminateInconsequentialStmts :: ForProgram -> ForProgram
+eliminateInconsequentialStmts (ForProgram vars stmt) = ForProgram vars $ fst $ eliminateInconsequentialStmtAndComputeTested (S.fromList vars) stmt
+
+eliminateInconsequentialStmtAndComputeTested :: S.Set BName -> ForStmt -> (ForStmt, S.Set BName)
+eliminateInconsequentialStmtAndComputeTested vars s@(Seq stmts) = (ans, testedVars) 
+  where 
+    (stmts'', _, testedVars) = foldl f ([], vars, S.empty) (reverse stmts)
+    f (stmts, inconsequentialVars, testedVars ) stmt = 
+        let (stmt', tested) = eliminateInconsequentialStmtAndComputeTested inconsequentialVars stmt in
+        (stmt' : stmts, inconsequentialVars `S.difference` tested, testedVars `S.union` tested)
+    ans = Seq $ stmts''
+eliminateInconsequentialStmtAndComputeTested vars (If e s1 s2) = (stmt', tested)
+    where
+        (s1', vars1) = eliminateInconsequentialStmtAndComputeTested vars s1
+        (s2', vars2) = eliminateInconsequentialStmtAndComputeTested vars s2
+        stmt' = If e s1' s2'
+        tested = vars1 `S.union` vars2 `S.union` getTestedVarsExpr e
+eliminateInconsequentialStmtAndComputeTested vars (For v d newVars s) =
+    let testedVars = getTestedVarsStmt s in -- TODO : Might be inefficient
+    let newInconsequential = (vars `S.difference` testedVars) `S.union` (S.fromList newVars) in
+    let (s', _) = eliminateInconsequentialStmtAndComputeTested newInconsequential s in
+    (For v d newVars s', testedVars `S.difference` S.fromList newVars)
+eliminateInconsequentialStmtAndComputeTested vars (SetTrue v)
+    | S.member v vars = (Seq [], S.empty)
+    | otherwise = (SetTrue v, S.empty)
+eliminateInconsequentialStmtAndComputeTested _ s = (s, S.empty)
+
+getTestedVarsStmt :: ForStmt -> S.Set BName
+getTestedVarsStmt (Seq stmts) = S.unions $ map getTestedVarsStmt stmts
+getTestedVarsStmt (If e s1 s2) = getTestedVarsExpr e `S.union` getTestedVarsStmt s1 `S.union` getTestedVarsStmt s2
+getTestedVarsStmt (For _ _ vars s) = getTestedVarsStmt s `S.difference` S.fromList vars
+getTestedVarsStmt _ = S.empty
+
+
+---- In this simplification we change if not b then b := true else skip to b := true.
+---- And similarly if b then skip else b := true to b := true.
+---- Also if b then b := true else skip to skip.
+simplifyConditionalSets :: ForProgram -> ForProgram
+simplifyConditionalSets (ForProgram vars stmt) = ForProgram vars $ simplifyConditionalSetsStmt stmt
+
+simplifyConditionalSetsStmt :: ForStmt -> ForStmt
+simplifyConditionalSetsStmt (Seq stmts) = Seq $ map simplifyConditionalSetsStmt stmts
+simplifyConditionalSetsStmt s@(If (BNot (BVar v1)) (SetTrue v2) (Seq []))
+    | v1 == v2 = SetTrue v1
+    | otherwise = s
+simplifyConditionalSetsStmt s@(If (BVar v1) (Seq []) (SetTrue v2))
+    | v1 == v2 = SetTrue v1
+    | otherwise = s
+simplifyConditionalSetsStmt s@(If (BVar v1) (SetTrue v2) (Seq []))
+    | v1 == v2 = Seq []
+    | otherwise = s
+simplifyConditionalSetsStmt s@(If e s1 s2) = If e (simplifyConditionalSetsStmt s1) (simplifyConditionalSetsStmt s2)
+simplifyConditionalSetsStmt (For v d vars s) = For v d vars $ simplifyConditionalSetsStmt s
+simplifyConditionalSetsStmt s = s
+
