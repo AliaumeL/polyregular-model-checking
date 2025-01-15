@@ -17,10 +17,12 @@ import Parser.ParseHighLevel (parseHighLevel)
 import Typing.TypeChecker (typeCheckProgram)
 import FinalConditions (finalConditions, displayBrokenConditions)
 import ToSimpleForProgram (toSimpleForProgram)
-import SimpleForPrograms (runProgram)
+import SimpleForPrograms (runProgram, pathToTag)
 import qualified SimpleForPrograms as SFP
 import LetBoolsToTop (bringLetBoolsToTopAndRefresh)
 import SimpleForProgramSimplification (simplifyForProgram)
+import Logic.Interpreter (runInterpretation)
+import Logic.Interpretation (toInterpretation, stringify, Interpretation (..))
 
 import Debug.Trace (traceM)
 
@@ -124,6 +126,14 @@ simpleShowEitherError :: Either InterpretError String -> String
 simpleShowEitherError (Left e) = "ERROR: " ++ simpleShowInterpreterError e
 simpleShowEitherError (Right s) = "OK: " ++ s
 
+
+sfpToInterpretation :: SFP.ForProgram -> Interpretation String
+sfpToInterpretation = stringify pathToTag . toInterpretation 
+
+runAsInterpretation :: SFP.ForProgram -> String -> String
+runAsInterpretation p s = runInterpretation (sfpToInterpretation p) s
+
+
 main :: IO ()
 main = do
     opts <- execParser cmdParser
@@ -183,5 +193,7 @@ main = do
                                 writeOutputFile (optOutputWord opts) (replicate 80 '-')
                                 writeOutputFile (optOutputWord opts) w
                                 writeOutputFile (optOutputWord opts) (show result)
+                                writeOutputFile (optOutputWord opts) (replicate 80 '-')
+                                let result' = runAsInterpretation sfp w
+                                writeOutputFile (optOutputWord opts) (show result')
                                 return ()
-

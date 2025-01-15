@@ -12,6 +12,9 @@ import Data.Map (Map)
 import qualified Data.Map as M
 
 
+import Debug.Trace
+
+
 data Interpretation tag = Interpretation {
     tags         :: [tag],
     alphabet     :: String,
@@ -27,12 +30,12 @@ instance Show tag => Show (Interpretation tag) where
                               show $ tags interp,
                               "\t ALPHABET",
                               show $ alphabet interp,
-                              "\t DOMAIN",
-                              sDoms,
                               "\t ORDER",
                               sOrds,
                               "\t LABELS",
-                              sLabs ]
+                              sLabs,
+                              "\t DOMAIN",
+                              sDoms]
         where
             sDom tag = show $ domain interp tag [In ("x_" ++ show i) | i <- [1..(arity interp tag)]]
             sOrd tag1 tag2 = show $ order interp tag1 tag2 [In ("x_" ++ show i) | i <- [1..(arity interp tag1)]] [In ("y_" ++ show i) | i <- [1..(arity interp tag2)]]
@@ -61,6 +64,7 @@ normalizeMovement (MoveIfL _) = MoveSeq 0
 normalizeMovement (MoveIfR _) = MoveSeq 1
 normalizeMovement (MoveSeq n) = MoveSeq n
 normalizeMovement (MoveFor p d b) = MoveFor p d b
+normalizeMovement (MoveProg p) = MoveProg p
 
 normalizeMovements :: [Movement] -> [Movement]
 normalizeMovements = map normalizeMovement
@@ -72,10 +76,11 @@ happensBefore (MoveSeq i : ms) (MoveSeq j : ns) vm vn
     | i < j = FConst True
     | i > j = FConst False
     | otherwise = happensBefore ms ns vm vn
-happensBefore (MoveFor _ SFP.LeftToRight _ : ms) (MoveFor _ SFP.LeftToRight _ : ns) (vm : vms) (vn : vns) = 
+happensBefore ((MoveFor _ SFP.LeftToRight _) : ms) ((MoveFor _ SFP.LeftToRight _) : ns) (vm : vms) (vn : vns) = 
     andList [FTestPos Le vm vn, happensBefore ms ns vms vns]
-happensBefore (MoveFor _ SFP.RightToLeft _ : ms) (MoveFor _ SFP.RightToLeft _ : ns) (vm : vms) (vn : vns) =
+happensBefore ((MoveFor _ SFP.RightToLeft _) : ms) ((MoveFor _ SFP.RightToLeft _) : ns) (vm : vms) (vn : vns) =
     andList [FTestPos Ge vm vn, happensBefore ms ns vms vns]
+happensBefore (MoveProg _ : xs) (MoveProg _ : ys) vm vn = happensBefore xs ys vm vn
 happensBefore _ _ _ _ = error $ "happensBefore: incompatible movements"
 
 
@@ -106,7 +111,7 @@ toInterpretation prog = Interpretation tags alphabet domain order labelOrCopy ar
         -- domain formula => compute until + exists
         domain = \tag vars -> injectTags $ PF.computeUntilProg tag prog vars
         -- order formula -> happens before
-        order = \(SFP.Path p1) (SFP.Path p2) vars1 vars2 -> injectTags $ happensBefore p1 p2 vars1 vars2
+        order = \(SFP.Path p1) (SFP.Path p2) vars1 vars2 -> injectTags $ happensBefore (normalizeMovements p1) (normalizeMovements p2) vars1 vars2
         -- arities
         arity = length . SFP.pathPVars
 

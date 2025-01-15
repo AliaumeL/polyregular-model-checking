@@ -11,6 +11,8 @@ import qualified Data.Map as M
 import Logic.Formulas
 import QuantifierFree
 
+import Debug.Trace
+
 -- | A formula seen as a morphism in the category of something
 -- so that they can be composed.
 data ProgramFormula tag  = ProgramFormula {
@@ -226,6 +228,8 @@ iterOverVar dir p (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
         -- condIntermediate => pi < p < p{i+1} 
         -- or                     >   >
         -- with p0 = 0 and pn = infty
+        condIntermediate LeftToRight 0 x | 0 == unum = FConst True
+        condIntermediate RightToLeft 0 x | 0 == unum = FConst True
         condIntermediate LeftToRight 0 x = 
             FTestPos Lt x (Local (1 + (posVarMap M.! 1)) p)
         condIntermediate RightToLeft 0 x = 
@@ -334,6 +338,8 @@ iterOverVarBeforeLazy dir p pmax (ProgramFormula φ iφ oφ) = ProgramFormula ξ
         -- or                     >   >
         -- with p0 = 0 and pn = p if LTR
         -- p0 = p and pn = +infty otherwise
+        condIntermediate LeftToRight 0 x | 0 == unum = FTestPos Lt x (In pmax)
+        condIntermediate RightToLeft 0 x | 0 == unum = FTestPos Gt x (In pmax)
         condIntermediate LeftToRight 0 x = 
             FTestPos Lt x (Local (1 + (posVarMap M.! 1)) p)
         condIntermediate RightToLeft 0 x = 
@@ -439,7 +445,7 @@ computeUntilProg (SFP.Path (x : path)) (SFP.ForProgram bs stmt) vars = ψ
     where
         pStmt   = computeUntil path stmt
         pStmtB  = withNewBoolVars [ x | BName x <- bs ] pStmt
-        φ       = formula pStmtB
+        φ       = formula pStmt
         -- now we need to map the variables of the path to variables given as input
         -- to `computeUntilProg`
         -- to that end, we list variables in the path, zip with vars, and remap inputs

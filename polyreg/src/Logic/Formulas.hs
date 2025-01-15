@@ -323,14 +323,10 @@ evalFormulaM (FVar v) = do
         _ -> error "Type error"
 evalFormulaM (FVar (In _))  = error "Free input variable"
 evalFormulaM (FVar (Out _)) = error "Free output variable"
-evalFormulaM (FBin Conj l r) = do
+evalFormulaM (FBin op l r) = do
     l' <- evalFormulaM l
     r' <- evalFormulaM r
-    return $ l' && r'
-evalFormulaM (FBin Disj l r) = do
-    l' <- evalFormulaM l
-    r' <- evalFormulaM r
-    return $ l' || r'
+    return $ binOpSemantics op l' r'
 evalFormulaM (FNot l) = do
     l' <- evalFormulaM l
     return $ not l'
