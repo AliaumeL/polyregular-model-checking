@@ -21,6 +21,26 @@ data Interpretation tag = Interpretation {
     arity        :: tag -> Int
 }
 
+instance Show tag => Show (Interpretation tag) where
+    show interp = unlines $ [ "Interp",
+                              "\t TAGS",
+                              show $ tags interp,
+                              "\t ALPHABET",
+                              show $ alphabet interp,
+                              "\t DOMAIN",
+                              sDoms,
+                              "\t ORDER",
+                              sOrds,
+                              "\t LABELS",
+                              sLabs ]
+        where
+            sDom tag = show $ domain interp tag [In ("x_" ++ show i) | i <- [1..(arity interp tag)]]
+            sOrd tag1 tag2 = show $ order interp tag1 tag2 [In ("x_" ++ show i) | i <- [1..(arity interp tag1)]] [In ("y_" ++ show i) | i <- [1..(arity interp tag2)]]
+            sLab tag = labelOrCopy interp tag
+            sDoms = unlines . map sDom $ tags interp
+            sOrds = unlines $ [ sOrd t1 t2 | t1 <- tags interp, t2 <- tags interp ]
+            sLabs = unlines . map (show . sLab) $ tags interp
+
 maxArity :: Interpretation tag -> Int
 maxArity interp = maximum $ map (arity interp) $ tags interp
 
@@ -84,7 +104,7 @@ toInterpretation prog = Interpretation tags alphabet domain order labelOrCopy ar
         -- print statements
         labelOrCopy = \tag -> labelFormula prog tag 
         -- domain formula => compute until + exists
-        domain = \tag vars -> injectTags $ PF.formula $ PF.computeUntilProg tag prog
+        domain = \tag vars -> injectTags $ PF.computeUntilProg tag prog vars
         -- order formula -> happens before
         order = \(SFP.Path p1) (SFP.Path p2) vars1 vars2 -> injectTags $ happensBefore p1 p2 vars1 vars2
         -- arities

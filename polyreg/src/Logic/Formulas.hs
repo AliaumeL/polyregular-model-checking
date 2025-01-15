@@ -3,6 +3,7 @@ module Logic.Formulas (Sort(..), Quant(..), Var(..), Formula(..), Value(..),
 andList, orList, quantifyList, mapInVars, mapOutVars, mapVars,
 nestQuantVars, nestQuantVar, mapTags,
 substituteBooleanVar, freeVars, prettyPrintFormula, 
+quantInOutVarsGeneric,
 quantOutVars, quantInVars, injectTags, evalFormula, evalFormulaWithFreeVars)
 where
 
@@ -149,6 +150,22 @@ mapInVars f = mapVars g
         g :: Int -> Var -> Var
         g d (In x) = f d x
         g d x = x
+
+
+quantInOutVarsGeneric :: (String -> Maybe Var) -> (String -> Maybe Var) -> Formula tag  -> Formula tag
+quantInOutVarsGeneric f g = mapVars h
+    where
+        h :: Int -> Var -> Var
+        h d (In x) = case f x of
+                        Just (Local i n) -> Local (i + d) n
+                        Just x -> x
+                        Nothing -> In x
+        h d (Out x) = case g x of
+                        Just (Local i n) -> Local (i + d) n
+                        Just x -> x
+                        Nothing -> Out x
+        h d x = x
+
 
 -- | remap output Variables to either the identity or a "new" Variable
 -- given by a string (for debugging purposes) and an integer (for de bruin indices)

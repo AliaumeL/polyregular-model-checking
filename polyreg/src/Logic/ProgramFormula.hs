@@ -432,10 +432,25 @@ computeUntil (SFP.MoveFor (PName pm) dirm bsm : xs) (SFP.For (PName p) dir bs st
         where
             pStmt  = sfpStmtToProgramFormula stmt
             pStmtB = withNewBoolVars [ x | BName x <- bsm ] pStmt
-computeUntil _ _ = error "computeUntil: invalid path"
+computeUntil pa pr = error $ "computeUntil: invalid path" ++ show (pa, pr)
 
-computeUntilProg :: SFP.Path -> SFP.ForProgram -> ProgramFormula ()
-computeUntilProg = undefined
+computeUntilProg :: SFP.Path -> SFP.ForProgram -> [Var] -> Formula ()
+computeUntilProg (SFP.Path (x : path)) (SFP.ForProgram bs stmt) vars = ψ
+    where
+        pStmt   = computeUntil path stmt
+        pStmtB  = withNewBoolVars [ x | BName x <- bs ] pStmt
+        φ       = formula pStmtB
+        -- now we need to map the variables of the path to variables given as input
+        -- to `computeUntilProg`
+        -- to that end, we list variables in the path, zip with vars, and remap inputs
+        -- to the corresponding variables
+        names :: [(Var, String)]
+        names   = zip vars . map (\(PName p) -> p) $ SFP.pathPVars (SFP.Path path)
+        namesM = M.fromList $ [ (x,y) | (y,x) <- names ]
+
+        ψ = quantInOutVarsGeneric (\n -> M.lookup n namesM) (const Nothing) φ
+
+        
 
 
 sfpToProgramFormula :: SFP.ForProgram -> ProgramFormula ()
@@ -461,6 +476,14 @@ verySimpleForProgram = SFP.ForProgram [BName "seen_a"] $
     SFP.For (SFP.PName "i") SFP.LeftToRight [] $
         SFP.If (SFP.BLabelAt (SFP.PName "i") 'a')
                (SFP.SetTrue $ BName "seen_a")
+               (SFP.Seq [])
+
+-- prints all the A’s in the input
+verySimpleForProgramPrint :: SFP.ForProgram
+verySimpleForProgramPrint = SFP.ForProgram [] $ 
+    SFP.For (SFP.PName "i") SFP.LeftToRight [] $
+        SFP.If (SFP.BLabelAt (SFP.PName "i") 'a')
+               (SFP.PrintLbl 'a')
                (SFP.Seq [])
 
 -- check if there is "a" in the input
