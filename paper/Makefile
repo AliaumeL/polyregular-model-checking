@@ -1,23 +1,24 @@
-.PHONY: clean
+.PHONY: clean all
 
 PAPER=polycheck
 SRC=src/*.tex             \
-	lib/*.tex             \
-	papers.bib            \
-	knowledges.kl         \
-	ensps-colorscheme.sty \
-	plainurl.bst		  \
-	$(PAPER).tex
+    lib/*.tex             \
+    papers.bib            \
+    knowledges.kl         \
+    ensps-colorscheme.sty \
+    plainurl.bst	  \
+    $(PAPER).md
 
 TEMPLATES=templates/plain-article.tex \
-		  templates/git-meta.lua 
+	  templates/git-meta.lua 
 
 FIGURES=
 
-# Default target: create the pdf file
-$(PAPER).pdf: $(SRC) $(FIGURES)
-	latexmk -pdf -pdflatex="pdflatex -interaction=nonstopmode" $(PAPER).tex
+all: $(PAPER).pdf
 
+# Default target: create the pdf file
+%.pdf: %.tex $(FIGURES)
+	latexmk -pdf -pdflatex="pdflatex -interaction=nonstopmode" $<
 
 # How to create standalone versions of the pictures
 fig/%.pdf: fig/%.tex
@@ -26,19 +27,51 @@ fig/%.pdf: fig/%.tex
 	@mv $(notdir $@) $@
 	@rm $(notdir $^)
 
-$(PAPER).tex: $(PAPER).md $(TEMPLATES) ../paper-meta.yaml
+$(PAPER).tex: $(SRC) $(TEMPLATES) ../paper-meta.yaml
 	pandoc --template=templates/plain-article.tex \
 		   --lua-filter=templates/git-meta.lua \
 		   --metadata-file=../paper-meta.yaml \
+		   --metadata=draft:true \
+		   --wrap=none \
 		   -o $(PAPER).tex \
 		   $(PAPER).md
 
+# Create a lipics document for submission
+$(PAPER).lipics.tex: $(SRC) $(TEMPLATES) ../paper-meta.yaml
+	pandoc --template=templates/lipics/lipics.tex \
+		   --lua-filter=templates/git-meta.lua \
+		   --metadata-file=../paper-meta.yaml \
+		   --metadata=draft:true \
+		   --wrap=none \
+		   -o $(PAPER).lipics.tex \
+		   $(PAPER).md
+
+# Create a lipics document for submission
+$(PAPER).lncs.tex: $(SRC) $(TEMPLATES) ../paper-meta.yaml
+	pandoc --template=templates/lncs/lncs.tex \
+		   --lua-filter=templates/git-meta.lua \
+		   --metadata-file=../paper-meta.yaml \
+		   --metadata=draft:true \
+		   --wrap=none \
+		   -o $(PAPER).lncs.tex \
+		   $(PAPER).md
+
+
 # Create a single file tex document for arXiv
-$(PAPER).arxiv.tex: $(PAPER).pdf
-	latexpand -o $(PAPER).arxiv.tex     \
-			  --empty-comments          \
-		      --expand-bbl $(PAPER).bbl \
+$(PAPER).arxiv.tex: $(SRC) $(TEMPLATES) ../paper-meta.yaml
+	pandoc --template=templates/plain-article.tex \
+		   --lua-filter=templates/git-meta.lua \
+		   --metadata-file=../paper-meta.yaml \
+		   --metadata=arxiv:true \
+		   --wrap=none \
+		   -o $(PAPER)-arxiv-tmp.tex \
+		   $(PAPER).md
+	latexmk -pdf -pdflatex="pdflatex -interaction=nonstopmode" $(PAPER)-arxiv-tmp.tex
+	latexpand -o $(PAPER).arxiv.tex         \
+		      --empty-comments          \
+		      --expand-bbl $(PAPER)-arxiv-tmp.bbl \
               $(PAPER).tex
+	@rm $(PAPER)-arxiv-tmp.*
 
 # Create an archive with the single file tex document and the license
 $(PAPER).arxiv.tar.gz: $(PAPER).arxiv.tex
@@ -62,4 +95,4 @@ $(PAPER).arxiv.pdf: $(PAPER).arxiv.tar.gz
 
 clean: 
 	latexmk -C
-	rm -f $(PAPER).arxiv.tex $(PAPER).arxiv.tar.gz $(PAPER).arxiv.pdf
+	rm -f *.tex *.tar.gz *.aux *.bbl *.blg *.log *.out *.fls *.fdb_latexmk *.synctex.gz

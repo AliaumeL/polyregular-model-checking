@@ -1,13 +1,27 @@
 title: Polyregular Model Checking
 author:
   - name: Aliaume Lopez
+    initials: A. Lopez
     email: ad.lopez@uw.edu.pl
     affiliation: University of Warsaw, Poland
+    orcid: "0000-0002-4205-327X"
   - name: Rafał Stefański
     email: rafal.stefanski@mimuw.edu.pl
+    initials: R. Stefański
     affiliation: University of Warsaw, Poland
-abstract: >
+    orcid: "0000-0002-8439-4056"
+abstract: |
   In this paper, we demonstrate how the theory of polyregular functions
   can be leveraged to verify simple string-to-string
   for-loop programs defined in a subset of Python in an efficient
   way.
+classification:
+  ccdesc:
+    - Theory of computation~Automata extensions
+    - Theory of computation~Logic and verification
+    - Theory of computation~Program verification
+keywords:
+  - Program verification
+  - Polyregular functions
+  - SMT Solver
+  - First order transduction

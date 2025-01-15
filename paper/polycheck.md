@@ -1,7 +1,7 @@
 ---
 bibliography: papers.bib
+final: true
 libraries:
-    - lib/packages
     - lib/aliaume
     - lib/maths
 appendix:

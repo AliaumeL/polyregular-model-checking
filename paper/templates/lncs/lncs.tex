@@ -7,16 +7,17 @@
 % - If you want to update the content of the paper, please edit the latex files
 %   in the `src` directory.
 % - If you want to update the template itself (e.g., change the layout), please
-%   edit the `templates/plain-article.tex` file instead.
-\documentclass[11pt,a4paper,twosided]{article}
+%   edit the `templates/lncs/lncs.tex` file instead.
+\documentclass[runningheads]{llncs}
 
-% we setup a custom geometry because the default one is too narrow
-\usepackage{geometry}
-\geometry{margin=3.5cm}
-
-% utf-8 for old systems
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+
+
+\usepackage{lineno}
+$if(final)$
+\nolinenumbers
+$endif$
 
 % babel for language settings
 \usepackage[english]{babel}
@@ -26,18 +27,7 @@
 
 
 % math packages
-\usepackage{amsmath,amsthm,amssymb,stmaryrd,thmtools,upgreek}
-
-% configure some theorems
-\newtheorem{theorem}{Theorem}
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{corollary}[theorem]{Corollary}
-\newtheorem{proposition}[theorem]{Proposition}
-\newtheorem{conjecture}[theorem]{Conjecture}
-\theoremstyle{definition}
-\newtheorem{definition}[theorem]{Definition}
-\newtheorem{remark}[theorem]{Remark}
-\newtheorem{example}[theorem]{Example}
+\usepackage{amssymb,stmaryrd,thmtools,upgreek}
 
 
 % graphics packages
@@ -74,7 +64,6 @@
 % Colors 
 \usepackage{ensps-colorscheme}
 
-
 % we include whatever the user wants to include in the header
 $for(header-includes)$
 $header-includes$
@@ -85,40 +74,34 @@ $for(libraries)$
 \input{$libraries$}
 $endfor$
 
-% We include the title and author information based on the 
-% `paper-meta.yaml` file.
-$if(title)$ 
+
+\begin{document}
+%
 \title{$title$}
+$if(short-title)$
+\titlerunning{$short-title$}
 $endif$
+
 \author{
-$for(author)$
-$author.name$$for(author.affiliation)$\thanks{$author.affiliation$}$endfor$
-$sep$ \and
-$endfor$
+    $for(author)$
+    $author.name$\inst{1}$if(author.orcid)$\orcidID{$author.orcid$}$endif$$sep$ \and
+    $endfor$
 }
 
-% For the date, we first check if the user has provided a date,
-% and otherwise use the git meta inforamtion (if available).
-$if(date)$
-\date{$date$$if(git-meta)$ --- $git-meta.commit$$endif$}
-$else$
-$if(git-meta)$
-\date{$git-meta.date$ -- $git-meta.commit$\footnote{branch $git-meta.branch$ at $git-meta.origin$}}
-$endif$
-$endif$
+\authorrunning{$for(author)$$author.initials$$sep$ and $endfor$}
 
+\institute{University of Warsaw}
 
-% Now, we create the document itself.
-\begin{document}
-% Generate the title page
-\maketitle
-% Print the abstract
+%
+\maketitle              % typeset the header of the contribution
+%
 \begin{abstract}
 $if(abstract)$
     $abstract$
 $else$
     Please write an abstract in the \texttt{paper-meta.yaml} file.
 $endif$
+$for(keywords)$$it$$sep$ and  $endfor$
 \end{abstract}
 
 % Include the content of the paper
@@ -126,7 +109,7 @@ $body$
 
 % Include the bibliography
 $if(bibliography)$
-\bibliographystyle{plainurl}
+\bibliographystyle{splncs04}
 \bibliography{$for(bibliography)$$it$$sep$,$endfor$}
 $endif$
 

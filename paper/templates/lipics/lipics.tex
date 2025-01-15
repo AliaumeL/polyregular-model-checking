@@ -7,38 +7,27 @@
 % - If you want to update the content of the paper, please edit the latex files
 %   in the `src` directory.
 % - If you want to update the template itself (e.g., change the layout), please
-%   edit the `templates/plain-article.tex` file instead.
-\documentclass[11pt,a4paper,twosided]{article}
+%   edit the `templates/lipics/lipics.tex` file instead.
+\documentclass[
+    a4paper,
+    UKenglish,
+    cleveref,
+    autoref,$if(review)$anonymous,$endif$$if(arxiv)$pdfa,$endif$
+    thm-restate]{lipics-v2021}
 
-% we setup a custom geometry because the default one is too narrow
-\usepackage{geometry}
-\geometry{margin=3.5cm}
+$if(arxiv)$
+\hideLIPIcs
+\pdfoutput=1
+\nolinenumbers
+$endif$
 
-% utf-8 for old systems
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
+$if(review)$
+\hideLIPIcs
+$endif$
 
-% babel for language settings
-\usepackage[english]{babel}
-
-% microtype for better typography
-\usepackage{microtype}
-
-
-% math packages
-\usepackage{amsmath,amsthm,amssymb,stmaryrd,thmtools,upgreek}
-
-% configure some theorems
-\newtheorem{theorem}{Theorem}
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{corollary}[theorem]{Corollary}
-\newtheorem{proposition}[theorem]{Proposition}
-\newtheorem{conjecture}[theorem]{Conjecture}
-\theoremstyle{definition}
-\newtheorem{definition}[theorem]{Definition}
-\newtheorem{remark}[theorem]{Remark}
-\newtheorem{example}[theorem]{Example}
-
+$if(final)$
+\nolinenumbers
+$endif$
 
 % graphics packages
 \usepackage{graphicx}
@@ -56,8 +45,6 @@
 
 
 % links inside the document
-\usepackage{hyperref}
-\usepackage[capitalise,noabbrev,nameinlink]{cleveref}
 \usepackage[$if(draft)$composition$else$electronic$endif$,hyperref,xcolor,cleveref]{knowledge}
 \knowledgeconfigure{notion}
 
@@ -90,23 +77,58 @@ $endfor$
 $if(title)$ 
 \title{$title$}
 $endif$
-\author{
+$if(short-title)$
+\titlerunning{$short-title$}
+$endif$
 $for(author)$
-$author.name$$for(author.affiliation)$\thanks{$author.affiliation$}$endfor$
-$sep$ \and
+\author{$author.name$}
+       {$author.affiliation$}
+       {$author.email$}
+       {$if(author.orcid)$https://orcid.org/$author.orcid$$endif$}
+       {$author.acknowledgements$}
 $endfor$
-}
 
-% For the date, we first check if the user has provided a date,
-% and otherwise use the git meta inforamtion (if available).
-$if(date)$
-\date{$date$$if(git-meta)$ --- $git-meta.commit$$endif$}
+\authorrunning{$for(author)$$author.initials$$sep$ and $endfor$}
+
+\Copyright{$for(author)$$author.name$$sep$ and $endfor$} 
+
+$for(classification.ccdesc)$
+\ccsdesc[100]{$it$}
+$endfor$
+
+\keywords{$for(keywords)$$it$$sep$, $endfor$} %TODO mandatory; please add comma-separated list of keywords
+
+\category{} %optional, e.g. invited paper
+
+$for(related-version)$
+$if(it.cite)$
+\relatedversiondetails[cite={$it.cite$}]{$it.name$}{$it.url$}
 $else$
-$if(git-meta)$
-\date{$git-meta.date$ -- $git-meta.commit$\footnote{branch $git-meta.branch$ at $git-meta.origin$}}
+\relatedversion{$it$}
 $endif$
+$endfor$
+
+$for(supplement)$
+\supplementdetails[cite={$supplement.cite$}]{General Classification}{$supplement.url$}
+$endfor$
+
+$if(acknowledgements)$
+\acknowledgements{$acknowledgements$}
 $endif$
 
+%Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\EventEditors{John Q. Open and Joan R. Access}
+\EventNoEds{2}
+\EventLongTitle{42nd Conference on Very Important Topics (CVIT 2016)}
+\EventShortTitle{CVIT 2016}
+\EventAcronym{CVIT}
+\EventYear{2016}
+\EventDate{December 24--27, 2016}
+\EventLocation{Little Whinging, United Kingdom}
+\EventLogo{}
+\SeriesVolume{42}
+\ArticleNo{23}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Now, we create the document itself.
 \begin{document}
