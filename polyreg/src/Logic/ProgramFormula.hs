@@ -219,12 +219,12 @@ iterOverVar dir p (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
         getUpdtVar n    depth x | n == unum = Out x
         getUpdtVar step depth x = case M.lookup (step, x) updtVarMap of
                                     Just i  -> Local (depth + i) x
-                                    Nothing -> error $ "iterUntil: variable " ++ x ++ " not found"
+                                    Nothing -> error $ "iterUntil: boolean variable " ++ x ++ " not found"
 
         getPosVar :: Int -> Int -> String -> Var 
         getPosVar step depth x | x == p = case M.lookup step posVarMap of
                                             Just i  -> Local (depth + i) x
-                                            Nothing -> error $ "iterUntil: variable " ++ x ++ " not found"
+                                            Nothing -> error $ "iterUntil: position variable " ++ x ++ " not found"
         getPosVar step depth x = In x
 
         -- Now, we construct the formulas [φ_i] for 0 <= i <= unum - 1
