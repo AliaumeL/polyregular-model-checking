@@ -1,4 +1,4 @@
 def main (word : [Char]) : [Char] := 
-    for (i, e : Char) in word do
+    for (i, e) in enumerate(word) do
         yield e
     done

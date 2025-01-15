@@ -195,5 +195,6 @@ main = do
                                 writeOutputFile (optOutputWord opts) (show result)
                                 writeOutputFile (optOutputWord opts) (replicate 80 '-')
                                 let result' = runAsInterpretation sfp w
+                                writeOutputFile (optOutputWord opts) (show . sfpToInterpretation $ sfp)
                                 writeOutputFile (optOutputWord opts) (show result')
                                 return ()

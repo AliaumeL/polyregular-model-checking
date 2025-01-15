@@ -334,3 +334,20 @@ prettyPrintBoolExpr (BTest op (PName p1) (PName p2)) = p1 ++ " " ++ show op ++ "
 prettyPrintBoolExpr (BLabelAt (PName p) l) = p ++ " == " ++ show l
 prettyPrintBoolExpr (BNot e) = "not " ++ prettyPrintBoolExpr e
 prettyPrintBoolExpr (BBin op e1 e2) = prettyPrintBoolExpr e1 ++ " " ++ show op ++ " " ++ prettyPrintBoolExpr e2
+
+
+
+skipLastLetterProgEx :: ForProgram
+skipLastLetterProgEx = ForProgram [] (
+        For (PName "i") LeftToRight [BName "b"] (
+            For (PName "j") RightToLeft [] (
+                If (BVar (BName "b")) (
+                    If (BTest Eq (PName "j") (PName "i")) 
+                       (PrintPos (PName "j"))
+                       (Seq [])
+                ) (
+                    (SetTrue (BName "b"))
+                )
+            )
+        )
+    )

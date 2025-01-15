@@ -37,12 +37,12 @@ instance Show tag => Show (Interpretation tag) where
                               "\t DOMAIN",
                               sDoms]
         where
-            sDom tag = show $ domain interp tag [In ("x_" ++ show i) | i <- [1..(arity interp tag)]]
-            sOrd tag1 tag2 = show $ order interp tag1 tag2 [In ("x_" ++ show i) | i <- [1..(arity interp tag1)]] [In ("y_" ++ show i) | i <- [1..(arity interp tag2)]]
-            sLab tag = labelOrCopy interp tag
+            sDom tag = show tag  ++ " : " ++ (show $ domain interp tag [In ("x_" ++ show i) | i <- [1..(arity interp tag)]])
+            sOrd tag1 tag2 = show tag1 ++ " ; " ++ show tag2  ++  " : "++ (show $ order interp tag1 tag2 [In ("x_" ++ show i) | i <- [1..(arity interp tag1)]] [In ("y_" ++ show i) | i <- [1..(arity interp tag2)]])
+            sLab tag = show tag ++ " : " ++ (show $ labelOrCopy interp tag)
             sDoms = unlines . map sDom $ tags interp
             sOrds = unlines $ [ sOrd t1 t2 | t1 <- tags interp, t2 <- tags interp ]
-            sLabs = unlines . map (show . sLab) $ tags interp
+            sLabs = unlines . map sLab $ tags interp
 
 maxArity :: Interpretation tag -> Int
 maxArity interp = maximum $ map (arity interp) $ tags interp
@@ -77,9 +77,15 @@ happensBefore (MoveSeq i : ms) (MoveSeq j : ns) vm vn
     | i > j = FConst False
     | otherwise = happensBefore ms ns vm vn
 happensBefore ((MoveFor _ SFP.LeftToRight _) : ms) ((MoveFor _ SFP.LeftToRight _) : ns) (vm : vms) (vn : vns) = 
-    andList [FTestPos Le vm vn, happensBefore ms ns vms vns]
+    orList $ [
+          andList [FTestPos Eq vm vn, happensBefore ms ns vms vns]
+        , FTestPos Le vm vn
+        ]
 happensBefore ((MoveFor _ SFP.RightToLeft _) : ms) ((MoveFor _ SFP.RightToLeft _) : ns) (vm : vms) (vn : vns) =
-    andList [FTestPos Ge vm vn, happensBefore ms ns vms vns]
+    orList $ [
+            andList [FTestPos Eq vm vn, happensBefore ms ns vms vns]
+            , FTestPos Ge vm vn
+            ]
 happensBefore (MoveProg _ : xs) (MoveProg _ : ys) vm vn = happensBefore xs ys vm vn
 happensBefore _ _ _ _ = error $ "happensBefore: incompatible movements"
 

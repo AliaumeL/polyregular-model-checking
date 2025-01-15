@@ -54,5 +54,5 @@ getPositionLabel :: Interpretation Tag -> String -> Tag -> [Int] -> Char
 getPositionLabel interpretation word tag ps =
     case labelOrCopy interpretation tag of
         Left c -> c
-        Right i -> word !! (ps !! i)
+        Right i -> word !! ((reverse ps) !! i)
 

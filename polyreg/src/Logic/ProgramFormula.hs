@@ -22,7 +22,18 @@ data ProgramFormula tag  = ProgramFormula {
     inputVars  :: Map String Sort,
     -- | the output variables (with their sorts)
     outputVars :: Map String Sort
-} deriving (Show, Eq)
+} deriving (Eq)
+
+instance Show tag => Show (ProgramFormula tag ) where
+    show (ProgramFormula φ iφ oφ) = unlines [
+        "ProgramFormula",
+        "\tFormula",
+        show φ,
+        "\tInputVars",
+        show iφ,
+        "\tOutputVars",
+        show oφ
+        ]
 
 
 ignoreOutputVarUnsafe :: String -> ProgramFormula tag  -> ProgramFormula tag 
@@ -445,7 +456,7 @@ computeUntilProg (SFP.Path (x : path)) (SFP.ForProgram bs stmt) vars = ψ
     where
         pStmt   = computeUntil path stmt
         pStmtB  = withNewBoolVars [ x | BName x <- bs ] pStmt
-        φ       = formula pStmt
+        φ       = formula pStmtB
         -- now we need to map the variables of the path to variables given as input
         -- to `computeUntilProg`
         -- to that end, we list variables in the path, zip with vars, and remap inputs
