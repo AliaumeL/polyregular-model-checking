@@ -6,6 +6,8 @@ import QuantifierFree
 import Data.List (isInfixOf)
 
 import System.Process
+import System.Exit (ExitCode(..))
+import Control.Exception (try, IOException)
 
 intersperse :: a -> [a] -> [a]
 intersperse _ [] = []
@@ -77,3 +79,13 @@ runMona input = do
     writeFile "tmp.mona" input
     output <- readProcess "mona" ["-q", "tmp.mona"] ""
     return $ parseMonaOutput output
+
+
+isProgramInstalled :: String -> IO Bool
+isProgramInstalled program = do
+    result <- try (readProcess program ["--version"] "") :: IO (Either IOError String)
+    return $ either (const False) (const True) result
+
+isMonaInstalled :: IO Bool
+isMonaInstalled = isProgramInstalled "mona"
+
