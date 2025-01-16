@@ -16,7 +16,8 @@ jobs:
       image: aliaume/polycheck:latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        run: |  
+          git clone https://github.com/AliaumeL/polyregular-model-checking.git
       - name: Install dependencies
         run: |
           cd polyreg
