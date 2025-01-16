@@ -24,6 +24,20 @@ data ProgramFormula tag  = ProgramFormula {
     outputVars :: Map String Sort
 } deriving (Eq)
 
+typeCheckProgramFormula :: ProgramFormula tag  -> Bool
+typeCheckProgramFormula (ProgramFormula φ iφ oφ) = 
+    let (iφ', oφ') = freeVars φ in
+    iφ == iφ' && oφ == oφ'
+
+forceTypeCheck :: ProgramFormula tag  -> ProgramFormula tag
+forceTypeCheck (ProgramFormula φ iφ oφ) = ProgramFormula φ iφ' oφ'
+    where
+        (iφ', oφ') = freeVars φ
+
+typeCheckOrFail :: ProgramFormula tag  -> a -> a
+typeCheckOrFail φ x = if typeCheckProgramFormula φ then x else error "typeCheckOrFail: type error"
+
+
 instance Show tag => Show (ProgramFormula tag ) where
     show (ProgramFormula φ iφ oφ) = unlines [
         "ProgramFormula",
@@ -89,14 +103,14 @@ ignoreOutputVarUnsafe x (ProgramFormula φ iφ oφ) = ProgramFormula φ' iφ' o�
 ignoreOutputVar :: String -> ProgramFormula tag  -> ProgramFormula tag
 ignoreOutputVar x p@(ProgramFormula _ _ oφ) =  case M.lookup x oφ of
                                                     Just _  -> ignoreOutputVarUnsafe x p
-                                                    Nothing -> p
+                                                    Nothing -> typeCheckOrFail p p
 
 ignoreOutputVars :: [String] -> ProgramFormula tag  -> ProgramFormula tag 
 ignoreOutputVars xs φ = foldr ignoreOutputVar φ xs
 
 
 withFalseInput :: String -> ProgramFormula tag  -> ProgramFormula tag 
-withFalseInput x (ProgramFormula φ iφ oφ) = ProgramFormula φ' iφ' oφ
+withFalseInput x p@(ProgramFormula φ iφ oφ) = typeCheckOrFail p $ ProgramFormula φ' iφ' oφ
     where
         φ'  = substituteBooleanVar f φ
         f y = if y == In x then FConst False else FVar y
@@ -153,7 +167,7 @@ instance Monoid (ProgramFormula tag ) where
 
 
 withNewBoolVar :: String -> ProgramFormula tag  -> ProgramFormula tag 
-withNewBoolVar x p = ignoreOutputVar x $ withFalseInput x p
+withNewBoolVar x p = ignoreOutputVar x $ withFalseInput x $ typeCheckOrFail p p
 
 withNewBoolVars :: [String] -> ProgramFormula tag  -> ProgramFormula tag 
 withNewBoolVars xs p = foldr withNewBoolVar p xs
@@ -221,7 +235,7 @@ ifThenElse b (ProgramFormula φ iφ oφ) (ProgramFormula ψ iψ oψ) = ProgramFo
 
 
 iterOverVar :: Direction -> String -> ProgramFormula tag  -> ProgramFormula tag
-iterOverVar dir p (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
+iterOverVar dir p (ProgramFormula φ iφ oφ) =  ProgramFormula ξ iξ oξ
     where
         -- the number of output variables of φ, i.e., the ones
         -- that can actually *change* by computing φ

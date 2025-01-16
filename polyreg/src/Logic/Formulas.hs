@@ -153,7 +153,7 @@ mapInVars f = mapVars g
 
 
 quantInOutVarsGeneric :: (String -> Maybe Var) -> (String -> Maybe Var) -> Formula tag  -> Formula tag
-quantInOutVarsGeneric g f  = mapVars h
+quantInOutVarsGeneric f g  = mapVars h
     where
         h :: Int -> Var -> Var
         h d (In x) = case f x of
