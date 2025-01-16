@@ -4,7 +4,8 @@ andList, orList, quantifyList, mapInVars, mapOutVars, mapVars,
 nestQuantVars, nestQuantVar, mapTags,
 substituteBooleanVar, freeVars, prettyPrintFormula, 
 quantInOutVarsGeneric,
-quantOutVars, quantInVars, injectTags, evalFormula, evalFormulaWithFreeVars)
+quantOutVars, quantInVars, injectTags, evalFormula, evalFormulaWithFreeVars, 
+showFormulaGeneric)
 where
 
 import QuantifierFree
@@ -66,6 +67,19 @@ data Formula tag  =
     -- and also in most SMT solvers
     | FPredPos Var Var
   deriving (Show, Eq, Ord)
+
+showFormulaGeneric :: Formula tag -> String 
+showFormulaGeneric (FConst b) = if b then "⊤" else "⊥"
+showFormulaGeneric (FVar x) = show x
+showFormulaGeneric (FBin op l r) = "(" ++ showFormulaGeneric l ++ show op ++ showFormulaGeneric r ++ ")"
+showFormulaGeneric (FNot l) = "¬" ++ showFormulaGeneric l
+showFormulaGeneric (FQuant q x s l) = show q ++ " " ++ x ++ " : " ++ show s ++ ". " ++ showFormulaGeneric l
+showFormulaGeneric (FTag x t) = show x ++ " ∈ " ++ " SomeTag"
+showFormulaGeneric (FLetter x l) = show x ++ " = " ++ show l
+showFormulaGeneric (FTestPos t x y) = show x ++ " " ++ show t ++ " " ++ show y
+showFormulaGeneric (FRealPos x) = "real(" ++ show x ++ ")"
+showFormulaGeneric (FPredPos x y) = show x ++ " = " ++ show y ++ " - 1"
+
 
 injectTags :: Formula () -> Formula t
 injectTags (FConst b) = FConst b
@@ -186,9 +200,13 @@ quantInVars f = mapInVars g
                     Nothing     -> In x
 
 
+varToFreeVars :: Var -> Sort -> (Map String Sort, Map String Sort)
+varToFreeVars (In x) s = (M.singleton x s, M.empty)
+varToFreeVars (Out x) s = (M.empty, M.singleton x s)
+varToFreeVars (Local _ _) _ = (M.empty, M.empty)
+
 freeVars :: Formula tag  -> (Map String Sort, Map String Sort)
-freeVars (FVar (In x))  = (M.singleton x Boolean, M.empty)
-freeVars (FVar (Out x)) = (M.empty, M.singleton x Boolean)
+freeVars (FVar v)  = varToFreeVars v Boolean
 freeVars (FBin _ l r) = (sIn, sOut)
     where
         (sInL, sOutL) = freeVars l
@@ -197,14 +215,9 @@ freeVars (FBin _ l r) = (sIn, sOut)
         sOut = sOutL `M.union` sOutR
 freeVars (FNot l) = freeVars l
 freeVars (FQuant _ _ _ l) = freeVars l
-freeVars (FTag (In x) _) = (M.singleton x Tag, M.empty)
-freeVars (FTag (Out x) _) = (M.empty, M.singleton x Tag)
-freeVars (FLetter (In x) _) = (M.singleton x Pos, M.empty)
-freeVars (FLetter (Out x) _) = (M.empty, M.singleton x Pos)
-freeVars (FTestPos _ (In x) (In y)) =  (M.singleton x Pos `M.union` M.singleton y Pos, M.empty)
-freeVars (FTestPos _ (Out x) (In y)) =  (M.singleton y Pos, M.singleton x Pos)
-freeVars (FTestPos _ (In x) (Out y)) = (M.singleton x Pos, M.singleton y Pos)
-freeVars (FTestPos _ (Out x) (Out y)) =  (M.empty, M.singleton x Pos `M.union` M.singleton y Pos)
+freeVars (FTag v _) = varToFreeVars v Tag
+freeVars (FLetter v _) = varToFreeVars v Pos
+freeVars (FTestPos _ v1 v2) = varToFreeVars v1 Pos <> varToFreeVars v2 Pos
 freeVars _ = (M.empty, M.empty)
 
 prettyPrintQuant :: Quant -> String

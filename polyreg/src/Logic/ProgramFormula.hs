@@ -22,7 +22,11 @@ data ProgramFormula tag  = ProgramFormula {
     inputVars  :: Map String Sort,
     -- | the output variables (with their sorts)
     outputVars :: Map String Sort
-} deriving (Eq)
+} deriving (Eq) 
+
+printProgramFormulaGeneric :: ProgramFormula tag  -> String
+printProgramFormulaGeneric (ProgramFormula φ iφ oφ) = unlines $ 
+    ["INPUT: " ++ show iφ, "OUTPUT: " ++ show oφ, "FORMULA: " ++ showFormulaGeneric φ]
 
 typeCheckProgramFormula :: ProgramFormula tag  -> Bool
 typeCheckProgramFormula (ProgramFormula φ iφ oφ) = 
@@ -35,7 +39,10 @@ forceTypeCheck (ProgramFormula φ iφ oφ) = ProgramFormula φ iφ' oφ'
         (iφ', oφ') = freeVars φ
 
 typeCheckOrFail :: ProgramFormula tag  -> a -> a
-typeCheckOrFail φ x = if typeCheckProgramFormula φ then x else error "typeCheckOrFail: type error"
+typeCheckOrFail φ x = if typeCheckProgramFormula φ then x else error $ unlines $
+    [ "typeCheckOrFail: type error",
+      (printProgramFormulaGeneric φ),
+      "FreeVars: " ++ show (freeVars $ formula φ) ]
 
 
 instance Show tag => Show (ProgramFormula tag ) where
