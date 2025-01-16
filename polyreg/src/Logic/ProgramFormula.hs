@@ -35,6 +35,47 @@ instance Show tag => Show (ProgramFormula tag ) where
         show oφ
         ]
 
+data ProgramFormulaValuation = ProgramFormulaValuation {
+    valAllTags   :: [String],
+    valInputWord :: String,     
+    valPositions :: Map Var Int,
+    valBooleans  :: Map Var Bool,
+    valTags      :: Map Var String
+} deriving (Eq,Show)
+
+evalProgramFormula :: ProgramFormulaValuation -> ProgramFormula String -> Bool
+evalProgramFormula (ProgramFormulaValuation allTags w pos bools tgs) (ProgramFormula φ iφ oφ) = evalFormulaWithFreeVars φ' allVals allTags w
+    where
+        φ' = mapInVars (\_ x -> In ("in_" ++ x)) . mapOutVars (\_ x -> In ("out_" ++ x)) $ φ
+        allVals = allPosVals ++ allBoolVals ++ allTagVals
+
+        allPosVals :: [(String, Value)]
+        allPosVals = do 
+            (x, i) <- M.toList pos
+            case x of 
+                In x      -> return ("in_" ++ x, PosVal i)
+                Out x     -> return ("out_" ++ x, PosVal i)
+                _         -> error "evalProgramFormula: local position variable"
+
+        allBoolVals :: [(String, Value)]
+        allBoolVals = do 
+            (x, b) <- M.toList bools
+            case x of 
+                In x      -> return ("in_" ++ x, BoolVal b)
+                Out x     -> return ("out_" ++ x, BoolVal b)
+                _         -> error "evalProgramFormula: local boolean variable"
+
+        allTagVals :: [(String, Value)]
+        allTagVals = do 
+            (x, t) <- M.toList tgs
+            case x of 
+                In x      -> return ("in_" ++ x, TagVal t)
+                Out x     -> return ("out_" ++ x, TagVal t)
+                _         -> error "evalProgramFormula: local tag variable"
+
+
+
+
 
 ignoreOutputVarUnsafe :: String -> ProgramFormula tag  -> ProgramFormula tag 
 ignoreOutputVarUnsafe x (ProgramFormula φ iφ oφ) = ProgramFormula φ' iφ' oφ'
