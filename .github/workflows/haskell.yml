@@ -20,13 +20,13 @@ jobs:
           git clone https://github.com/AliaumeL/polyregular-model-checking.git
       - name: Install dependencies
         run: |
-          cd polyreg
+          cd polyregular-model-checking/polyreg
           stack build --only-dependencies --enable-tests --enable-benchmarks
       - name: Build
         run: |
-          cd polyreg
+          cd polyregular-model-checking/polyreg
           stack build --enable-tests --enable-benchmarks all
       - name: Run tests
         run: |
-          cd polyreg
+          cd polyregular-model-checking/polyreg
           stack test all
