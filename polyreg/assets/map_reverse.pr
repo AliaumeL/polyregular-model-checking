@@ -1,20 +1,20 @@
 def getFirstWord (s : [Char]) : [Char] :=
-    let mut seen_space : Bool := False in
-    for (i, v : Char) in s do 
+    let mut seen_space:= False in
+    for (i, v) in enumerate(s) do 
         if not seen_space and not (v =Char= ' ') then 
             yield v
         endif
         if v =Char= ' ' then 
-            setTrue seen_space
+            seen_space := True
         endif
     done
 
 def getCurrentWord (s : [Char] with (i)) : [Char] :=
-    let mut seen_space : Bool := False in
-    for (j, v : Char) in s do 
+    let mut seen_space := False in
+    for (j, v) in enumerate(s) do 
        if j > i then 
            if v =Char= ' ' then 
-               setTrue seen_space
+               seen_space := True
            endif
            if not seen_space then 
               yield v 
@@ -24,27 +24,32 @@ def getCurrentWord (s : [Char] with (i)) : [Char] :=
 
 def words (ss : [Char]) : [[Char]] :=
     yield getFirstWord(ss)
-    for (i, vv : Char) in ss do 
+    for (i, vv) in enumerate(ss) do 
         if vv =Char= ' ' then 
             yield getCurrentWord(ss with (i)) 
         endif 
      done
 
 def unwords(ss : [[Char]]) : [Char] :=
-    let mut not_first : Bool := False in
-    for (i, word : [Char]) in ss do 
+    let mut not_first := False in
+    for (i, word) in enumerate(ss) do 
         if not_first then 
             yield ' '
         endif
-        for (j, v : Char) in word do 
+        for (j, v) in enumerate(word) do 
             yield v
         done
-        setTrue not_first
+        not_first := True
+    done
+
+def myReverse (ss : [Char]) : [Char] :=
+    for (i, e) in reversed(enumerate(ss)) do
+        yield e
     done
 
 def map_reverse (ss : [[Char]]) : [[Char]] :=
-    for (i, s : [Char]) in ss do 
-        yield reversed(s)
+    for (i, s) in enumerate(ss) do 
+        yield myReverse(s)
     done
 
 def main ( w : [Char]) : [Char] := 
