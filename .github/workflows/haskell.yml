@@ -21,11 +21,11 @@ jobs:
       - name: Install dependencies
         run: |
           cd polyregular-model-checking/polyreg
-          stack build --only-dependencies --enable-tests --enable-benchmarks
+          stack build --only-dependencies 
       - name: Build
         run: |
           cd polyregular-model-checking/polyreg
-          stack build --enable-tests --enable-benchmarks all
+          stack build
       - name: Run tests
         run: |
           cd polyregular-model-checking/polyreg
