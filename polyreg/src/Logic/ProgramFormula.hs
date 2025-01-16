@@ -276,9 +276,11 @@ iterOverVar dir p (ProgramFormula φ iφ oφ) =  ProgramFormula ξ iξ oξ
 
         -- finds the corresponding boolean variable
         -- for the variable x at iteration i
-        getUpdtVar :: Int -> Int -> String -> Var 
+        getUpdtVar :: Int -> Int -> String -> Var
         getUpdtVar 0    depth x = In x
-        getUpdtVar n    depth x | n == unum = Out x
+        getUpdtVar n    depth x | n == unum = case M.lookup x oφ  of
+                                    Just i  -> Out x
+                                    Nothing -> In x
         getUpdtVar step depth x = case M.lookup (step, x) updtVarMap of
                                     Just i  -> Local (depth + i) x
                                     Nothing -> error $ "iterUntil: boolean variable " ++ x ++ " not found"
@@ -385,12 +387,14 @@ iterOverVarBeforeLazy dir p pmax (ProgramFormula φ iφ oφ) = ProgramFormula ξ
 
         -- finds the corresponding boolean variable
         -- for the variable x at iteration i
-        getUpdtVar :: Int -> Int -> String -> Var 
+        getUpdtVar :: Int -> Int -> String -> Var
         getUpdtVar 0    depth x = In x
-        getUpdtVar n    depth x | n == unum = Out x
+        getUpdtVar n    depth x | n == unum = case M.lookup x oφ  of
+                                    Just i  -> Out x
+                                    Nothing -> In x
         getUpdtVar step depth x = case M.lookup (step, x) updtVarMap of
                                     Just i  -> Local (depth + i) x
-                                    Nothing -> error $ "iterUntil: variable " ++ x ++ " not found"
+                                    Nothing -> error $ "iterUntil: boolean variable " ++ x ++ " not found" 
 
         getPosVar :: Int -> Int -> String -> Var 
         getPosVar step depth x | x == p = case M.lookup step posVarMap of
@@ -507,10 +511,11 @@ computeUntil (SFP.MoveSeq n : xs) (SFP.Seq ss)   = before <> computeUntil xs aft
         after = ss !! n
         before = mconcat $ map sfpStmtToProgramFormula $ take (n-1) ss
 computeUntil (SFP.MoveFor (PName pm) dirm bsm : xs) (SFP.For (PName p) dir bs stmt) 
-    | dirm == dirm && bsm == bs = iterOverVarBefore dir p pm pStmtB <> computeUntil xs stmt
+    | dirm == dirm && bsm == bs = iterOverVarBefore dir p pm pStmtB <> reminder
         where
             pStmt  = sfpStmtToProgramFormula stmt
             pStmtB = withNewBoolVars [ x | BName x <- bsm ] pStmt
+            reminder = withNewBoolVars [ x | BName x <- bsm ] $ computeUntil xs stmt
 computeUntil pa pr = error $ "computeUntil: invalid path" ++ show (pa, pr)
 
 computeUntilProg :: SFP.Path -> SFP.ForProgram -> [Var] -> Formula ()

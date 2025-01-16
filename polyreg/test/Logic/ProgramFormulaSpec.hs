@@ -108,6 +108,36 @@ checkFormulaFunctionWord i o ps w f = do
         forM_ incorrectOutput $ \io -> do 
             checkFormulaWord i io ps w f `shouldBe` False
 
+
+------ PROGRAM 
+
+setBTrue :: ForStmt 
+setBTrue = SetTrue (BName "b")
+
+skip :: ForStmt 
+skip = Seq [] 
+
+printJ :: ForStmt 
+printJ = PrintPos (PName "j")
+
+ifCondition :: BoolExpr 
+ifCondition = BBin Conj (BVar (BName "b")) (BTest Eq (PName "i") (PName "j"))
+
+ifBAndEq :: ForStmt
+ifBAndEq = If ifCondition  printJ skip
+
+ifAndThenSetTrue :: ForStmt
+ifAndThenSetTrue = Seq [ifBAndEq, setBTrue]
+
+forJBackwards :: ForStmt
+forJBackwards = For (PName "j") RightToLeft [] ifAndThenSetTrue
+
+forIForwards :: ForStmt
+forIForwards = For (PName "i") LeftToRight [BName "b"] forJBackwards
+
+pathToPrint :: [Movement]
+pathToPrint = [MoveFor (PName "i") LeftToRight [BName "b"], MoveFor (PName "j") RightToLeft [], MoveSeq 0, MoveIfL ifCondition]
+
 spec :: Spec
 spec = do
     describe "The composition works" $ do 
@@ -154,6 +184,14 @@ spec = do
             let i2 = M.fromList [("x", True)]
             let o2 = M.fromList [("x", True)]
             checkFormulaFunctionWord i2 o2 M.empty w f4iter
+        -- describe "The simple program works" $ do
+        --     runIO $ putStrLn $ printProgramFormulaGeneric (sfpStmtToProgramFormula forIForwards)
+        --     runIO $ putStrLn $ printProgramFormulaGeneric (computeUntil pathToPrint forIForwards)
+        --     runIO $ putStrLn $ printProgramFormulaGeneric $ withNewBoolVars ["b"] (computeUntil (tail pathToPrint) forJBackwards)
+        --     runIO $ putStrLn $ printProgramFormulaGeneric (computeUntil (tail pathToPrint) forJBackwards)
+        --     runIO $ putStrLn $ printProgramFormulaGeneric (computeUntil (tail (tail pathToPrint)) ifAndThenSetTrue) 
+        --     it "fails" $ do 
+        --         True `shouldBe` False
 
 
 
