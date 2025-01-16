@@ -15,28 +15,8 @@ jobs:
     container:
       image: aliaume/polycheck:latest
     steps:
-      - name: Cache Pantry (Stackage package index)
-        id: pantry
-        uses: actions/cache@v3
-        with:
-          path: ~/.stack/pantry
-          key: CI-pantry-${{ env.STACK_LTS }}
-      - name: Recompute Stackage package index
-        if: steps.pantry.outputs.cache-hit != 'true'
-        run: stack update # populates ~/.stack/pantry
-      - name: Cache Haskell dependencies
-        uses: actions/cache@v3
-        env:
-          MANUAL_RESET: ${{ env.MANUAL_CACHE_RESET_TESTDEPS }}
-        with:
-          #-- NOTE no, shouldn't cache the entire ~/.stack -- that'd be bad. just these 2:
-          path: |
-            ~/.stack/stack.sqlite3
-            ~/.stack/snapshots
-          key: CI-testdeps-${{ env.MANUAL_RESET }}--${{ env.STACK_LTS }}--${{ hashFiles('stack.yaml.lock') }}
-          restore-keys: |
-            CI-testdeps-${{ env.MANUAL_RESET }}--${{ env.STACK_LTS }}--
-            CI-testdeps-${{ env.MANUAL_RESET }}-!
+      - name: Check out code
+        uses: actions/checkout@v4
       - name: Install dependencies
         run: |
           cd polyreg
