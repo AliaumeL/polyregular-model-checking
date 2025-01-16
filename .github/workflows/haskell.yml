@@ -15,6 +15,9 @@ jobs:
     container:
       image: aliaume/polycheck:latest
     steps:
+      # https://github.com/commercialhaskell/stack/issues/2187
+      - name: Permissions bug workaround
+        run: "chown -R $(id -un):$(id -gn) ~"
       - name: Check out code
         run: |  
           git clone https://github.com/AliaumeL/polyregular-model-checking.git
