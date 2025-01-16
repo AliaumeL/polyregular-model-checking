@@ -12,15 +12,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    container:
+      image: aliaume/polycheck:latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-haskell@v1
-        with:
-          ghc-version: "latest"
-          cabal-version: "latest"
-          enable-stack: true
-          stack-version: "latest"
       - name: Cache Pantry (Stackage package index)
         id: pantry
         uses: actions/cache@v3
