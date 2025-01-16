@@ -60,6 +60,7 @@ let
                   pkgs.zlib
                   pkgs.cvc5
                   pkgs.z3
+                  pkgs.fish
         ];
     };
 
@@ -73,13 +74,12 @@ let
             paths = [
                 polyreg-runtime
                 pkgs.fish
+                pkgs.git
             ];
             pathsToLink = ["/bin"];
         };
         config = {
             Cmd = [ "${pkgs.fish}/bin/fish" ];
-            # create a volume for the "assets" directory
-            Volumes = [ "/assets" ];
         };
     };
 

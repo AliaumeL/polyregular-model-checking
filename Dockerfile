@@ -6,18 +6,8 @@ COPY . /tmp/polyreg-src/
 
 WORKDIR /tmp/polyreg-src/
 
-RUN nix-build polyreg.nix -A polyreg-devenv -o result 
+RUN nix-env -i -f polyreg.nix -A polyreg-devenv
+RUN nix-collect-garbage -d
 
-RUN mkdir -p /tmp/nix-polyreg-env/
 
-RUN cp -R $(nix-store -qR result/) /tmp/nix-polyreg-env/
-
-FROM scratch 
-
-WORKDIR /app
-
-COPY --from=builder /tmp/nix-polyreg-env/ /nix/store
-COPY --from=builder /tmp/polyreg-src/result /
-COPY . /polyreg-sources/
-
-ENTRYPOINT ["/bin/fish"]
+ENTRYPOINT ["fish"]
