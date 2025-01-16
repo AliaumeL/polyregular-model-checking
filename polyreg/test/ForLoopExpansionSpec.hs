@@ -13,6 +13,8 @@ import FunctionElimination
 import LiteralElimination
 import ReductionLitEq
 import AddrVarElimination
+import LetElimination (eliminateLetProgram)
+import ReturnElimination (retElimProgram)
 import ForLoopExpansion
 
 import Control.Monad
@@ -42,11 +44,13 @@ getProgram :: String -> IO (Program String ValueType)
 getProgram file = do 
     testProgram <- parseFromFile file
     let typedProgram = fromRight' . inferAndCheckProgram $ fromRight' testProgram
-    let noLitEq = removeBLitEq typedProgram
-    let noFunctions = eliminateFunctionCalls typedProgram
+    let noLitEq     = removeBLitEq typedProgram
+    let noFunctions = eliminateFunctionCalls noLitEq
     let noBools     = removeBooleanGen noFunctions
     let noLiterals  = eliminateLiterals noBools
-    return noLiterals
+    let noLetOutput = eliminateLetProgram noLiterals
+    let noReturn    = retElimProgram noLetOutput
+    return noReturn
     
 transformProgram :: Program String ValueType -> Program String ()
 transformProgram p = case forLoopExpansion p of 
