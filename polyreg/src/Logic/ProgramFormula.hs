@@ -60,7 +60,7 @@ data ProgramFormulaValuation = ProgramFormulaValuation {
 evalProgramFormula :: ProgramFormulaValuation -> ProgramFormula String -> Bool
 evalProgramFormula (ProgramFormulaValuation allTags w pos bools tgs) (ProgramFormula φ iφ oφ) = evalFormulaWithFreeVars φ' allVals allTags w
     where
-        φ' = mapInVars (\_ x -> In ("in_" ++ x)) . mapOutVars (\_ x -> In ("out_" ++ x)) $ φ
+        φ' = mapOutVars (\_ x -> In ("out_" ++ x)) . mapInVars (\_ x -> In ("in_" ++ x)) $ φ
         allVals = allPosVals ++ allBoolVals ++ allTagVals
 
         allPosVals :: [(String, Value)]
