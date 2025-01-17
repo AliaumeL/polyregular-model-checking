@@ -19,17 +19,15 @@ jobs:
       - name: Permissions bug workaround
         run: "chown -R $(id -un):$(id -gn) ~"
       - name: Check out code
-        run: |  
-          git clone https://github.com/AliaumeL/polyregular-model-checking.git
-      - name: Install dependencies
         run: |
-          cd polyregular-model-checking/polyreg
-          stack build --only-dependencies 
+          git clone https://github.com/AliaumeL/polyregular-model-checking.git
       - name: Build
         run: |
           cd polyregular-model-checking/polyreg
-          stack build
-      - name: Run tests
+          # --nix to use nix dependencies
+          # --allow-different-user because github changes the user
+          stack build --nix --allow-different-user
+      - name: Run test suite
         run: |
           cd polyregular-model-checking/polyreg
-          stack test all
+          stack test --nix --allow-different-user
