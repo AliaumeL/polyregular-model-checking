@@ -156,6 +156,20 @@ staticVarCompForSProgram (ForProgram vars stmt) = do
     stmt' <- staticVarCompStmt stmt
     return $ ForProgram vars stmt'
 
+setVarsFromBooleanValuation :: (StaticVarComputationMonad m) => BoolExpr -> Bool -> m ()
+setVarsFromBooleanValuation (BVar v) b = setVarValue v $ if b then VTrue else VFalse
+setVarsFromBooleanValuation (BNot e) b = setVarsFromBooleanValuation e (not b)
+setVarsFromBooleanValuation (BBin Conj e1 e2) True = do 
+    setVarsFromBooleanValuation e1 True 
+    setVarsFromBooleanValuation e2 True
+setVarsFromBooleanValuation (BBin Disj e1 e2) False = do
+    setVarsFromBooleanValuation e1 False
+    setVarsFromBooleanValuation e2 False
+setVarsFromBooleanValuation (BBin Impl e1 e2) False = do
+    setVarsFromBooleanValuation e1 True
+    setVarsFromBooleanValuation e2 False
+setVarsFromBooleanValuation _ _ = return ()
+
 staticVarCompStmt :: (StaticVarComputationMonad m) =>  ForStmt -> m ForStmt
 staticVarCompStmt (Seq stmts) = do 
     stmts' <- mapM staticVarCompStmt stmts
@@ -163,11 +177,13 @@ staticVarCompStmt (Seq stmts) = do
 staticVarCompStmt (If e s1 s2) = do
     e' <- staticVarCompExpr e
     vars <- getVars
-    (s1', vars1') <- withVars vars $ do 
+    (s1', vars1') <- withVars vars $ do
+        setVarsFromBooleanValuation e' True 
         s1' <- staticVarCompStmt s1
         vars1' <- getVars
         return (s1', vars1')
     (s2', vars2') <- withVars vars $ do
+        setVarsFromBooleanValuation e' False
         s2' <- staticVarCompStmt s2
         vars2' <- getVars
         return (s2', vars2')
