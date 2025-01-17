@@ -138,66 +138,58 @@ substituteBooleanVar f (FTestPos t x y) = FTestPos t x y
 
 -- | apply f to every Variable in the formula
 -- f is given the current quantifier depth and the Variable name
-mapVars :: (Int -> Var -> Var) -> Formula tag  -> Formula tag 
+mapVars :: (Int -> Sort -> Var -> Var) -> Formula tag  -> Formula tag 
 mapVars f = mapVars' f 0
     where
-        mapVars' :: (Int -> Var -> Var) -> Int -> Formula tag  -> Formula tag 
+        mapVars' :: (Int -> Sort -> Var -> Var) -> Int -> Formula tag  -> Formula tag 
         mapVars' f d (FConst b) = FConst b
-        mapVars' f d (FVar x) = FVar $ f d x
+        mapVars' f d (FVar x) = FVar $ f d Boolean x
         mapVars' f d (FBin op l r) = FBin op (mapVars' f d l) (mapVars' f d r)
         mapVars' f d (FNot l) = FNot (mapVars' f d l)
         mapVars' f d (FQuant q x s l) = FQuant q x s (mapVars' f (d+1) l)
-        mapVars' f d (FTag x t) = FTag (f d x) t
-        mapVars' f d (FLetter x l) = FLetter (f d x) l
-        mapVars' f d (FTestPos t x y) = FTestPos t (f d x) (f d y)
+        mapVars' f d (FTag x t) = FTag (f d Tag x) t
+        mapVars' f d (FLetter x l) = FLetter (f d Pos x) l
+        mapVars' f d (FTestPos t x y) = FTestPos t (f d Pos x) (f d Pos y)
 
-mapOutVars :: (Int -> String -> Var) -> Formula tag  -> Formula tag
+mapOutVars :: (Int -> Sort -> String -> Var) -> Formula tag  -> Formula tag
 mapOutVars f = mapVars g
     where
-        g :: Int -> Var -> Var
-        g d (Out x) = f d x
-        g d x = x
+        g :: Int -> Sort -> Var -> Var
+        g d s (Out x) = f d s x
+        g d s x = x
 
-mapInVars :: (Int -> String -> Var) -> Formula tag  -> Formula tag
+mapInVars :: (Int -> Sort -> String -> Var) -> Formula tag  -> Formula tag
 mapInVars f = mapVars g
     where
-        g :: Int -> Var -> Var
-        g d (In x) = f d x
-        g d x = x
+        g :: Int -> Sort -> Var -> Var
+        g d s (In x) = f d s x
+        g d s x = x
 
 
-quantInOutVarsGeneric :: (String -> Maybe Var) -> (String -> Maybe Var) -> Formula tag  -> Formula tag
+quantInOutVarsGeneric :: (Sort -> String -> Maybe Var) ->
+                         (Sort -> String -> Maybe Var) -> 
+                         Formula tag  -> Formula tag
 quantInOutVarsGeneric f g  = mapVars h
     where
-        h :: Int -> Var -> Var
-        h d (In x) = case f x of
+        h :: Int -> Sort -> Var -> Var
+        h d s (In x) = case f s x of
                         Just (Local i n) -> Local (i + d) n
                         Just x -> x
                         Nothing -> In x
-        h d (Out x) = case g x of
+        h d s (Out x) = case g s x of
                         Just (Local i n) -> Local (i + d) n
                         Just x -> x
                         Nothing -> Out x
-        h d x = x
+        h _ _ x = x
 
 
 -- | remap output Variables to either the identity or a "new" Variable
 -- given by a string (for debugging purposes) and an integer (for de bruin indices)
-quantOutVars :: (String -> Maybe (Int, String)) -> Formula tag  -> Formula tag 
-quantOutVars f = mapOutVars g
-    where
-        g :: Int -> String -> Var
-        g d x = case f x of
-                    Just (i, y) -> Local (i + d) y
-                    Nothing     -> Out x
+quantOutVars :: (Sort -> String -> Maybe Var) -> Formula tag  -> Formula tag 
+quantOutVars f = quantInOutVarsGeneric f (\_ _ -> Nothing)
 
-quantInVars :: (String -> Maybe (Int, String)) -> Formula tag  -> Formula tag 
-quantInVars f = mapInVars g
-    where
-        g :: Int -> String -> Var
-        g d x = case f x of
-                    Just (i, y) -> Local (i + d) y
-                    Nothing     -> In x
+quantInVars :: (Sort -> String -> Maybe Var) -> Formula tag  -> Formula tag 
+quantInVars f = quantInOutVarsGeneric (\_ _ -> Nothing) f
 
 
 varToFreeVars :: Var -> Sort -> (Map String Sort, Map String Sort)

@@ -13,6 +13,8 @@ import QuantifierFree
 
 import Debug.Trace
 
+import Control.Monad (guard)
+
 -- | A formula seen as a morphism in the category of something
 -- so that they can be composed.
 data ProgramFormula tag  = ProgramFormula {
@@ -67,7 +69,7 @@ data ProgramFormulaValuation = ProgramFormulaValuation {
 evalProgramFormula :: ProgramFormulaValuation -> ProgramFormula String -> Bool
 evalProgramFormula (ProgramFormulaValuation allTags w pos bools tgs) (ProgramFormula φ iφ oφ) = evalFormulaWithFreeVars φ' allVals allTags w
     where
-        φ' = mapOutVars (\_ x -> In ("out_" ++ x)) . mapInVars (\_ x -> In ("in_" ++ x)) $ φ
+        φ' = quantInOutVarsGeneric (\_ x -> Just $ In ("in_" ++ x)) (\_ x -> Just $ In ("out_" ++ x)) φ
         allVals = allPosVals ++ allBoolVals ++ allTagVals
 
         allPosVals :: [(String, Value)]
@@ -105,7 +107,7 @@ ignoreOutputVarUnsafe x (ProgramFormula φ iφ oφ) = ProgramFormula φ' iφ' o�
         φ'  = FQuant Exists x s $ quantOutVars f φ
         iφ' = iφ
         oφ' = M.delete x oφ
-        f y = if x == y then Just (0, y) else Nothing
+        f _ y = if x == y then (Just $ Local 0 y) else Nothing
 
 ignoreOutputVar :: String -> ProgramFormula tag  -> ProgramFormula tag
 ignoreOutputVar x p@(ProgramFormula _ _ oφ) =  case M.lookup x oφ of
@@ -155,12 +157,12 @@ instance Semigroup (ProgramFormula tag ) where
 
             ψ' = ψ
 
-            fφ :: String -> Maybe (Int, String)
-            fφ x = case M.lookup x commonVarsQ of
-                        Just i   -> Just (i, x)
+            fφ :: Sort -> String -> Maybe Var
+            fφ _ x = case M.lookup x commonVarsQ of
+                        Just i   -> Just $ Local i x
                         Nothing  -> Nothing
 
-            fψ :: String -> Maybe (Int, String)
+            fψ :: Sort -> String -> Maybe Var
             fψ = fφ
 
             φ'' = quantOutVars fφ φ'
@@ -276,27 +278,32 @@ iterOverVar dir p (ProgramFormula φ iφ oφ) =  ProgramFormula ξ iξ oξ
 
         -- finds the corresponding boolean variable
         -- for the variable x at iteration i
-        getUpdtVar :: Int -> Int -> String -> Var
-        getUpdtVar 0    depth x = In x
-        getUpdtVar n    depth x | n == unum = case M.lookup x oφ  of
-                                    Just i  -> Out x
-                                    Nothing -> In x
-        getUpdtVar step depth x = case M.lookup (step, x) updtVarMap of
-                                    Just i  -> Local (depth + i) x
-                                    Nothing -> error $ "iterUntil: boolean variable " ++ x ++ " not found"
+        getUpdtVar' :: Int -> Sort -> String -> Maybe Var
+        getUpdtVar' 0    _ x = Just $ In x
+        getUpdtVar' n    _ x | n == unum = Just $ Out x
+        getUpdtVar' step _ x = case M.lookup (step, x) updtVarMap of
+                                    Just i  -> Just $ Local i x
+                                    Nothing -> error $ "iterUntil: boolean variable " ++ x ++ " not found" 
 
-        getPosVar :: Int -> Int -> String -> Var 
-        getPosVar step depth x | x == p = case M.lookup step posVarMap of
-                                            Just i  -> Local (depth + i) x
-                                            Nothing -> error $ "iterUntil: position variable " ++ x ++ " not found"
-        getPosVar step depth x = In x
+        getUpdtVar :: Int -> Sort -> String -> Maybe Var
+        getUpdtVar step s x = do 
+            guard $ s == Boolean
+            guard $ x `M.member` oφ
+            getUpdtVar' step s x
+
+        getPosVar :: Int -> Sort -> String -> Maybe Var 
+        getPosVar step sort x | x == p = case M.lookup step posVarMap of
+                                            Just i  -> Just $ Local i x
+                                            Nothing -> error $ "iterUntil: variable " ++ x ++ " not found"
+        getPosVar _ Pos x = trace ("Not changing " ++  show x ) $ Nothing
+        getPosVar _ _ x = Nothing
 
         -- Now, we construct the formulas [φ_i] for 0 <= i <= unum - 1
         -- where φ_i is φ with input   variables (updtVarMap i)
         -- and                 output  variables (updtVarMap i+1)
-        subφ i = mapInVars (getUpdtVar i) $ 
-                    mapOutVars (getUpdtVar (i+1)) $ 
-                        mapInVars (getPosVar (i+1)) φ
+        subφ i = quantInOutVarsGeneric (getUpdtVar i) (getUpdtVar (i+1)) $
+                        quantInVars (getPosVar (i+1)) φ
+
 
         correctφ = andList $ [ subφ i | i <- [0 .. unum - 1] ]
 
@@ -324,10 +331,13 @@ iterOverVar dir p (ProgramFormula φ iφ oφ) =  ProgramFormula ξ iξ oξ
         
 
         quantifyIntermediatePos i λ = quantifyList [("pj", Pos, Forall)] $
-                mapInVars (\d x -> if x == p then Local d "pj" else In x) $ 
-                    FBin Impl (condIntermediate dir i (Local 0 "pj")) λ
+            quantInVars (\s x -> do 
+                            guard  $ s == Pos
+                            guard  $ x == p
+                            return $ Local 0 "pj") $
+                         FBin Impl (condIntermediate dir i (Local 0 "pj")) λ
 
-        completenessAtStep i = mapInVars (getUpdtVar i) . mapOutVars (getUpdtVar i) $ 
+        completenessAtStep i = quantInOutVarsGeneric (getUpdtVar i) (getUpdtVar i) $
                                 quantifyIntermediatePos i φ
 
         completeness = andList [ completenessAtStep i | i <- [0 .. unum] ]
@@ -387,27 +397,30 @@ iterOverVarBeforeLazy dir p pmax (ProgramFormula φ iφ oφ) = ProgramFormula ξ
 
         -- finds the corresponding boolean variable
         -- for the variable x at iteration i
-        getUpdtVar :: Int -> Int -> String -> Var
-        getUpdtVar 0    depth x = In x
-        getUpdtVar n    depth x | n == unum = case M.lookup x oφ  of
-                                    Just i  -> Out x
-                                    Nothing -> In x
-        getUpdtVar step depth x = case M.lookup (step, x) updtVarMap of
-                                    Just i  -> Local (depth + i) x
+        getUpdtVar' :: Int -> Sort -> String -> Maybe Var
+        getUpdtVar' 0    _ x = Just $ In x
+        getUpdtVar' n    _ x | n == unum = Just $ Out x
+        getUpdtVar' step _ x = case M.lookup (step, x) updtVarMap of
+                                    Just i  -> Just $ Local i x
                                     Nothing -> error $ "iterUntil: boolean variable " ++ x ++ " not found" 
 
-        getPosVar :: Int -> Int -> String -> Var 
-        getPosVar step depth x | x == p = case M.lookup step posVarMap of
-                                            Just i  -> Local (depth + i) x
+        getUpdtVar :: Int -> Sort -> String -> Maybe Var
+        getUpdtVar step s x = do 
+            guard $ s == Boolean
+            guard $ x `M.member` oφ
+            getUpdtVar' step s x
+
+        getPosVar :: Int -> Sort -> String -> Maybe Var 
+        getPosVar step sort x | x == p = case M.lookup step posVarMap of
+                                            Just i  -> Just $ Local i x
                                             Nothing -> error $ "iterUntil: variable " ++ x ++ " not found"
-        getPosVar step depth x = In x
+        getPosVar _ _ _ = Nothing
 
         -- Now, we construct the formulas [φ_i] for 0 <= i <= unum - 1
         -- where φ_i is φ with input   variables (updtVarMap i)
         -- and                 output  variables (updtVarMap i+1)
-        subφ i = mapInVars (getUpdtVar i) $ 
-                    mapOutVars (getUpdtVar (i+1)) $ 
-                        mapInVars (getPosVar (i+1)) φ
+        subφ i = quantInOutVarsGeneric (getUpdtVar i) (getUpdtVar (i+1)) $
+                        quantInVars (getPosVar (i+1)) φ
 
         correctφ = andList $ [ subφ i | i <- [0 .. unum - 1] ]
 
@@ -450,12 +463,14 @@ iterOverVarBeforeLazy dir p pmax (ProgramFormula φ iφ oφ) = ProgramFormula ξ
         
 
         quantifyIntermediatePos i λ = quantifyList [("pj", Pos, Forall)] $
-                mapInVars (\d x -> if x == p then Local d "pj" else In x) $ 
+            quantInVars (\s x -> do 
+                            guard  $ s == Pos
+                            guard  $ x == p
+                            return $ Local 0 "pj") $
                     FBin Conj constraintIntermediatePos (
                          FBin Impl (condIntermediate dir i (Local 0 "pj")) λ)
 
-
-        completenessAtStep i = mapInVars (getUpdtVar i) . mapOutVars (getUpdtVar i) $ 
+        completenessAtStep i = quantInOutVarsGeneric (getUpdtVar i) (getUpdtVar i) $
                                 quantifyIntermediatePos i φ
 
         completeness = andList [ completenessAtStep i | i <- [0 .. unum] ]
@@ -532,7 +547,12 @@ computeUntilProg (SFP.Path (x : path)) (SFP.ForProgram bs stmt) vars = ψ
         names   = zip vars . map (\(PName p) -> p) $ SFP.pathPVars (SFP.Path path)
         namesM = M.fromList $ [ (x,y) | (y,x) <- names ]
 
-        ψ = quantInOutVarsGeneric (\n -> M.lookup n namesM) (const Nothing) φ
+        getNewName :: Sort -> String -> Maybe Var 
+        getNewName s n = do
+            guard $ s == Pos
+            M.lookup n namesM
+
+        ψ = quantInOutVarsGeneric getNewName (\_ _ -> Nothing) φ
 
         
 

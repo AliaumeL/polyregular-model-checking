@@ -138,6 +138,46 @@ forIForwards = For (PName "i") LeftToRight [BName "b"] forJBackwards
 pathToPrint :: [Movement]
 pathToPrint = [MoveFor (PName "i") LeftToRight [BName "b"], MoveFor (PName "j") RightToLeft [], MoveSeq 0, MoveIfL ifCondition]
 
+
+
+--- Program 2 (compress_as)
+setB1True :: ForStmt
+setB1True = SetTrue (BName "b1")
+
+setB2True :: ForStmt
+setB2True = SetTrue (BName "b2")
+
+setB1B2True :: ForStmt
+setB1B2True = Seq [setB1True, setB2True]
+
+ifNotB2SetB1B2True :: ForStmt
+ifNotB2SetB1B2True = If (BVar (BName "b2")) skip setB1B2True
+
+ifAThenB2ElseIfNotBSetB1B2True :: ForStmt
+ifAThenB2ElseIfNotBSetB1B2True = If (BLabelAt (PName "i") 'a') setB2True ifNotB2SetB1B2True
+
+ifIleJThenIfAEtc :: ForStmt
+ifIleJThenIfAEtc = If (BTest Le (PName "j") (PName "i")) ifAThenB2ElseIfNotBSetB1B2True skip
+
+forJBackwards2 :: ForStmt
+forJBackwards2 = For (PName "j") RightToLeft [] ifIleJThenIfAEtc
+
+printI :: ForStmt
+printI = PrintPos (PName "i")
+
+printIfB1OrNotA :: ForStmt
+printIfB1OrNotA = If (BBin Disj (BVar (BName "b1")) (BNot (BLabelAt (PName "i") 'a'))) printI skip
+
+ifNotB2ThenB1 :: ForStmt
+ifNotB2ThenB1 = If (BNot (BVar (BName "b2"))) setB1True skip
+
+forJBackwardsThenPrintAndSkip :: ForStmt
+forJBackwardsThenPrintAndSkip = Seq [forJBackwards2, ifNotB2ThenB1, printIfB1OrNotA]
+
+forIForwards2 :: ForStmt
+forIForwards2 = For (PName "i") LeftToRight [BName "b1", BName "b2"] forJBackwardsThenPrintAndSkip
+
+
 spec :: Spec
 spec = do
     describe "The composition works" $ do 
