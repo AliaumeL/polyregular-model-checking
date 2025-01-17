@@ -236,7 +236,7 @@ ifThenElse b (ProgramFormula φ iφ oφ) (ProgramFormula ψ iψ oψ) = ProgramFo
 
         (iθ, _) = freeVars θ
 
-        iξ = iφ `M.union` iψ `M.union` iθ
+        iξ = iφ `M.union` iψ `M.union` iθ `M.union` missingOutputφ `M.union` missingOutputψ 
 
         oξ = totalOutputVars
 
