@@ -186,10 +186,10 @@ quantInOutVarsGeneric f g  = mapVars h
 -- | remap output Variables to either the identity or a "new" Variable
 -- given by a string (for debugging purposes) and an integer (for de bruin indices)
 quantOutVars :: (Sort -> String -> Maybe Var) -> Formula tag  -> Formula tag 
-quantOutVars f = quantInOutVarsGeneric f (\_ _ -> Nothing)
+quantOutVars f = quantInOutVarsGeneric (\_ _ -> Nothing) f
 
 quantInVars :: (Sort -> String -> Maybe Var) -> Formula tag  -> Formula tag 
-quantInVars f = quantInOutVarsGeneric (\_ _ -> Nothing) f
+quantInVars f = quantInOutVarsGeneric f (\_ _ -> Nothing)
 
 
 varToFreeVars :: Var -> Sort -> (Map String Sort, Map String Sort)

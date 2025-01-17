@@ -1,0 +1,12 @@
+def main (w : [Char]) : [Char] := 
+    let mut seen_a := False in
+    for (i, c) in enumerate(w) do
+        if seen_a then 
+            yield 'a'
+        else
+            yield c
+        endif
+        if c === 'a' then
+            seen_a := True
+        endif
+    done

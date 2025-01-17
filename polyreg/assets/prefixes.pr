@@ -1,0 +1,9 @@
+def main (w : [Char]) : [Char] :=
+    for (i, c) in enumerate(w) do
+        yield '#'
+        for (j, d) in enumerate(w) do
+            if i >= j then 
+                yield d
+            endif
+        done
+    done
