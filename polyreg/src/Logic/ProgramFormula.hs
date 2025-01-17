@@ -241,6 +241,123 @@ ifThenElse b (ProgramFormula φ iφ oφ) (ProgramFormula ψ iψ oψ) = ProgramFo
         oξ = totalOutputVars
 
 
+iterOverVarNew :: Direction -> String -> Maybe Var -> ProgramFormula tag  -> ProgramFormula tag
+iterOverVarNew dir p bound (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
+    where
+        -- We assume that we are not using an empty iteration: 
+        --   a. the word is not empty
+        --   b. the bound (if it exists) is not defining the empty subword
+        --
+        -- 1. We first compute all "static" input variables, that will
+        --    be passed to the formula φ at every step of the for loop 
+        --    they can be boolean OR position variables
+        static :: Map String Sort
+        static = M.toList $ iφ `M.difference` oφ
+        -- 2. We then compute all the "updatable" variables, that will
+        --    that are (potentially) modified by φ at every step of the
+        --    loop. All output variables are potentially modified by φk
+        updatable :: Map String Sort
+        updatable = oφ
+        -- 3. The new input vars are  => the previous ones - p + bound (if bound is an input var)
+        inBoundVar :: Map String Sort
+        inBoundVar = case bound of 
+                        Just (In x) -> M.fromList [(x, Pos)]
+                        _           -> M.empty
+        iξ = inBoundVar `M.union` M.delete p iφ `M.union` M.delete p updatable
+        -- 4. The new output vars are => the same as before
+        oξ = oφ
+        -- For the actual content of the formula ξ, we do the following
+        --
+        -- a. We existentially quantify
+        --    over |oφ| - 1 intermediate states (copies of the output variables)
+        -- b. We existentially quantify 
+        --    over |oφ|     position variables  (instances for p)
+        -- c. We then say that 
+        --   - the position variables are ordered (p1 <= p2 <= ... <= pn) (if LeftToRight)
+        --   - the position variables respect the bound (if it exists)
+        --   - the program formula φ, with *modified* variables
+        --     bound to the intermediate states, is correct for every step
+        --   - for every step, for every *new* position variable 
+        --      "pj" between "pi" and "pi+1", the formula φ 
+        --      does not change the "updatableVariables"
+        --
+        -- To that end, we have a function φAtStep
+        -- that considers a position variable "pj",
+        -- and two functions that tell which are the input / output
+        -- updatable variables at this precise time. 
+        φAtStep :: Var -> (String -> Maybe Var) -> (String -> Maybe Var) -> Formula tag
+        φAtStep pj iUpd oUpd = quantInOutVarsGeneric qIn qOut φ
+            where
+                qIn Pos n | n == p = Just pj
+                qIn Pos _          = Nothing
+                qIn Boolean x      = iUpd x
+                qOut Boolean x     = oUpd x
+                qOut _       _     = Nothing
+        -- To decide how many position variables / intermediate states we need
+        -- it suffices to consider the size of "updatable" variables
+        maxUpdates :: Int
+        maxUpdates = M.size updatable
+        -- Now, we can build position variables and intermediate states
+        -- with the format
+        -- (step number, var_name, quant)
+        posVars :: [(Int, String, Sort)]
+        posVars = do
+            i <- [1 .. maxUpdates]
+            return (i, "p_" ++ show i, Pos)
+        updtVars :: [(Int, String, Sort)]
+        updtVars = do
+            i <- [1 .. (maxUpdates - 1)]
+            (x, s) <- M.toList updatable
+            return (i, x ++ "_" ++ show i, s)
+        updtVarsReverse :: Map (Int, String) Int
+        updtVarsReverse = M.fromList $ zip (reverse (map (\(i, x, _) -> (i, x)) updtVars)) [0..]
+        allVars :: [(Int, String, Sort)]
+        allVars = posVars ++ updtVars
+        -- In order to be able to actually *use* these variables
+        -- in our formula, we need to be able to find them.
+        -- We assume that allVars will be quantified existentially in this specific ordering.
+        -- We create a function 
+        -- posAtStep :: Int -> Var
+        --      it maps a step (from 1 to maxUpdates) to the corresponding position variable
+        posAtStep :: Int -> Maybe Var
+        posAtStep i = Local varPosFromEnd ("p_" ++ show i)
+            where
+                varPosFromEnd = length updtVars + length posVars - i
+        -- updtAtStep :: Int -> String -> Var 
+        --      it maps a step (from 0 to maxUpdates) to the corresponding boolean variable
+        --      note that at step 0           => these are the input  variables
+        --      at step           maxUpdates  => these are the output variables
+        --
+        -- Note: can fail, but should not!
+        updtAtStep :: Int -> String -> Var
+        updtAtStep i b | i == 0             = In  b
+        updtAtStep i b | i == maxUpdates    = Out b
+        updtAtStep i b |                    = Local (updtVarsReverse M.! (i, b)) (b ++ "_" ++ show i)
+        updtAtStepSafe :: Int -> String -> Maybe Var
+        updtAtStepSafe i b = do 
+            guard $ b `M.member` updatable
+            guard $ i >= 0
+            guard $ i <= maxUpdates
+            return $ updtAtStep i b
+        -- Now, we can say that the transformation between steps i and i+1
+        -- for 0 <= i <= maxUpdates is correct. I.e.,
+        -- that (In boools + p1) φ (bools 1 + p2) φ (bools 2) ... φ (Out bools)
+        -- is true.
+        correctAtStep :: Int -> Formula tag
+        correctAtStep i = φAtStep (posAtStep i) (updtAtStepSafe i) (updtAtStepSafe (i+1))
+        -- Now, we can say that everything is correct
+        correct = andList [ correctAtStep i | i <- [1 .. maxUpdates] ]
+        --
+        -- Let us now turn our attention to completeness
+        -- To be complete, we need to prove that every 
+        -- intermediate "position" would not modify the computation
+        -- I.e., that φAtStep (p_j) (bools_i) (bools_i) holds
+        -- for every p_j that is (strictly) between p_i and p_{i+1}
+        completeAtStep :: Int -> Var -> Formula tag
+        completeAtStep i pj = φAtStep pj (updtAtStepSafe i) (updtAtStepSafe i)
+
+        
+
 
 
 iterOverVar :: Direction -> String -> ProgramFormula tag  -> ProgramFormula tag
