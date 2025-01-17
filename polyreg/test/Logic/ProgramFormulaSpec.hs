@@ -177,6 +177,9 @@ forJBackwardsThenPrintAndSkip = Seq [forJBackwards2, ifNotB2ThenB1, printIfB1OrN
 forIForwards2 :: ForStmt
 forIForwards2 = For (PName "i") LeftToRight [BName "b1", BName "b2"] forJBackwardsThenPrintAndSkip
 
+pathToPrint2 :: [Movement]
+pathToPrint2 = [MoveFor (PName "i") LeftToRight [BName "b1",BName "b2"],MoveSeq 2,MoveIfL (BBin Disj (BVar (BName "b1")) (BNot (BLabelAt (PName "i") 'a')))]
+
 
 spec :: Spec
 spec = do
