@@ -354,13 +354,11 @@ iterOverVarNew dir p bound (ProgramFormula φ iφ oφ) = finalOutput
         -- quantify the local variable "pj" before doing the substitution
         -- We are now ready to say that the step "i" is complete.
         -- completenessAtStep :: Int -> Formula tag
-        completenessAtStep i = quantInOutVarsGeneric (updtAtStepSafe i) (updtAtStepSafe i) $
-                                quantifyList [(p ++ "_j" , Pos, Forall)] $
-                                   quantInVars (\s x -> do 
-                                                    guard  $ s == Pos
-                                                    guard  $ x == p
-                                                    return $ Local 0 (p ++ "_j")) $
-                                         FBin Impl (condIntermediate dir bound i (Local 0 (p ++ "_j"))) φ
+        completenessAtStep i = quantifyList [(p ++ "_j", Pos, Forall)] (FBin Impl rangeQ φInRange)
+            where
+                φInRange = φAtStep (Local 0 (p ++ "_j")) updtAtStepShifted updtAtStepShifted
+                rangeQ   = condIntermediate dir bound i (Local 0 (p ++ "_j"))
+                updtAtStepShifted x = fmap (shiftVar 1) $ updtAtStepSafe i Boolean x
         -- We can now say that the whole program is complete
         -- completeness :: Formula tag
         completeness = andList [ completenessAtStep i | i <- [0 .. maxUpdates] ]
@@ -375,25 +373,25 @@ iterOverVarNew dir p bound (ProgramFormula φ iφ oφ) = finalOutput
         --      p0   = -infinity or the bound 
         --      pmax = +infinity
         -- condIntermediate :: Direction -> Maybe Var -> Int -> Var -> Formula tag
-        condIntermediate LeftToRight _         0 x = FTestPos Lt x (posAtStep 1)
-        condIntermediate LeftToRight Nothing   i x | i == maxUpdates = FTestPos Gt (posAtStep i) x
+        condIntermediate LeftToRight _         0 x = FTestPos Lt x (shiftVar 1 (posAtStep 1))
+        condIntermediate LeftToRight Nothing   i x | i == maxUpdates = FTestPos Gt x (shiftVar 1 (posAtStep i))
         condIntermediate LeftToRight (Just v)  i x | i == maxUpdates = andList [
-                        FTestPos Gt x (posAtStep i),
+                        FTestPos Gt x (shiftVar 1 (posAtStep i)),
                         FTestPos Lt x v
                     ]
         condIntermediate LeftToRight _         i x = andList [
-                        FTestPos Gt x (posAtStep i),
-                        FTestPos Lt x (posAtStep (i+1))
+                        FTestPos Gt x (shiftVar 1 (posAtStep i)),
+                        FTestPos Lt x (shiftVar 1 (posAtStep (i+1)))
                     ]
-        condIntermediate RightToLeft _        0 x = FTestPos Lt x (posAtStep 1)
-        condIntermediate RightToLeft Nothing  i x | i == maxUpdates = FTestPos Lt x (posAtStep i)
+        condIntermediate RightToLeft _        0 x = FTestPos Lt x (shiftVar 1 (posAtStep 1))
+        condIntermediate RightToLeft Nothing  i x | i == maxUpdates = FTestPos Lt x (shiftVar 1 (posAtStep i))
         condIntermediate RightToLeft (Just v) i x | i == maxUpdates = andList [
-                        FTestPos Lt x (posAtStep i),
+                        FTestPos Lt x (shiftVar 1 (posAtStep i)),
                         FTestPos Gt x v
                     ]
         condIntermediate RightToLeft _        i x = andList [
-                        FTestPos Lt x (posAtStep i),
-                        FTestPos Gt x (posAtStep (i+1))
+                        FTestPos Lt x (shiftVar 1 (posAtStep i)),
+                        FTestPos Gt x (shiftVar 1 (posAtStep (i+1)))
                     ]
 
 
