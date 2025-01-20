@@ -154,10 +154,10 @@ ifNotB2SetB1B2True :: ForStmt
 ifNotB2SetB1B2True = If (BVar (BName "b2")) skip setB1B2True
 
 ifAThenB2ElseIfNotBSetB1B2True :: ForStmt
-ifAThenB2ElseIfNotBSetB1B2True = If (BLabelAt (PName "i") 'a') setB2True ifNotB2SetB1B2True
+ifAThenB2ElseIfNotBSetB1B2True = If (BLabelAt (PName "j") 'a') setB2True ifNotB2SetB1B2True
 
 ifIleJThenIfAEtc :: ForStmt
-ifIleJThenIfAEtc = If (BTest Le (PName "j") (PName "i")) ifAThenB2ElseIfNotBSetB1B2True skip
+ifIleJThenIfAEtc = If (BTest Lt (PName "j") (PName "i")) ifAThenB2ElseIfNotBSetB1B2True skip
 
 forJBackwards2 :: ForStmt
 forJBackwards2 = For (PName "j") RightToLeft [] ifIleJThenIfAEtc
