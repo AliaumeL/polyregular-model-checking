@@ -146,6 +146,18 @@ containsAB = quantifyList [("firstA", Pos, Exists), ("nextB", Pos, Exists)] $ an
         iIsA       = FLetter (Local 1 "firstA") 'a'
         jIsB       = FLetter (Local 0 "nextB")  'b'
 
+startsWithA :: Formula ()
+startsWithA = quantifyList [("firstA", Pos, Exists)] $ andList [iIsA, isFirst]
+    where
+        iIsA       = FLetter (Local 0 "firstA") 'a'
+        isFirst    = FNot $ quantifyList [("beforeFirst", Pos, Exists)] $ FTestPos Lt (Local 0 "beforeFirst") (Local 1 "firstA")
+
+endsWithB :: Formula ()
+endsWithB = quantifyList [("lastB", Pos, Exists)] $ andList [jIsB, isLast]
+    where
+        jIsB       = FLetter (Local 0 "lastB") 'b'
+        isLast     = FNot $ quantifyList [("afterLast", Pos, Exists)] $ FTestPos Lt (Local 1 "lastB") (Local 0 "afterLast")
+
 containsAA :: Formula ()
 containsAA = quantifyList [("firstA", Pos, Exists), ("nextB", Pos, Exists)] $ andList [iLessThanJ, consecutive, iIsA, jIsA]
     where
@@ -199,16 +211,15 @@ main = do
     putStrLn $ "Program: converted to simple for\n" ++ show simpleForProg
     let simpleForInterpretation = simpleForToInterpretation simpleForProg
     putStrLn $ "Program: converted to interpretation" ++ show simpleForInterpretation
-    putStrLn $ "Program: converted to interpretation"
-    let hoareTriple = simplifyFormula $ encodeHoareTriple containsAA simpleForInterpretation containsAA
-    putStrLn $ "Program: transformed to hoare triple" ++ show hoareTriple
-    verifyResult <- monaVerifyHoareTriple containsAA simpleForInterpretation containsAA
+    verifyResult <- monaVerifyHoareTriple containsAA simpleForInterpretation (FNot containsAA)
+    -- (andList [startsWithA, endsWithB]) simpleForInterpretation containsAB
     putStrLn $ "Program: transformed to hoare triple (MONA)"
     case verifyResult of
         Logic.Mona.Unsat     -> putStrLn "[MONA] YES! The Hoare triple is       valid"
         Logic.Mona.Sat       -> putStrLn "[MONA] NO ! The Hoare triple is *not* valid"
         Logic.Mona.Unknown   -> putStrLn "[MONA] ???"
-    verifyResult <- smtLibVerifyHoareTriple CVC5 containsAB simpleForInterpretation containsAB
+    verifyResult <- smtLibVerifyHoareTriple CVC5 containsAA simpleForInterpretation (FNot containsAA)
+    -- (andList [startsWithA, endsWithB]) simpleForInterpretation containsAB
     putStrLn $ "Program: transformed to hoare triple (SMTLib)"
     case verifyResult of
         Logic.SMTLib.Unsat   -> putStrLn "[SMTLib] YES! The Hoare triple is       valid"

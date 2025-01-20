@@ -110,10 +110,6 @@ formulaToMona (FVar x) = do
     name <- varToMona x
     return $ "(" ++ name ++ " in BTrue)"
 formulaToMona (FBin Impl left right) = formulaToMona (FBin Disj (FNot left) right)
-    l <- formulaToMona left
-    r <- formulaToMona right
-    let op' = binOpToMona op
-    return $ "( " ++ l ++ " " ++ op' ++ " " ++ r ++ " )"
 formulaToMona (FBin op left right) = do
     l <- formulaToMona left
     r <- formulaToMona right
@@ -121,7 +117,7 @@ formulaToMona (FBin op left right) = do
     return $ "( " ++ l ++ " " ++ op' ++ " " ++ r ++ " )"
 formulaToMona (FNot inner) = do
     i <- formulaToMona inner
-    return $ "~( " ++ i ++ " )"
+    return $ "(~( " ++ i ++ " ))"
 formulaToMona (FTestPos op x y) = do 
     vx <- varToMona x
     vy <- varToMona y
@@ -159,7 +155,7 @@ data EncodeParams = EncodeParams {
 } deriving (Eq,Show)
 
 encodeMona :: EncodeParams -> Formula String -> String
-encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetVarsDef, tagsVarsDef, layoutvarsDef, boolVarsDef, boolVarsPositions, tagVarsPositions, fakePosPosition, boolSortConstraint, tagSortConstraint, realPosConstraints, lettersAreDisjoint, layoutDisjoint, covering, formula']
+encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetVarsDef, tagsVarsDef, layoutvarsDef, boolVarsDef, boolVarsPositions, tagVarsPositions, fakePosPosition, fakePosIsNotReal, boolSortConstraint, tagSortConstraint, realPosConstraints, lettersAreDisjoint, layoutDisjoint, covering, formula']
     where
         -- layout 
         -- | tt | ff | t1 | t2 | ... | tn | ε | w1 | w2 | ... | wk |
@@ -201,7 +197,8 @@ encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetV
 
         boolSortConstraint = "assert (" ++ boolSetMona ++ " = " ++ unwords (intersperse " union " boolVars) ++ ");"
         tagSortConstraint  = "assert (" ++ tagSetMona ++ " = " ++ unwords (intersperse " union " tagsVars) ++ ");"
-        realPosConstraints  = "assert (" ++ realPosSetMona ++ " = " ++ unwords (intersperse " union " (alphabetVars)) ++ ");"
+        realPosConstraints = "assert (" ++ realPosSetMona ++ " = " ++ unwords (intersperse " union " (alphabetVars)) ++ ");"
+        fakePosIsNotReal   = "assert (~(" ++ show fakePositionNumber ++ " in " ++ realPosSetMona ++ "));"
             
         lettersAreDisjoint :: String
         lettersAreDisjoint = unlines $ [

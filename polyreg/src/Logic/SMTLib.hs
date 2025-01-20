@@ -198,7 +198,7 @@ encodeSMTLib (EncodeParams alphabet tags) formula = unlines $ [preamble,
         blankOutsideWord   = "(assert (forall ((i Int)) (=> (or (< i 0) (>= i size)) (= (word i) Blank))))"
         notBlankInsideWord = "(assert (forall ((i Int)) (=> (and (>= i 0) (< i size)) (distinct (word i) Blank))))"
 
-        formula' = "(assert (not " ++ (runExportM $ formulaToSMTLib formula) ++ "))"
+        formula' = "(assert " ++ (runExportM $ formulaToSMTLib formula) ++ ")"
 
         checkSat = "(check-sat)"
 
