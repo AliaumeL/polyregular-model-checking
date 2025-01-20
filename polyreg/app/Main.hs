@@ -25,6 +25,7 @@ import QuantifierFree
 import Logic.Formulas 
 import Logic.PullBack (pullBack)
 import Logic.Mona (encodeMona, runMona, EncodeParams(..), MonaResult(..))
+import Logic.SMTLib (encodeSMTLib, runSMTLib, SMTLibResult(..), EncodeParams(..), SMTLibSolver(..))
 import Logic.Interpreter (runInterpretation)
 import Logic.Interpretation (toInterpretation, stringify, Interpretation (..))
 
@@ -160,8 +161,15 @@ monaVerifyHoareTriple :: Formula () -> Interpretation String -> Formula () -> IO
 monaVerifyHoareTriple input i output = runMona encoded
     where
         triple  = simplifyFormula $ FNot (encodeHoareTriple input i output)
-        params  = EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
+        params  = Logic.Mona.EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
         encoded = encodeMona params triple
+
+smtLibVerifyHoareTriple :: SMTLibSolver -> Formula () -> Interpretation String -> Formula () -> IO SMTLibResult
+smtLibVerifyHoareTriple solver input i output = runSMTLib solver encoded
+    where
+        triple  = simplifyFormula $ FNot (encodeHoareTriple input i output)
+        params  = Logic.SMTLib.EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
+        encoded = encodeSMTLib params triple
 
 
 higherToSimpleProgram :: Program String ValueType -> SFP.ForProgram
@@ -195,11 +203,17 @@ main = do
     let hoareTriple = simplifyFormula $ encodeHoareTriple containsAA simpleForInterpretation containsAA
     putStrLn $ "Program: transformed to hoare triple" ++ show hoareTriple
     verifyResult <- monaVerifyHoareTriple containsAA simpleForInterpretation containsAA
-    putStrLn $ "Program: transformed to hoare triple"
+    putStrLn $ "Program: transformed to hoare triple (MONA)"
     case verifyResult of
-        Unsat   -> putStrLn "The Hoare triple is valid"
-        Sat     -> putStrLn "The Hoare triple is not valid"
-        Unknown -> putStrLn "???"
+        Logic.Mona.Unsat     -> putStrLn "[MONA] YES! The Hoare triple is       valid"
+        Logic.Mona.Sat       -> putStrLn "[MONA] NO ! The Hoare triple is *not* valid"
+        Logic.Mona.Unknown   -> putStrLn "[MONA] ???"
+    verifyResult <- smtLibVerifyHoareTriple CVC5 containsAB simpleForInterpretation containsAB
+    putStrLn $ "Program: transformed to hoare triple (SMTLib)"
+    case verifyResult of
+        Logic.SMTLib.Unsat   -> putStrLn "[SMTLib] YES! The Hoare triple is       valid"
+        Logic.SMTLib.Sat     -> putStrLn "[SMTLib] NO ! The Hoare triple is *not* valid"
+        Logic.SMTLib.Unknown -> putStrLn "[SMTLib] ???"
     
 
 

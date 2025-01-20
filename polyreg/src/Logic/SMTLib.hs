@@ -13,6 +13,8 @@ import System.IO.Temp (withSystemTempFile)
 import System.Process (readProcess)
 import Data.List (isInfixOf)
 
+import Data.Char
+
 import Logic.Formulas
 
 intersperse :: a -> [a] -> [a]
@@ -54,15 +56,18 @@ binOpToSMTLib Equiv = "="
 
 
 varToSMTLib :: (MonadExport m) => Var -> m String
-varToSMTLib (In x) = return ("in-" ++ x)
-varToSMTLib (Out x) = return ("out-" ++ x)
+varToSMTLib (In x)      = return ("in-" ++ x)
+varToSMTLib (Out x)     = return ("out-" ++ x)
 varToSMTLib (Local i _) = getVarName i
 
 tagToSMTLib ::  String -> String
 tagToSMTLib x = "T" ++ x
 
 letterToSMTLib :: Char -> String
-letterToSMTLib x = "L" ++ [x]
+letterToSMTLib x = if Data.Char.isAlpha x then 
+                      "L" ++ [x]
+                   else 
+                      "L" ++ show (Data.Char.ord x)
 
 boolSetSMTLib :: String
 boolSetSMTLib = "Bool"
@@ -115,14 +120,14 @@ formulaToSMTLib (FTag x tag) = do
 formulaToSMTLib (FLetter x letter) = do
     vx <- varToSMTLib x
     let lx = letterToSMTLib letter
-    return $ "(= " ++ vx ++ " " ++ lx ++ ")"
+    return $ "(= (word " ++ vx ++ ") " ++ lx ++ ")"
 formulaToSMTLib (FPredPos p x) = do
     px <- varToSMTLib p
     vx <- varToSMTLib x
     return $ "(= " ++ px ++ " (- " ++ vx ++ " ))"
 formulaToSMTLib (FRealPos x) = do
     vx <- varToSMTLib x
-    return $ "(distinct Blank " ++ vx ++ ")"
+    return $ "(distinct Blank (word " ++ vx ++ "))"
 formulaToSMTLib (FQuant Exists _ s inner) = do
     withVariable s $ do
         n <- getVarName 0
@@ -191,7 +196,7 @@ encodeSMTLib (EncodeParams alphabet tags) formula = unlines $ [preamble,
 
         wordSizeNonNeg = "(assert (>= size 0))"
         blankOutsideWord   = "(assert (forall ((i Int)) (=> (or (< i 0) (>= i size)) (= (word i) Blank))))"
-        notBlankInsideWord = "(assert (forall ((i Int)) (=> (and (>= i 0) (< i size)) (distinct (word i) Blank)))"
+        notBlankInsideWord = "(assert (forall ((i Int)) (=> (and (>= i 0) (< i size)) (distinct (word i) Blank))))"
 
         formula' = "(assert (not " ++ (runExportM $ formulaToSMTLib formula) ++ "))"
 
@@ -228,8 +233,8 @@ outputToSMTLibResult _ output = if isUnsat then Unsat else if isSat then Sat els
 
 
 runSMTLib :: SMTLibSolver -> String -> IO SMTLibResult
-runSMTLib solver input = withSystemTempFile "tmp.SMTLib" $ \name _ -> do
-    writeFile name input
-    output <- callSMTSolver solver name
+runSMTLib solver input = do
+    writeFile "tmp.smtlib" input
+    output <- callSMTSolver solver "tmp.smtlib"
     return $ outputToSMTLibResult solver output
 
