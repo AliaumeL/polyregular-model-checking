@@ -213,6 +213,15 @@ thereAreConsecutiveAsFormula = quantifyList [("i", Pos, Exists), ("j", Pos, Exis
         labelledAs = andList [FLetter (Local 0 "i") 'a', FLetter (Local 1 "j") 'a']
         
 
+containsAB :: Formula ()
+containsAB = quantifyList [("firstA", Pos, Exists), ("nextB", Pos, Exists)] $ andList [iLessThanJ, consecutive, iIsA, jIsB]
+    where
+        iLessThanJ = FTestPos Lt (Local 1 "firstA") (Local 0 "nextB")
+        consecutive = FNot . quantifyList [("middleLetter", Pos, Exists)] . andList $ [
+            FTestPos Lt (Local 2 "firstA") (Local 0 "middleLetter"),
+            FTestPos Lt (Local 0 "middleLetter") (Local 1 "nextB") ]
+        iIsA       = FLetter (Local 1 "firstA") 'a'
+        jIsB       = FLetter (Local 0 "nextB")  'b'
 
 
 

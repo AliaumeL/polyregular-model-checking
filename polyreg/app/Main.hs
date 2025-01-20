@@ -22,7 +22,7 @@ import qualified SimpleForPrograms as SFP
 import LetBoolsToTop (bringLetBoolsToTopAndRefresh)
 import SimpleForProgramSimplification (simplifyForProgram)
 import QuantifierFree
-import Logic.Formulas hiding (simplifyFormula)
+import Logic.Formulas 
 import Logic.PullBack (pullBack)
 import Logic.Mona (encodeMona, runMona, EncodeParams(..), MonaResult(..))
 import Logic.Interpreter (runInterpretation)
@@ -34,7 +34,6 @@ import Debug.Trace (traceM)
 import Options.Applicative
 
 
-simplifyFormula = id
 -- use optparse-applicative for the command line arguments
 -- use the following options:
 -- -i --input: the input file
@@ -137,14 +136,24 @@ encodeHoareTriple :: Formula () -> Interpretation String -> Formula () -> Formul
 encodeHoareTriple input i output = FBin Impl (injectTags input) (pullBack i output)
 
 containsAB :: Formula ()
-containsAB = quantifyList [("i", Pos, Exists), ("j", Pos, Exists)] $ andList [iLessThanJ, consecutive, iIsA, jIsB]
+containsAB = quantifyList [("firstA", Pos, Exists), ("nextB", Pos, Exists)] $ andList [iLessThanJ, consecutive, iIsA, jIsB]
     where
-        iLessThanJ = FTestPos Lt (Local 1 "i") (Local 0 "j")
-        consecutive = FNot . quantifyList [("k", Pos, Exists)] . andList $ [
-            FTestPos Lt (Local 2 "i") (Local 0 "k"),
-            FTestPos Lt (Local 0 "k") (Local 1 "j") ]
-        iIsA       = FLetter (Local 1 "i") 'a'
-        jIsB       = FLetter (Local 0 "j") 'a'
+        iLessThanJ = FTestPos Lt (Local 1 "firstA") (Local 0 "nextB")
+        consecutive = FNot . quantifyList [("middleLetter", Pos, Exists)] . andList $ [
+            FTestPos Lt (Local 2 "firstA") (Local 0 "middleLetter"),
+            FTestPos Lt (Local 0 "middleLetter") (Local 1 "nextB") ]
+        iIsA       = FLetter (Local 1 "firstA") 'a'
+        jIsB       = FLetter (Local 0 "nextB")  'b'
+
+containsAA :: Formula ()
+containsAA = quantifyList [("firstA", Pos, Exists), ("nextB", Pos, Exists)] $ andList [iLessThanJ, consecutive, iIsA, jIsA]
+    where
+        iLessThanJ = FTestPos Lt (Local 1 "firstA") (Local 0 "nextB")
+        consecutive = FNot . quantifyList [("middleLetter", Pos, Exists)] . andList $ [
+            FTestPos Lt (Local 2 "firstA") (Local 0 "middleLetter"),
+            FTestPos Lt (Local 0 "middleLetter") (Local 1 "nextB") ]
+        iIsA       = FLetter (Local 1 "firstA") 'a'
+        jIsA       = FLetter (Local 0 "nextB")  'a'
 
 
 monaVerifyHoareTriple :: Formula () -> Interpretation String -> Formula () -> IO MonaResult
@@ -183,9 +192,9 @@ main = do
     let simpleForInterpretation = simpleForToInterpretation simpleForProg
     putStrLn $ "Program: converted to interpretation" ++ show simpleForInterpretation
     putStrLn $ "Program: converted to interpretation"
-    let hoareTriple = simplifyFormula $ encodeHoareTriple containsAB simpleForInterpretation containsAB
+    let hoareTriple = simplifyFormula $ encodeHoareTriple containsAA simpleForInterpretation containsAA
     putStrLn $ "Program: transformed to hoare triple" ++ show hoareTriple
-    verifyResult <- monaVerifyHoareTriple containsAB simpleForInterpretation containsAB
+    verifyResult <- monaVerifyHoareTriple containsAA simpleForInterpretation containsAA
     putStrLn $ "Program: transformed to hoare triple"
     case verifyResult of
         Unsat   -> putStrLn "The Hoare triple is valid"
