@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Logic.Formulas (Sort(..), Quant(..), Var(..), Formula(..), Value(..),
+shiftVar,
 andList, orList, quantifyList, mapInVars, mapOutVars, mapVars,
 nestQuantVars, nestQuantVar, mapTags,
 substituteBooleanVar, freeVars, prettyPrintFormula, 
@@ -39,6 +40,11 @@ data Var   = In    String
            | Local Int String 
     deriving (Show, Eq, Ord) 
 
+
+shiftVar :: Int -> Var -> Var
+shiftVar _ (In x) = In x
+shiftVar _ (Out x) = Out x
+shiftVar i (Local j x) = Local (j + i) x
 
 data Formula tag  = 
     -- Constants
