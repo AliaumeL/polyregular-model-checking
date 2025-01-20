@@ -31,13 +31,16 @@ newtype PBMonad a = PBMonad (Reader PBState a) deriving (Functor, Applicative, M
 runPBMonad :: PBMonad a -> a
 runPBMonad (PBMonad m) = runReader m (PBState [])
 
+shiftVarStack :: Int -> [VarExpansion] -> [VarExpansion]
+shiftVarStack n = map (\(VarExpansion x xs) -> VarExpansion (shiftVar n x) (map (shiftVar n) xs))
+
 instance MonadPB PBMonad where
     withNewPosVar q x n f = do
         let tx  = Local n (x ++ "_t")
         let pxs = map (\i -> Local i (x ++ "_" ++ show i)) [0..(n-1)]
         let ex  = VarExpansion tx pxs
         let quants = ((x ++ "_t", Tag, q) : [(x ++ "_" ++ show i, Pos, q) | i <- [0..(n-1)]])
-        local (\s -> s { varStack = ex : varStack s }) $ f quants
+        local (\s -> s { varStack = ex : (shiftVarStack (n+1) (varStack s)) }) $ f quants
     getPosVar (In _) = error "getPosVar: input variable"
     getPosVar (Out _) = error "getPosVar: output variable"
     getPosVar (Local i _) = do
