@@ -85,21 +85,21 @@ pathPVars (Path (MoveFor p _ _ : ms)) = p : pathPVars (Path ms)
 pathPVars (Path (MoveProg _ : ms)) = pathPVars (Path ms)
 
 pathToTag :: Path -> String
-pathToTag (Path ms) = concat . intersperse ":" . map movementToTag $ ms
+pathToTag (Path ms) = concat . intersperse "_" . map movementToTag $ ms
     where
         movementToTag (MoveIfL e) = "l"
         movementToTag (MoveIfR e) = "r"
         movementToTag (MoveSeq n) = show n  
         movementToTag (MoveFor p d bs) = "f"
-        movementToTag (MoveProg bs) = "/"
+        movementToTag (MoveProg bs) = "s"
 
 tagToPath :: String -> Path
-tagToPath s = Path $ map tagToMovement s
+tagToPath s = Path $ map tagToMovement s -- FIXME: split on underscores first!
     where
         tagToMovement 'l' = MoveIfL (BConst True)
         tagToMovement 'r' = MoveIfR (BConst True)
         tagToMovement 'f' = MoveFor (PName "p") LeftToRight []
-        tagToMovement '/' = MoveProg []
+        tagToMovement 's' = MoveProg []
         tagToMovement c = MoveSeq (read [c])
 
 followPath :: Path -> ForStmt -> ForStmt

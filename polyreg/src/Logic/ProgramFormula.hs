@@ -383,7 +383,7 @@ iterOverVarNew dir p bound (ProgramFormula φ iφ oφ) = finalOutput
                         FTestPos Gt x (shiftVar 1 (posAtStep i)),
                         FTestPos Lt x (shiftVar 1 (posAtStep (i+1)))
                     ]
-        condIntermediate RightToLeft _        0 x = FTestPos Lt x (shiftVar 1 (posAtStep 1))
+        condIntermediate RightToLeft _        0 x = FTestPos Gt x (shiftVar 1 (posAtStep 1))
         condIntermediate RightToLeft Nothing  i x | i == maxUpdates = FTestPos Lt x (shiftVar 1 (posAtStep i))
         condIntermediate RightToLeft (Just v) i x | i == maxUpdates = andList [
                         FTestPos Lt x (shiftVar 1 (posAtStep i)),
@@ -472,7 +472,7 @@ computeUntil (SFP.MoveSeq 0 : xs) (SFP.Seq ss)   = computeUntil xs (ss !! 0)
 computeUntil (SFP.MoveSeq n : xs) (SFP.Seq ss)   = before <> computeUntil xs after
     where
         after = ss !! n
-        before = mconcat $ map sfpStmtToProgramFormula $ take (n-1) ss
+        before = mconcat $ map sfpStmtToProgramFormula $ take n ss
 computeUntil (SFP.MoveFor (PName pm) dirm bsm : xs) (SFP.For (PName p) dir bs stmt) 
     | dirm == dirm && bsm == bs = iterOverVarBefore dir p pm pStmtB <> remainder
         where

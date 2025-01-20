@@ -1,6 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Logic.Formulas (Sort(..), Quant(..), Var(..), Formula(..), Value(..),
 shiftVar,
+quantifierDepth,
+simplifyFormula,
 andList, orList, quantifyList, mapInVars, mapOutVars, mapVars,
 nestQuantVars, nestQuantVar, mapTags,
 substituteBooleanVar, freeVars, prettyPrintFormula, 
@@ -73,6 +75,63 @@ data Formula tag  =
     -- and also in most SMT solvers
     | FPredPos Var Var
   deriving (Show, Eq, Ord)
+
+
+varEquality :: Var -> Var -> Bool
+varEquality (Local i _) (Local j _) = i == j
+varEquality (In x) (In y) = x == y
+varEquality (Out x) (Out y) = x == y
+varEquality _ _ = False
+
+
+simplifyFormula :: (Eq tag) => Formula tag -> Formula tag
+simplifyFormula = fixpoint simplifyOnce
+    where
+        fixpoint :: Eq a => (a -> a) -> a -> a
+        fixpoint f x = let x' = f x in if x == x' then x else fixpoint f x'
+        
+        simplifyOnce  (FBin Conj (FConst True) x)   = simplifyOnce x
+        simplifyOnce  (FBin Conj x (FConst True))   = simplifyOnce x
+        simplifyOnce  (FBin Conj (FConst False) x)  = FConst False
+        simplifyOnce  (FBin Conj x (FConst False))  = FConst False
+        simplifyOnce  (FBin Disj (FConst False) x)  = simplifyOnce x
+        simplifyOnce  (FBin Disj x (FConst False))  = simplifyOnce x
+        simplifyOnce  (FBin Disj (FConst True) x)   = FConst True
+        simplifyOnce  (FBin Impl (FConst True) x)   = simplifyOnce x
+        simplifyOnce  (FBin Impl x (FConst False))  = simplifyOnce (FNot x)
+        simplifyOnce  (FBin Impl (FConst False) x)  = FConst True
+        simplifyOnce  (FBin Impl x (FConst True))   = FConst True
+        simplifyOnce  (FBin Disj x (FConst True))   = FConst True
+        simplifyOnce  (FBin Equiv (FConst True) x)  = simplifyOnce x
+        simplifyOnce  (FBin Equiv (FConst False) x) = simplifyOnce (FNot x)
+        simplifyOnce  (FBin Equiv x (FConst True))  = simplifyOnce x
+        simplifyOnce  (FBin Equiv x (FConst False)) = simplifyOnce (FNot x)
+        simplifyOnce  (FTestPos Eq  x y) | x == y = FConst True
+        simplifyOnce  (FTestPos Le  x y) | x == y = FConst True
+        simplifyOnce  (FTestPos Ge  x y) | x == y = FConst True
+        simplifyOnce  (FTestPos Neq x y) | x == y = FConst False
+        simplifyOnce  (FTestPos Lt  x y) | x == y = FConst False
+        simplifyOnce  (FTestPos Gt  x y) | x == y = FConst False
+        simplifyOnce  (FNot (FConst a))            = FConst (not a)
+        simplifyOnce  (FBin o a b) = FBin o (simplifyOnce a) (simplifyOnce b)
+        simplifyOnce  (FNot a) = FNot (simplifyOnce a)
+        simplifyOnce  (FQuant q x s a) = FQuant q x s (simplifyOnce a)
+        simplifyOnce  x = x
+
+
+
+quantifierDepth :: Formula tag -> Int
+quantifierDepth (FConst _) = 0
+quantifierDepth (FVar _) = 0
+quantifierDepth (FBin _ l r) = max (quantifierDepth l) (quantifierDepth r)
+quantifierDepth (FNot l) = quantifierDepth l
+quantifierDepth (FQuant _ _ _ l) = 1 + quantifierDepth l    
+quantifierDepth (FTag _ _) = 0
+quantifierDepth (FLetter _ _) = 0
+quantifierDepth (FTestPos _ _ _) = 0
+quantifierDepth (FRealPos _) = 0
+quantifierDepth (FPredPos _ _) = 0
+
 
 showFormulaGeneric :: Formula tag -> String 
 showFormulaGeneric (FConst b) = if b then "⊤" else "⊥"

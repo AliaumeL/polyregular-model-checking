@@ -7,6 +7,8 @@ import QuantifierFree
 import Logic.Formulas
 import Logic.Interpretation
 
+import Debug.Trace
+
 
 -- A position variable in the "pullback" is a 
 -- tag variable + a list of position variables.
@@ -56,10 +58,10 @@ testPosVarExp i Le (VarExpansion tx xs) (VarExpansion ty ys) =
         realTagX <- tags i
         realTagY <- tags i
         return . andList $ [FTag tx realTagX, FTag ty realTagY, order i realTagX realTagY xs ys]
-testPosVar i Ge x y = testPosVar i Le y x
-testPosVar i Lt x y = andList [testPosVar i Le x y, testPosVar i Neq x y]
-testPosVar i Gt x y = testPosVar i Lt y x
-testPosVar i Neq x y = FNot $ testPosVar i Eq x y
+testPosVarExp i Ge x y = testPosVarExp i Le y x
+testPosVarExp i Lt x y = andList [testPosVarExp i Le x y, testPosVarExp i Neq x y]
+testPosVarExp i Gt x y = testPosVarExp i Lt y x
+testPosVarExp i Neq x y = FNot $ testPosVarExp i Eq x y
 
 
 -- testing whether the letter at given position is a given character.
@@ -73,8 +75,22 @@ letterVarExp i c (VarExpansion tx xs) =
         t <- tags i
         case (labelOrCopy i t) of
             Left  c2 -> return . andList $ [(FConst (c == c2)), FTag tx t]
-            Right j  -> return  . andList $ [FLetter (xs !! j) c, FTag tx t]
+            Right j  -> return . andList $ [FLetter (xs !! j) c, FTag tx t]
 
+
+areFakePositions :: [Var] -> Formula tag
+areFakePositions vs = andList $ map (\v -> FNot $ FRealPos v) vs
+
+areRealPositions :: [Var] -> Formula tag
+areRealPositions vs = andList $ map (\v -> FRealPos v) vs
+
+varExpInDomain :: Interpretation tag -> VarExpansion -> Formula tag
+varExpInDomain i (VarExpansion tx xs) = 
+    orList $ do
+        t <- tags i
+        return . andList $ [(FTag tx t), (domain i t (take (arity i t) xs)),
+                           (areFakePositions (drop (arity i t) xs)),
+                           (areRealPositions (take (arity i t) xs))]
 
 
 pullBackM :: (MonadPB m) => Interpretation tag -> Formula () -> m (Formula tag)
@@ -96,8 +112,12 @@ pullBackM i (FLetter x letter) = do
     return $ letterVarExp i letter vx
 pullBackM i (FQuant q x Pos φ) = do
     withNewPosVar q x (maxArity i) $ \qs -> do
+        currentVar <- getPosVar (Local 0 x)
+        let λ = varExpInDomain i currentVar
         ξ <- pullBackM i φ
-        return $ quantifyList qs ξ
+        case q of
+            Forall -> return $ quantifyList qs (FBin Impl λ ξ)
+            Exists -> return $ quantifyList qs (FBin Conj λ ξ)
 
 
 

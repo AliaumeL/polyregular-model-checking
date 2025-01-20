@@ -21,13 +21,20 @@ import SimpleForPrograms (runProgram, pathToTag)
 import qualified SimpleForPrograms as SFP
 import LetBoolsToTop (bringLetBoolsToTopAndRefresh)
 import SimpleForProgramSimplification (simplifyForProgram)
+import QuantifierFree
+import Logic.Formulas hiding (simplifyFormula)
+import Logic.PullBack (pullBack)
+import Logic.Mona (encodeMona, runMona, EncodeParams(..), MonaResult(..))
 import Logic.Interpreter (runInterpretation)
 import Logic.Interpretation (toInterpretation, stringify, Interpretation (..))
 
+import Data.List (nub)
 import Debug.Trace (traceM)
 
 import Options.Applicative
 
+
+simplifyFormula = id
 -- use optparse-applicative for the command line arguments
 -- use the following options:
 -- -i --input: the input file
@@ -126,14 +133,68 @@ simpleShowEitherError :: Either InterpretError String -> String
 simpleShowEitherError (Left e) = "ERROR: " ++ simpleShowInterpreterError e
 simpleShowEitherError (Right s) = "OK: " ++ s
 
+encodeHoareTriple :: Formula () -> Interpretation String -> Formula () -> Formula String
+encodeHoareTriple input i output = FBin Impl (injectTags input) (pullBack i output)
 
-sfpToInterpretation :: SFP.ForProgram -> Interpretation String
-sfpToInterpretation = stringify pathToTag . toInterpretation 
+containsAB :: Formula ()
+containsAB = quantifyList [("i", Pos, Exists), ("j", Pos, Exists)] $ andList [iLessThanJ, consecutive, iIsA, jIsB]
+    where
+        iLessThanJ = FTestPos Lt (Local 1 "i") (Local 0 "j")
+        consecutive = FNot . quantifyList [("k", Pos, Exists)] . andList $ [
+            FTestPos Lt (Local 2 "i") (Local 0 "k"),
+            FTestPos Lt (Local 0 "k") (Local 1 "j") ]
+        iIsA       = FLetter (Local 1 "i") 'a'
+        jIsB       = FLetter (Local 0 "j") 'a'
 
-runAsInterpretation :: SFP.ForProgram -> String -> String
-runAsInterpretation p s = runInterpretation (sfpToInterpretation p) s
+
+monaVerifyHoareTriple :: Formula () -> Interpretation String -> Formula () -> IO MonaResult
+monaVerifyHoareTriple input i output = runMona encoded
+    where
+        triple  = simplifyFormula $ FNot (encodeHoareTriple input i output)
+        params  = EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
+        encoded = encodeMona params triple
 
 
+higherToSimpleProgram :: Program String ValueType -> SFP.ForProgram
+higherToSimpleProgram p = simplifyForProgram sfp
+    where
+        transformedProg = foldl (flip applyTransform) p transformationsInOrder
+        Right sfp = toSimpleForProgram transformedProg
+
+simpleForToInterpretation :: SFP.ForProgram -> Interpretation String
+simpleForToInterpretation sfp = Interpretation tags alphabet simplifiedDomain simplifiedOrder labelOrCopy arity
+    where
+        Interpretation tags alphabet domain order labelOrCopy arity = stringify pathToTag $  toInterpretation sfp
+        simplifiedDomain = \s vs -> id $ domain s vs
+        simplifiedOrder  = \s1 s2 vs1 vs2 -> simplifyFormula $ order s1 s2 vs1 vs2
+
+
+main :: IO ()
+main = do 
+    opts <- execParser cmdParser
+    progString <- readInputFile (optInputProg opts)
+    putStrLn $ "Program: read"
+    let (Right parsedProg)      = parseHighLevel progString
+    putStrLn $ "Program: parsed"
+    let (Right typedProg)       = inferAndCheckProgram parsedProg
+    putStrLn $ "Program: typed"
+    let simpleForProg           = higherToSimpleProgram typedProg
+    putStrLn $ "Program: converted to simple for\n" ++ show simpleForProg
+    let simpleForInterpretation = simpleForToInterpretation simpleForProg
+    putStrLn $ "Program: converted to interpretation" ++ show simpleForInterpretation
+    putStrLn $ "Program: converted to interpretation"
+    let hoareTriple = simplifyFormula $ encodeHoareTriple containsAB simpleForInterpretation containsAB
+    putStrLn $ "Program: transformed to hoare triple" ++ show hoareTriple
+    verifyResult <- monaVerifyHoareTriple containsAB simpleForInterpretation containsAB
+    putStrLn $ "Program: transformed to hoare triple"
+    case verifyResult of
+        Unsat   -> putStrLn "The Hoare triple is valid"
+        Sat     -> putStrLn "The Hoare triple is not valid"
+        Unknown -> putStrLn "???"
+    
+
+
+{- 
 main :: IO ()
 main = do
     opts <- execParser cmdParser
@@ -198,3 +259,4 @@ main = do
                                 writeOutputFile (optOutputWord opts) (show . sfpToInterpretation $ sfp)
                                 writeOutputFile (optOutputWord opts) (show result')
                                 return ()
+-}

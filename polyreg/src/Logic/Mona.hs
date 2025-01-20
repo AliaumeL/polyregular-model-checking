@@ -6,12 +6,16 @@ import QuantifierFree
 import Control.Monad
 import Control.Monad.State
 
+import Data.Char
+
 import Data.Map (Map)
 import qualified Data.Map as M
 
 import System.IO.Temp (withSystemTempFile)
 import System.Process (readProcess)
 import Data.List (isInfixOf)
+
+import GHC.IO.Handle (hPutStr)
 
 import Logic.Formulas
 
@@ -75,7 +79,10 @@ tagToMona ::  String -> String
 tagToMona x = "T" ++ x
 
 letterToMona :: Char -> String
-letterToMona x = "L" ++ [x]
+letterToMona x = if Data.Char.isAlpha x then 
+                    "L" ++ [x]
+                 else 
+                    "L" ++ show (Data.Char.ord x)
 
 boolSetMona :: String
 boolSetMona = "B"
@@ -99,7 +106,9 @@ sortToMona Tag = tagSetMona
 formulaToMona :: (MonadExport m) => Formula String -> m String
 formulaToMona (FConst True) = return "true"
 formulaToMona (FConst False) = return "false"
-formulaToMona (FVar x) = varToMona x
+formulaToMona (FVar x) = do
+    name <- varToMona x
+    return $ "(" ++ name ++ " in BTrue)"
 formulaToMona (FBin op left right) = do
     l <- formulaToMona left
     r <- formulaToMona right
@@ -145,7 +154,7 @@ data EncodeParams = EncodeParams {
 } deriving (Eq,Show)
 
 encodeMona :: EncodeParams -> Formula String -> String
-encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetVarsDef, tagsVarsDef, layoutvarsDef, boolVarsPositions, tagVarsPositions, fakePosPosition, boolSortConstraint, tagSortConstraint, realPosConstraints, lettersAreDisjoint, layoutDisjoint, covering, formula']
+encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetVarsDef, tagsVarsDef, layoutvarsDef, boolVarsDef, boolVarsPositions, tagVarsPositions, fakePosPosition, boolSortConstraint, tagSortConstraint, realPosConstraints, lettersAreDisjoint, layoutDisjoint, covering, formula']
     where
         -- layout 
         -- | tt | ff | t1 | t2 | ... | tn | ε | w1 | w2 | ... | wk |
@@ -171,6 +180,7 @@ encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetV
         alphabetVarsDef = "var2 " ++ unwords (intersperse "," alphabetVars) ++ ";"
         tagsVarsDef     = "var2 " ++ unwords (intersperse "," tagsVars) ++ ";"
         layoutvarsDef   = "var2 " ++ unwords (intersperse "," layoutVars) ++ ";"
+        boolVarsDef     = "var2 " ++ unwords (intersperse "," boolVars) ++ ";"
 
         boolVarsPositions = unlines $ do
             (i, name) <- zip [0..] boolVars
@@ -216,7 +226,8 @@ parseMonaOutput :: String -> MonaResult
 parseMonaOutput output = if "Formula is valid" `isInfixOf` output then Sat else if "A satisfying example" `isInfixOf` output then Sat else if "Formula is unsatisfiable" `elem` lines output then Unsat else Unknown
 
 runMona :: String -> IO MonaResult
-runMona input = withSystemTempFile "tmp.mona" $ \name _ -> do
-    writeFile name input
-    output <- readProcess "mona" ["-q", name] ""
+runMona input = do
+    -- write using the handle and not the file name
+    writeFile "tmp.mona" input
+    output <- readProcess "mona" ["-q", "tmp.mona"] ""
     return $ parseMonaOutput output

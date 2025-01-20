@@ -3,6 +3,9 @@ module Logic.ProgramFormulaSpec where
 
 import SimpleForPrograms
 
+import Logic.Interpretation
+import Logic.PullBack
+import Logic.Mona
 import Logic.ProgramFormula
 import Logic.Formulas
 import QuantifierFree
@@ -180,8 +183,37 @@ forIForwards2 = For (PName "i") LeftToRight [BName "b1", BName "b2"] forJBackwar
 compressAsProg :: ForProgram 
 compressAsProg = ForProgram [] forIForwards2
 
+
+compressAsBis :: ForProgram
+compressAsBis = ForProgram [] (For (PName "i") LeftToRight [BName "b1",BName "b2"] (Seq [Seq [For (PName "j") RightToLeft [] (If (BTest Lt (PName "j") (PName "i")) (If (BLabelAt (PName "j") 'a') (SetTrue (BName "b2")) (If (BVar (BName "b2")) (Seq []) (Seq [SetTrue (BName "b1"),SetTrue (BName "b2")]))) (Seq [])),If (BNot (BVar (BName "b2"))) (SetTrue (BName "b1")) (Seq [])],If (BBin Disj (BVar (BName "b1")) (BNot (BLabelAt (PName "i") 'a')) ) (PrintPos (PName "i")) (Seq [])]))
+
+seqseq :: ForStmt
+seqseq = Seq [Seq [For (PName "j") RightToLeft [] (If (BTest Lt (PName "j") (PName "i")) (If (BLabelAt (PName "j") 'a') (SetTrue (BName "b2")) (If (BVar (BName "b2")) (Seq []) (Seq [SetTrue (BName "b1"),SetTrue (BName "b2")]))) (Seq [])),If (BNot (BVar (BName "b2"))) (SetTrue (BName "b1")) (Seq [])],If (BBin Disj (BVar (BName "b1")) (BNot (BLabelAt (PName "i") 'a')) ) (PrintPos (PName "i")) (Seq [])]
+
 pathToPrint2 :: [Movement]
 pathToPrint2 = [MoveFor (PName "i") LeftToRight [BName "b1",BName "b2"],MoveSeq 2,MoveIfL (BBin Disj (BVar (BName "b1")) (BNot (BLabelAt (PName "i") 'a')))]
+
+
+--- PRINT UNTIL BACKWARDS --- 
+printUntilABackwards :: ForProgram
+printUntilABackwards = ForProgram [BName "b"] forBack
+    where
+        forBack      = For (PName "i") RightToLeft [] (Seq [printAorKeep, setBIfA])
+        printAorKeep = If (BVar (BName "b"))  (PrintLbl 'a') (PrintPos (PName "i"))
+        setBIfA      = If (BLabelAt (PName "i") 'a') setBTrue skip
+
+-- There are consecutive As
+thereAreConsecutiveAsFormula :: Formula ()
+thereAreConsecutiveAsFormula = quantifyList [("i", Pos, Exists), ("j", Pos, Exists)] $ andList [consecutive, iLessThanJ, labelledAs]
+    where
+        iLessThanJ = FTestPos Lt (Local 1 "i") (Local 0 "j")
+        consecutive = FNot . quantifyList [("k", Pos, Exists)] . andList $ [
+            FTestPos Lt (Local 2 "i") (Local 0 "k"),
+            FTestPos Lt (Local 0 "k") (Local 1 "j") ]
+        labelledAs = andList [FLetter (Local 0 "i") 'a', FLetter (Local 1 "j") 'a']
+        
+
+
 
 
 spec :: Spec
