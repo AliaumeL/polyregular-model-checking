@@ -474,11 +474,11 @@ computeUntil (SFP.MoveSeq n : xs) (SFP.Seq ss)   = before <> computeUntil xs aft
         after = ss !! n
         before = mconcat $ map sfpStmtToProgramFormula $ take (n-1) ss
 computeUntil (SFP.MoveFor (PName pm) dirm bsm : xs) (SFP.For (PName p) dir bs stmt) 
-    | dirm == dirm && bsm == bs = iterOverVarBefore dir p pm pStmtB <> reminder
+    | dirm == dirm && bsm == bs = iterOverVarBefore dir p pm pStmtB <> remainder
         where
-            pStmt  = sfpStmtToProgramFormula stmt
-            pStmtB = withNewBoolVars [ x | BName x <- bsm ] pStmt
-            reminder = withNewBoolVars [ x | BName x <- bsm ] $ computeUntil xs stmt
+            pStmt     = sfpStmtToProgramFormula stmt
+            pStmtB    = withNewBoolVars [ x | BName x <- bs ] $ pStmt
+            remainder = withNewBoolVars [ x | BName x <- bs ] $ computeUntil xs stmt
 computeUntil pa pr = error $ "computeUntil: invalid path" ++ show (pa, pr)
 
 computeUntilProg :: SFP.Path -> SFP.ForProgram -> [Var] -> Formula ()
