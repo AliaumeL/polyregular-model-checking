@@ -181,30 +181,20 @@ main = do
                     case simpleForProg of
                         Left err  -> putStrLn $ "Error in converting to simple for program: " ++ show err
                         Right sfp' ->
-                            let sfp = if optNoSimplify opts then sfp' else simplifyForProgram sfp' in do
-                                putStrLn $ "Before simpliication, length: " ++ (show $ length $ SFP.prettyPrintForProgram sfp')
-                                putStrLn $ "After simplification, length: " ++  (show $ length $ SFP.prettyPrintForProgram sfp)
-                                putStrLn $ "Deflation percentage: " ++ (show $ 100 *  (fromIntegral (length $SFP.prettyPrintForProgram sfp) / fromIntegral (length $ SFP.prettyPrintForProgram sfp')))
-                                case word of 
-                                    Nothing -> putStrLn "Converted to a simple for program, but nothing to be run on it"
-                                    Just w -> do
-                                        writeOutputFile (optOutputWord opts) (replicate 80 '-')
-                                        -- writeOutputFile (optOutputWord opts) (SFP.prettyPrintForProgram sfp)
-                                        -- traceM $ show $ optNoSimplify opts
-                                        --traceM $ SFP.prettyPrintForProgram sfp
-                                        let result = runProgram sfp w
-                                        if (fromRight result) == (fromRight $ runProgramString (fmap (const ()) prog) w )
-                                        then putStrLn "Transformation correct. "
-                                        else putStrLn $ "Transformation incorrect.\n Output: " ++ show result ++ "\nExpected output: :" ++ show (runProgramString (fmap (const ()) prog) w)
-
-                                        -- writeOutputFile (optOutputWord opts) (replicate 80 '-')
-                                        -- writeOutputFile (optOutputWord opts) w
-                                        -- writeOutputFile (optOutputWord opts) (show result)
-                                        -- writeOutputFile (optOutputWord opts) (replicate 80 '-')
-                                        -- let result' = runAsInterpretation sfp w
-                                        -- writeOutputFile (optOutputWord opts) (show . sfpToInterpretation $ sfp)
-                                        -- writeOutputFile (optOutputWord opts) (show result')
-                                        -- return ()
-
-fromRight :: Either a b -> b                                       
-fromRight (Right x) = x
+                            let sfp = if optNoSimplify opts then sfp' else simplifyForProgram sfp' in
+                            case word of 
+                            Nothing -> putStrLn "Converted to a simple for program, but nothing to be run on it"
+                            Just w -> do
+                                writeOutputFile (optOutputWord opts) (replicate 80 '-')
+                                writeOutputFile (optOutputWord opts) (SFP.prettyPrintForProgram sfp)
+                                -- traceM $ show $ optNoSimplify opts
+                                --traceM $ SFP.prettyPrintForProgram sfp
+                                let result = runProgram sfp w
+                                writeOutputFile (optOutputWord opts) (replicate 80 '-')
+                                writeOutputFile (optOutputWord opts) w
+                                writeOutputFile (optOutputWord opts) (show result)
+                                writeOutputFile (optOutputWord opts) (replicate 80 '-')
+                                let result' = runAsInterpretation sfp w
+                                writeOutputFile (optOutputWord opts) (show . sfpToInterpretation $ sfp)
+                                writeOutputFile (optOutputWord opts) (show result')
+                                return ()
