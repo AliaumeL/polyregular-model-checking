@@ -109,6 +109,11 @@ formulaToMona (FConst False) = return "false"
 formulaToMona (FVar x) = do
     name <- varToMona x
     return $ "(" ++ name ++ " in BTrue)"
+formulaToMona (FBin Impl left right) = formulaToMona (FBin Disj (FNot left) right)
+    l <- formulaToMona left
+    r <- formulaToMona right
+    let op' = binOpToMona op
+    return $ "( " ++ l ++ " " ++ op' ++ " " ++ r ++ " )"
 formulaToMona (FBin op left right) = do
     l <- formulaToMona left
     r <- formulaToMona right
