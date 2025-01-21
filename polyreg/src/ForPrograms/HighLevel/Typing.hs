@@ -24,6 +24,17 @@ import Data.Tuple.Extra
 -- *origin* of this position in terms of *untyped AST*.
 -------
 
+erasePositionTypes ::ValueType -> Maybe ValueType
+erasePositionTypes (TPos _) = Nothing
+erasePositionTypes t = Just t
+
+eraseTypesInFunctions :: Program String ValueType -> Program String (Maybe ValueType)
+eraseTypesInFunctions (Program fs main) = Program (map eraseTypesInFunctionsFun fs) main
+
+eraseTypesInFunctionsFun :: StmtFun String ValueType -> StmtFun String (Maybe ValueType)
+eraseTypesInFunctionsFun (StmtFun name args s t) = StmtFun name args' (fmap (const Nothing) s) (Just t)
+    where args' = map (\(a, b, c) -> (a, Just b, c)) args
+
 eraseTypesO :: OExpr v t -> OExpr v ()
 eraseTypesO p = fmap (const ()) p
 
@@ -100,3 +111,5 @@ instance HasType (OExpr String ValueType) where
 
 instance HasType (StmtFun String ValueType) where
     getType (StmtFun _ _ _ t) = t
+
+

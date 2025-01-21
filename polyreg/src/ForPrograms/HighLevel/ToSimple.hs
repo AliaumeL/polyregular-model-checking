@@ -22,7 +22,9 @@ module ForPrograms.HighLevel.ToSimple where
 --    and takes no position variables as input
 
 import ForPrograms.HighLevel        as FP
-import ForPrograms.Simple  as SFP
+import ForPrograms.Simple           as SFP
+
+import ForPrograms.HighLevel.Transformations.FinalConditions (finalConditions, displayBrokenConditions)
 
 import Debug.Trace (traceM)
 
@@ -45,6 +47,7 @@ data ToSimpleForProgramError =
   | LetBindingBoolean
   | GeneratorExpression
   | NoMainFunction
+  | DisplayBrokenConditions String
   deriving (Show,Eq)
 
 class (Monad m) => MonadTSF m where
@@ -76,7 +79,12 @@ findMainFunction (StmtFun name args body outputType :fs) main =
 
 
 toSimpleForProgram :: (Show t) => FP.Program String t -> Either ToSimpleForProgramError SFP.ForProgram
-toSimpleForProgram p = runTSFPMonad (toSimpleForProgramM p)
+toSimpleForProgram p = do 
+    if finalConditions p then 
+        runTSFPMonad (toSimpleForProgramM p)
+    else 
+        Left $ DisplayBrokenConditions $ displayBrokenConditions p
+
 
 toSimpleForProgramM :: (Show t) => FP.Program String t -> TSFPMonad SFP.ForProgram
 toSimpleForProgramM (FP.Program funcs main) = do
