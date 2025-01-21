@@ -28,6 +28,7 @@ dependencies:
   - text
   - array
   - temporary
+  - scotty
 
 build-tools:
   - alex

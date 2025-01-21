@@ -26,6 +26,8 @@ import Logic.FormulaExamples
 import Options.Applicative
 import Control.Monad (forM_)
 
+import Web.API (webApp)
+
 
 data Options = Options
     { optInputProg :: Maybe FilePath
@@ -35,6 +37,7 @@ data Options = Options
     , optOutputWord :: Maybe String
     , optNoSimplify :: Bool
     , optList :: Bool
+    , optWeb :: Bool
     } deriving (Eq,Show)
 
 options :: Parser Options
@@ -46,6 +49,7 @@ options = Options
       <*> optional (strOption (long "output-word" <> short 'W' <> metavar "WORD" <> help "The output word"))
       <*> switch   (long "no-simplify" <> short 'f' <> help "Do not simplify the resulting simple for program")
       <*> switch   (long "list" <> short 'l' <> help "List all the transformations")
+      <*> switch   (long "web" <> short 'b' <> help "Start the web server")
 
 
 
@@ -76,10 +80,8 @@ simpleForToInterpretation sfp = Interpretation tags alphabet simplifiedDomain si
         simplifiedDomain = \s vs -> simplifyFormula $ domain s vs
         simplifiedOrder  = \s1 s2 vs1 vs2 -> simplifyFormula $ order s1 s2 vs1 vs2
 
-
-main :: IO ()
-main = do 
-    opts <- execParser cmdParser
+cliApp :: Options -> IO ()
+cliApp opts = do
     progString <- readInputFile (optInputProg opts)
     putStrLn $ "Program: read"
     let (Right parsedProg)      = parseHighLevel progString
@@ -107,3 +109,10 @@ main = do
             Sat       -> putStrLn $ "[" ++ show solver ++ "] NO ! The Hoare triple is *not* valid"
             Unknown   -> putStrLn $ "[" ++ show solver ++ "] ???"
             Error msg -> putStrLn $ "[" ++ show solver ++ "] ERROR: " ++ msg
+
+main :: IO ()
+main = do 
+    opts <- execParser cmdParser
+    case optWeb opts of
+        True  -> webApp
+        False -> cliApp opts
