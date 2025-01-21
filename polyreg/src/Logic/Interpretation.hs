@@ -79,12 +79,12 @@ happensBefore (MoveSeq i : ms) (MoveSeq j : ns) vm vn
 happensBefore ((MoveFor _ SFP.LeftToRight _) : ms) ((MoveFor _ SFP.LeftToRight _) : ns) (vm : vms) (vn : vns) = 
     orList $ [
           andList [FTestPos Eq vm vn, happensBefore ms ns vms vns]
-        , FTestPos Le vm vn
+        , FTestPos Lt vm vn
         ]
 happensBefore ((MoveFor _ SFP.RightToLeft _) : ms) ((MoveFor _ SFP.RightToLeft _) : ns) (vm : vms) (vn : vns) =
     orList $ [
             andList [FTestPos Eq vm vn, happensBefore ms ns vms vns]
-            , FTestPos Ge vm vn
+            , FTestPos Gt vm vn
             ]
 happensBefore (MoveProg _ : xs) (MoveProg _ : ys) vm vn = happensBefore xs ys vm vn
 happensBefore _ _ _ _ = error $ "happensBefore: incompatible movements"

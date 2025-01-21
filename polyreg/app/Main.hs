@@ -33,6 +33,7 @@ import Data.List (nub)
 import Debug.Trace (traceM)
 
 import Options.Applicative
+import Control.Monad (forM_)
 
 
 -- use optparse-applicative for the command line arguments
@@ -91,13 +92,13 @@ data Options = Options
 
 options :: Parser Options
 options = Options
-    <$> optional (strOption (long "input-prog" <> short 'i' <> metavar "FILE" <> help "The input file"))
-    <*> optional (strOption (long "input-word" <> short 'w' <> metavar "WORD" <> help "The input word"))
-    <*> optional (option auto (long "transformation" <> short 't' <> metavar "TRANSFORMATION" <> help "The transformation to apply"))
-    <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE" <> help "The output file"))
-    <*> optional (strOption (long "output-word" <> short 'W' <> metavar "WORD" <> help "The output word"))
-    <*> switch (long "no-simplify" <> short 'f' <> help "Do not simplify the resulting simple for program")
-    <*> switch (long "list" <> short 'l' <> help "List all the transformations")
+      <$> optional (strOption (long "input-prog" <> short 'i' <> metavar "FILE" <> help "The input file"))
+      <*> optional (strOption (long "input-word" <> short 'w' <> metavar "WORD" <> help "The input word"))
+      <*> optional (option auto (long "transformation" <> short 't' <> metavar "TRANSFORMATION" <> help "The transformation to apply"))
+      <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE" <> help "The output file"))
+      <*> optional (strOption (long "output-word" <> short 'W' <> metavar "WORD" <> help "The output word"))
+      <*> switch   (long "no-simplify" <> short 'f' <> help "Do not simplify the resulting simple for program")
+      <*> switch   (long "list" <> short 'l' <> help "List all the transformations")
 
 
 
@@ -134,7 +135,7 @@ simpleShowEitherError (Left e) = "ERROR: " ++ simpleShowInterpreterError e
 simpleShowEitherError (Right s) = "OK: " ++ s
 
 encodeHoareTriple :: Formula () -> Interpretation String -> Formula () -> Formula String
-encodeHoareTriple input i output = FBin Impl (injectTags input) (pullBack i output)
+encodeHoareTriple input i output = FBin Impl (addRealPositions (injectTags input)) (pullBack i output)
 
 containsAB :: Formula ()
 containsAB = quantifyList [("firstA", Pos, Exists), ("nextB", Pos, Exists)] $ andList [iLessThanJ, consecutive, iIsA, jIsB]
@@ -169,17 +170,17 @@ containsAA = quantifyList [("firstA", Pos, Exists), ("nextB", Pos, Exists)] $ an
         jIsA       = FLetter (Local 0 "nextB")  'a'
 
 
-monaVerifyHoareTriple :: Formula () -> Interpretation String -> Formula () -> IO MonaResult
-monaVerifyHoareTriple input i output = runMona encoded
+monaVerifyHoareTriple :: Interpretation String -> Formula String -> IO MonaResult
+monaVerifyHoareTriple i tripleRaw = runMona encoded
     where
-        triple  = simplifyFormula $ FNot (encodeHoareTriple input i output)
+        triple  = simplifyFormula $ FNot tripleRaw
         params  = Logic.Mona.EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
         encoded = encodeMona params triple
 
-smtLibVerifyHoareTriple :: SMTLibSolver -> Formula () -> Interpretation String -> Formula () -> IO SMTLibResult
-smtLibVerifyHoareTriple solver input i output = runSMTLib solver encoded
+smtLibVerifyHoareTriple :: SMTLibSolver -> Interpretation String -> Formula String -> IO SMTLibResult
+smtLibVerifyHoareTriple solver i tripleRaw = runSMTLib solver encoded
     where
-        triple  = simplifyFormula $ FNot (encodeHoareTriple input i output)
+        triple  = simplifyFormula $ FNot tripleRaw
         params  = Logic.SMTLib.EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
         encoded = encodeSMTLib params triple
 
@@ -194,7 +195,7 @@ simpleForToInterpretation :: SFP.ForProgram -> Interpretation String
 simpleForToInterpretation sfp = Interpretation tags alphabet simplifiedDomain simplifiedOrder labelOrCopy arity
     where
         Interpretation tags alphabet domain order labelOrCopy arity = stringify pathToTag $  toInterpretation sfp
-        simplifiedDomain = \s vs -> id $ domain s vs
+        simplifiedDomain = \s vs -> simplifyFormula $ domain s vs
         simplifiedOrder  = \s1 s2 vs1 vs2 -> simplifyFormula $ order s1 s2 vs1 vs2
 
 
@@ -208,23 +209,28 @@ main = do
     let (Right typedProg)       = inferAndCheckProgram parsedProg
     putStrLn $ "Program: typed"
     let simpleForProg           = higherToSimpleProgram typedProg
-    putStrLn $ "Program: converted to simple for\n" ++ show simpleForProg
+    putStrLn $ "Program: converted to simple for" ++ show simpleForProg
+    putStrLn $ "Program: runned on `adb` : " ++ (show $ runProgram simpleForProg "adb")
     let simpleForInterpretation = simpleForToInterpretation simpleForProg
     putStrLn $ "Program: converted to interpretation" ++ show simpleForInterpretation
-    verifyResult <- monaVerifyHoareTriple containsAA simpleForInterpretation (FNot containsAA)
-    -- (andList [startsWithA, endsWithB]) simpleForInterpretation containsAB
-    putStrLn $ "Program: transformed to hoare triple (MONA)"
+    putStrLn $ "Program: interpretation runned on `adb` : " ++ (show $ runInterpretation simpleForInterpretation "adb")
+    let precondition  = andList [startsWithA, endsWithB] 
+    let postcondition = containsAB
+    let hoareTriple   = encodeHoareTriple precondition simpleForInterpretation postcondition
+    putStrLn $ "Program: transformed to hoare triple" ++ show hoareTriple
+    verifyResult <- monaVerifyHoareTriple simpleForInterpretation hoareTriple
+    putStrLn $ "Program: verified using MONA"
     case verifyResult of
         Logic.Mona.Unsat     -> putStrLn "[MONA] YES! The Hoare triple is       valid"
         Logic.Mona.Sat       -> putStrLn "[MONA] NO ! The Hoare triple is *not* valid"
         Logic.Mona.Unknown   -> putStrLn "[MONA] ???"
-    verifyResult <- smtLibVerifyHoareTriple CVC5 containsAA simpleForInterpretation (FNot containsAA)
-    -- (andList [startsWithA, endsWithB]) simpleForInterpretation containsAB
-    putStrLn $ "Program: transformed to hoare triple (SMTLib)"
-    case verifyResult of
-        Logic.SMTLib.Unsat   -> putStrLn "[SMTLib] YES! The Hoare triple is       valid"
-        Logic.SMTLib.Sat     -> putStrLn "[SMTLib] NO ! The Hoare triple is *not* valid"
-        Logic.SMTLib.Unknown -> putStrLn "[SMTLib] ???"
+    forM_ [CVC5, AltErgo] $ \solver -> do
+        verifyResult <- smtLibVerifyHoareTriple solver simpleForInterpretation hoareTriple
+        putStrLn $ "Program: verified using SMTLib "  ++ show solver
+        case verifyResult of
+            Logic.SMTLib.Unsat   -> putStrLn "[SMTLib] YES! The Hoare triple is       valid"
+            Logic.SMTLib.Sat     -> putStrLn "[SMTLib] NO ! The Hoare triple is *not* valid"
+            Logic.SMTLib.Unknown -> putStrLn "[SMTLib] ???"
     
 
 

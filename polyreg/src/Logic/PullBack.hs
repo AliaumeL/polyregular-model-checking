@@ -37,7 +37,7 @@ shiftVarStack n = map (\(VarExpansion x xs) -> VarExpansion (shiftVar n x) (map 
 instance MonadPB PBMonad where
     withNewPosVar q x n f = do
         let tx  = Local n (x ++ "_t")
-        let pxs = map (\i -> Local i (x ++ "_" ++ show i)) [0..(n-1)]
+        let pxs = map (\i -> Local (n-i-1) (x ++ "_" ++ show i)) [0..(n-1)]
         let ex  = VarExpansion tx pxs
         let quants = ((x ++ "_t", Tag, q) : [(x ++ "_" ++ show i, Pos, q) | i <- [0..(n-1)]])
         local (\s -> s { varStack = ex : (shiftVarStack (n+1) (varStack s)) }) $ f quants
@@ -78,7 +78,9 @@ letterVarExp i c (VarExpansion tx xs) =
         t <- tags i
         case (labelOrCopy i t) of
             Left  c2 -> return . andList $ [(FConst (c == c2)), FTag tx t]
-            Right j  -> return . andList $ [FLetter (xs !! j) c, FTag tx t]
+            Right j  -> do
+                let vindex = (arity i t) - j - 1
+                return . andList $ [FLetter (xs !! vindex) c, FTag tx t]
 
 
 areFakePositions :: [Var] -> Formula tag
@@ -91,7 +93,7 @@ varExpInDomain :: Interpretation tag -> VarExpansion -> Formula tag
 varExpInDomain i (VarExpansion tx xs) = 
     orList $ do
         t <- tags i
-        return . andList $ [(FTag tx t), (domain i t (take (arity i t) xs)),
+        return . andList $ [(FTag tx t), addRealPositions (domain i t (take (arity i t) xs)),
                            (areFakePositions (drop (arity i t) xs)),
                            (areRealPositions (take (arity i t) xs))]
 

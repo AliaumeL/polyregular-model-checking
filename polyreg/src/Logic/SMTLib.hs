@@ -10,7 +10,8 @@ import Data.Map (Map)
 import qualified Data.Map as M
 
 import System.IO.Temp (withSystemTempFile)
-import System.Process (readProcess)
+import System.Process (readProcessWithExitCode)
+import System.Exit (ExitCode(..))
 import Data.List (isInfixOf)
 
 import Data.Char
@@ -214,11 +215,25 @@ parseSMTLibOutput output = if "Formula is valid" `isInfixOf` output then Sat els
 
 data SMTLibSolver = CVC5 | Z3 | Yices | AltErgo deriving (Show, Eq)
 
-callSMTSolver :: SMTLibSolver -> String -> IO String
-callSMTSolver CVC5 file = readProcess "cvc5" ["--lang=smt2", file] ""
-callSMTSolver Z3 file = readProcess "z3" ["-smt2", file] ""
-callSMTSolver Yices file = readProcess "yices-smt2" [file] ""
-callSMTSolver AltErgo file = readProcess "alt-ergo" ["-i smtlib2", file] ""
+callSMTSolver :: SMTLibSolver -> String -> IO (ExitCode, String, String)
+callSMTSolver CVC5 file    = readProcessWithExitCode "cvc5" [
+                                    "--lang=smt2", file,
+                                    "--tlimit=30000",
+                                    "--cut-all-bounded",
+                                    "--dt-blast-splits",
+                                    "--dt-infer-as-lemmas",
+                                    "--cbqi",
+                                    "--cegqi",
+                                    "--cegqi-nested-qe"
+                                ] ""
+callSMTSolver Z3 file      = readProcessWithExitCode "z3" ["-smt2", file] ""
+callSMTSolver Yices file   = readProcessWithExitCode "yices-smt2" [file] ""
+callSMTSolver AltErgo file = readProcessWithExitCode "alt-ergo" [
+                                    "--input=smtlib2", file,
+                                    "--instantiation-heuristic=greedy",
+                                    "--no-nla",
+                                    "--timelimit=30"
+                                ] ""
 
 outputToSMTLibResult :: SMTLibSolver -> String -> SMTLibResult
 outputToSMTLibResult _ output = if isUnsat then Unsat else if isSat then Sat else Unknown
@@ -235,6 +250,9 @@ outputToSMTLibResult _ output = if isUnsat then Unsat else if isSat then Sat els
 runSMTLib :: SMTLibSolver -> String -> IO SMTLibResult
 runSMTLib solver input = do
     writeFile "tmp.smtlib" input
-    output <- callSMTSolver solver "tmp.smtlib"
-    return $ outputToSMTLibResult solver output
+    (exitCode, output, _) <- callSMTSolver solver "tmp.smtlib"
+    if exitCode /= ExitSuccess then 
+        return Unknown
+    else
+        return $ outputToSMTLibResult solver output
 

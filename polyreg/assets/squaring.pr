@@ -1,0 +1,6 @@
+def main( w : [Char]) : [Char] := 
+    for (i, c) in enumerate(w) do
+        for (j, d) in enumerate(w) do 
+            yield d
+        done
+    done

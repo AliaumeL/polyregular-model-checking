@@ -3,6 +3,7 @@ module Logic.Formulas (Sort(..), Quant(..), Var(..), Formula(..), Value(..),
 shiftVar,
 quantifierDepth,
 simplifyFormula,
+addRealPositions,
 andList, orList, quantifyList, mapInVars, mapOutVars, mapVars,
 nestQuantVars, nestQuantVar, mapTags,
 substituteBooleanVar, freeVars, prettyPrintFormula, 
@@ -157,6 +158,22 @@ injectTags (FLetter x l) = FLetter x l
 injectTags (FTestPos t x y) = FTestPos t x y
 injectTags (FRealPos x) = FRealPos x
 injectTags (FPredPos x y) = FPredPos x y
+
+addRealPositions :: Formula tag -> Formula tag
+addRealPositions (FConst b) = FConst b
+addRealPositions (FVar x) = FVar x
+addRealPositions (FBin op l r) = FBin op (addRealPositions l) (addRealPositions r)
+addRealPositions (FNot l) = FNot (addRealPositions l)
+addRealPositions (FQuant Exists x Pos l) = FQuant Exists x Pos (FBin Conj (FRealPos (Local 0 x)) (addRealPositions l))
+addRealPositions (FQuant Forall x Pos l) = FQuant Forall x Pos (FBin Impl (FRealPos (Local 0 x)) (addRealPositions l))
+addRealPositions (FQuant q x s l) = FQuant q x s (addRealPositions l)
+addRealPositions (FTag x t) = FTag x t
+addRealPositions (FLetter x l) = FLetter x l
+addRealPositions (FTestPos t x y) = FTestPos t x y
+addRealPositions (FRealPos x) = FRealPos x
+addRealPositions (FPredPos x y) = FPredPos x y
+
+
 
 mapTags :: (t -> s) -> Formula t -> Formula s
 mapTags _ (FConst b) = FConst b
