@@ -215,8 +215,8 @@ main = do
     let simpleForInterpretation = simpleForToInterpretation simpleForProg
     putStrLn $ "Program: converted to interpretation" ++ show simpleForInterpretation
     putStrLn $ "Program: interpretation runned on `adb` : " ++ (show $ runInterpretation simpleForInterpretation "adb")
-    let precondition  = andList [startsWithChar 'b', endsWithChar 'd']
-    let postcondition = containsAB 'd' 'b'
+    let precondition  = containsAB 'a' 'b'
+    let postcondition = containsAB 'a' 'b'
     let hoareTriple   = encodeHoareTriple precondition simpleForInterpretation postcondition
     putStrLn $ "Program: transformed to hoare triple" ++ show hoareTriple
     verifyResult <- monaVerifyHoareTriple simpleForInterpretation hoareTriple
