@@ -1,12 +1,9 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Logic.Mona where
+module Logic.Export.Mona where
 
 import QuantifierFree
 
-import System.Process (readProcess)
 import Data.List (isInfixOf)
-
-import GHC.IO.Handle (hPutStr)
 
 import Logic.Formulas
 
@@ -174,5 +171,7 @@ runMona :: String -> IO ExportResult
 runMona input = do
     -- write using the handle and not the file name
     writeFile "tmp.mona" input
-    output <- readProcess "mona" ["-q", "tmp.mona"] ""
-    return $ parseMonaOutput output
+    outputCmd <- safeRunProcess "mona" ["-q", "tmp.mona"]
+    case outputCmd of
+        Left err     -> return $ Error err
+        Right output -> return $ parseMonaOutput output

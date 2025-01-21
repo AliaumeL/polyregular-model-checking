@@ -1,10 +1,9 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Logic.SMTLib where
+module Logic.Export.SMTLib where
 
 import QuantifierFree
 
 import System.Process (readProcessWithExitCode)
-import System.Exit (ExitCode(..))
 import Data.List (isInfixOf)
 
 import Logic.Export.Utils
@@ -152,12 +151,11 @@ encodeSMTLib (EncodeParams alphabet tags) formula = unlines $ [preamble,
         checkSat = "(check-sat)"
 
 
+data SMTLibSolver =  Z3 | CVC5 | Yices | AltErgo deriving (Show, Eq, Enum, Ord)
 
 
-data SMTLibSolver = CVC5 | Z3 | Yices | AltErgo deriving (Show, Eq)
-
-callSMTSolver :: SMTLibSolver -> String -> IO (ExitCode, String, String)
-callSMTSolver CVC5 file    = readProcessWithExitCode "cvc5" [
+smtSolverToCommand :: SMTLibSolver -> String -> (String, [String])
+smtSolverToCommand CVC5   file  = ("cvc5", [
                                     "--lang=smt2", file,
                                     "--tlimit=30000",
                                     "--cut-all-bounded",
@@ -165,16 +163,15 @@ callSMTSolver CVC5 file    = readProcessWithExitCode "cvc5" [
                                     "--dt-infer-as-lemmas",
                                     "--cbqi",
                                     "--cegqi",
-                                    "--cegqi-nested-qe"
-                                ] ""
-callSMTSolver Z3 file      = readProcessWithExitCode "z3" ["-smt2", file] ""
-callSMTSolver Yices file   = readProcessWithExitCode "yices-smt2" [file] ""
-callSMTSolver AltErgo file = readProcessWithExitCode "alt-ergo" [
+                                    "--cegqi-nested-qe"])
+smtSolverToCommand Z3     file  = ("z3", ["-smt2", file])
+smtSolverToCommand Yices  file  = ("yices-smt2", [file])
+smtSolverToCommand AltErgo file = ("alt-ergo", [
                                     "--input=smtlib2", file,
                                     "--instantiation-heuristic=greedy",
                                     "--no-nla",
                                     "--timelimit=30"
-                                ] ""
+                                ])
 
 outputToSMTLibResult :: SMTLibSolver -> String -> ExportResult
 outputToSMTLibResult _ output = if isUnsat then Unsat else if isSat then Sat else Unknown
@@ -191,9 +188,9 @@ outputToSMTLibResult _ output = if isUnsat then Unsat else if isSat then Sat els
 runSMTLib :: SMTLibSolver -> String -> IO ExportResult
 runSMTLib solver input = do
     writeFile "tmp.smtlib" input
-    (exitCode, output, _) <- callSMTSolver solver "tmp.smtlib"
-    if exitCode /= ExitSuccess then 
-        return Unknown
-    else
-        return $ outputToSMTLibResult solver output
+    let (cmd, args) = smtSolverToCommand solver "tmp.smtlib"
+    cmdOutput <- safeRunProcess cmd args
+    case cmdOutput of
+        Left err       -> return $ Error err
+        Right (output) -> return $ outputToSMTLibResult solver output
 

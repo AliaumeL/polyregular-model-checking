@@ -9,6 +9,10 @@ import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as M
 
+import System.Process (readProcess)
+import GHC.IO.Exception
+import Control.Exception (catch)
+
 import Data.Char
 
 import Logic.Formulas
@@ -55,5 +59,10 @@ data EncodeParams = EncodeParams {
 } deriving (Eq,Show)
 
 
-data ExportResult = Sat | Unsat | Unknown
+data ExportResult = Sat | Unsat | Unknown | Error String
   deriving (Show, Eq)
+
+safeRunProcess :: String -> [String] -> IO (Either String String)
+safeRunProcess p args = catch (Right <$> readProcess p args "") handler
+    where
+        handler e = return $ Left $ show (e :: IOException)

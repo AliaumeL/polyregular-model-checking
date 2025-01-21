@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Logic.AltErgo where
+module Logic.Export.AltErgo where
 
 import QuantifierFree
 
@@ -143,13 +143,13 @@ encodeAltErgo (EncodeParams alphabet tags) formula = unlines $ [
         formula' = "goal altergoGoal: " ++ (runExportM $ encodeFormula formula)
 
 
-callAltErgo :: String -> IO (ExitCode, String, String)
-callAltErgo file = readProcessWithExitCode "alt-ergo" [
+altErgoCmd :: String -> (String, [String])
+altErgoCmd file = ("alt-ergo", [
                                            "--timelimit=30",
                                            "--instantiation-heuristic=greedy",
                                            "--no-nla",
                                            file
-                                           ] ""
+                                           ])
 
 outputToResult :: String -> ExportResult
 outputToResult output = if isUnsat then Unsat else if isSat then Sat else Unknown
@@ -166,9 +166,9 @@ outputToResult output = if isUnsat then Unsat else if isSat then Sat else Unknow
 runAltErgo :: String -> IO ExportResult
 runAltErgo input = do
     writeFile "tmp.ae" input
-    (exitCode, output, _) <- callAltErgo "tmp.ae"
-    if exitCode /= ExitSuccess then 
-        return Unknown
-    else
-        return $ outputToResult output
+    let (cmd, args) = altErgoCmd "tmp.ae"
+    outputCmd <- safeRunProcess cmd args
+    case outputCmd of
+        Left err     -> return $ Error err
+        Right output -> return $ outputToResult output
 

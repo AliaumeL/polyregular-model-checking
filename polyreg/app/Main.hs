@@ -23,12 +23,9 @@ import ForPrograms.HighLevel.Transformations.LetBoolsToTop (bringLetBoolsToTopAn
 import ForPrograms.Simple.Optimization(simplifyForProgram)
 import QuantifierFree
 import Logic.Formulas 
-import Logic.PullBack (pullBack)
-import Logic.Mona (encodeMona, runMona)
-import Logic.SMTLib (encodeSMTLib, runSMTLib,SMTLibSolver(..))
-import Logic.AltErgo (encodeAltErgo, runAltErgo)
-import Logic.Export.Utils (ExportResult(..), EncodeParams(..))
-import Logic.Interpreter (runInterpretation)
+import Logic.HoareTriple    (HoareTriple(..), verifyHoareTriple, encodeHoareTriple)
+import Logic.Export         (ExportResult(..), EncodeParams(..), allSolvers)
+import Logic.Interpreter    (runInterpretation)
 import Logic.Interpretation (toInterpretation, stringify, Interpretation (..))
 
 import Data.List (nub)
@@ -136,8 +133,6 @@ simpleShowEitherError :: Either InterpretError String -> String
 simpleShowEitherError (Left e) = "ERROR: " ++ simpleShowInterpreterError e
 simpleShowEitherError (Right s) = "OK: " ++ s
 
-encodeHoareTriple :: Formula () -> Interpretation String -> Formula () -> Formula String
-encodeHoareTriple input i output = FBin Impl (addRealPositions (injectTags input)) (pullBack i output)
 
 containsAB :: Char -> Char -> Formula ()
 containsAB c1 c2 = quantifyList [("firstC", Pos, Exists), ("nextC", Pos, Exists)] $ andList [iLessThanJ, consecutive, iIsC, jIsC]
@@ -162,28 +157,6 @@ endsWithChar c = quantifyList [("lastC", Pos, Exists)] $ andList [jIsC, isLast]
         isLast     = FNot $ quantifyList [("afterLast", Pos, Exists)] $ FTestPos Lt (Local 1 "lastC") (Local 0 "afterLast")
 
 
-
-monaVerifyHoareTriple :: Interpretation String -> Formula String -> IO ExportResult
-monaVerifyHoareTriple i tripleRaw = runMona encoded
-    where
-        triple  = simplifyFormula $ FNot tripleRaw
-        params  = EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
-        encoded = encodeMona params triple
-
-smtLibVerifyHoareTriple :: SMTLibSolver -> Interpretation String -> Formula String -> IO ExportResult
-smtLibVerifyHoareTriple solver i tripleRaw = runSMTLib solver encoded
-    where
-        triple  = simplifyFormula $ FNot tripleRaw
-        params  = EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
-        encoded = encodeSMTLib params triple
-
-
-altErgoVerifyHoareTriple :: Interpretation String -> Formula String -> IO ExportResult
-altErgoVerifyHoareTriple i tripleRaw = runAltErgo encoded
-    where
-        triple  = simplifyFormula $ FNot tripleRaw
-        params  = EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
-        encoded = encodeAltErgo params triple
 
 
 higherToSimpleProgram :: Program String ValueType -> SFP.ForProgram
@@ -217,27 +190,16 @@ main = do
     putStrLn $ "Program: interpretation runned on `adb` : " ++ (show $ runInterpretation simpleForInterpretation "adb")
     let precondition  = containsAB 'a' 'b'
     let postcondition = containsAB 'a' 'b'
-    let hoareTriple   = encodeHoareTriple precondition simpleForInterpretation postcondition
+    let hoareTriple = HoareTriple precondition simpleForInterpretation postcondition
     putStrLn $ "Program: transformed to hoare triple" ++ show hoareTriple
-    verifyResult <- monaVerifyHoareTriple simpleForInterpretation hoareTriple
-    putStrLn $ "Program: verified using MONA"
-    case verifyResult of
-        Unsat     -> putStrLn "[MONA] YES! The Hoare triple is       valid"
-        Sat       -> putStrLn "[MONA] NO ! The Hoare triple is *not* valid"
-        Unknown   -> putStrLn "[MONA] ???"
-    verifyResult <- altErgoVerifyHoareTriple simpleForInterpretation hoareTriple
-    putStrLn $ "Program: verified using AltErgo (ae file)"
-    case verifyResult of
-        Unsat   -> putStrLn "[AltErgo] YES! The Hoare triple is       valid"
-        Sat     -> putStrLn "[AltErgo] NO ! The Hoare triple is *not* valid"
-        Unknown -> putStrLn "[AltErgo] ???"
-    forM_ [CVC5, AltErgo] $ \solver -> do
-        verifyResult <- smtLibVerifyHoareTriple solver simpleForInterpretation hoareTriple
-        putStrLn $ "Program: verified using SMTLib "  ++ show solver
+    forM_ allSolvers $ \solver -> do
+        verifyResult <- verifyHoareTriple solver hoareTriple
+        putStrLn $ "Program: verified using " ++ show solver
         case verifyResult of
-            Unsat   -> putStrLn "[SMTLib] YES! The Hoare triple is       valid"
-            Sat     -> putStrLn "[SMTLib] NO ! The Hoare triple is *not* valid"
-            Unknown -> putStrLn "[SMTLib] ???"
+            Unsat     -> putStrLn $ "[" ++ show solver ++ "] YES! The Hoare triple is       valid"
+            Sat       -> putStrLn $ "[" ++ show solver ++ "] NO ! The Hoare triple is *not* valid"
+            Unknown   -> putStrLn $ "[" ++ show solver ++ "] ???"
+            Error msg -> putStrLn $ "[" ++ show solver ++ "] ERROR: " ++ msg
 
 
 {- 

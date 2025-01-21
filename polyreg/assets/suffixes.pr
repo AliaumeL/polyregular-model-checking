@@ -1,0 +1,8 @@
+def main(w : [Char]) : [Char] := 
+    for (i, c) in reversed(enumerate(w)) do
+        for (j, d) in enumerate(w) do 
+            if i <= j then
+                yield d
+            endif
+        done
+    done
