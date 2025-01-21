@@ -9,7 +9,7 @@ import Control.Monad.State
 import Data.Map (Map)
 import qualified Data.Map as M
 
-import System.Process (readProcess)
+import System.Process (readProcessWithExitCode)
 import GHC.IO.Exception
 import Control.Exception (catch)
 
@@ -63,6 +63,19 @@ data ExportResult = Sat | Unsat | Unknown | Error String
   deriving (Show, Eq)
 
 safeRunProcess :: String -> [String] -> IO (Either String String)
-safeRunProcess p args = catch (Right <$> readProcess p args "") handler
+safeRunProcess p args = catch callCommand handler
     where
         handler e = return $ Left $ show (e :: IOException)
+        callCommand = do 
+            (exitCode, stdout, stderr) <- readProcessWithExitCode p args ""
+            case exitCode of
+                ExitSuccess   -> return $ Right stdout
+                ExitFailure i -> return $ Left $ (show  i) ++ " : " ++ stderr
+
+
+processIsInstalled :: String -> IO Bool
+processIsInstalled p = do
+    res <- safeRunProcess p ["--version"]
+    case res of
+        Left _  -> return False
+        Right _ -> return True

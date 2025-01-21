@@ -24,7 +24,7 @@ import ForPrograms.Simple.Optimization(simplifyForProgram)
 import QuantifierFree
 import Logic.Formulas 
 import Logic.HoareTriple    (HoareTriple(..), verifyHoareTriple, encodeHoareTriple)
-import Logic.Export         (ExportResult(..), EncodeParams(..), allSolvers)
+import Logic.Export         (ExportResult(..), EncodeParams(..), allSolvers, installedSolvers)
 import Logic.Interpreter    (runInterpretation)
 import Logic.Interpretation (toInterpretation, stringify, Interpretation (..))
 
@@ -192,7 +192,10 @@ main = do
     let postcondition = containsAB 'a' 'b'
     let hoareTriple = HoareTriple precondition simpleForInterpretation postcondition
     putStrLn $ "Program: transformed to hoare triple" ++ show hoareTriple
-    forM_ allSolvers $ \solver -> do
+    solvers <- installedSolvers
+    putStrLn $ "Program: potential solvers " ++ show allSolvers
+    putStrLn $ "Program: installed solvers " ++ show solvers
+    forM_ solvers $ \solver -> do
         verifyResult <- verifyHoareTriple solver hoareTriple
         putStrLn $ "Program: verified using " ++ show solver
         case verifyResult of
