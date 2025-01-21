@@ -19,7 +19,7 @@ import Control.Monad.State
 import Control.Monad.Reader
 import Control.Monad.Extra (anyM, allM)
 
-import qualified SimpleForPrograms as SFP
+import qualified ForPrograms.Simple as SFP
 
 import Data.Map (Map)
 import qualified Data.Map as M

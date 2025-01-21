@@ -2,8 +2,8 @@ module Parser.ParseHighLevel where
 
 import Parser.HighLevelForProgram.Par   ( pProgram, myLexer )
 import Parser.ParsedToForProgram ( parsedToForProgram )
-import ForPrograms
-import qualified ForProgramsTyping as T
+import ForPrograms.HighLevel
+import qualified ForPrograms.HighLevel.Typing as T
 
 type PartiallyTypedProgram = Program String (Maybe T.ValueType)
 

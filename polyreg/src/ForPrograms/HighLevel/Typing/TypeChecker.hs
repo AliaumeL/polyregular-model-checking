@@ -1,14 +1,14 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Typing.TypeChecker (typeCheckProgram) where
+module ForPrograms.HighLevel.Typing.TypeChecker (typeCheckProgram) where
 
-import ForPrograms 
-import ForProgramsTyping
+import ForPrograms.HighLevel 
+import ForPrograms.HighLevel.Typing
 import qualified Data.Map as M
 
 import Control.Monad
 import Control.Monad.Reader 
 
-import ForProgramsPrettyPrint
+import ForPrograms.HighLevel.PrettyPrint
 
 class (Monad m) => TypeCheckingMonad m where 
     getVarType :: String -> m ValueType 

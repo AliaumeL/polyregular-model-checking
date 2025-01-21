@@ -2,7 +2,7 @@ module SimpleForProgramsSpec where
 
 import Test.Hspec
 
-import SimpleForPrograms
+import ForPrograms.Simple
 import QuantifierFree
 
 -- | example program

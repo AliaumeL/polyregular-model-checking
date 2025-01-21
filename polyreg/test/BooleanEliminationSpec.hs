@@ -2,13 +2,13 @@ module BooleanEliminationSpec where
 
 import Test.Hspec
 
-import ForPrograms
-import ForProgramInterpreter
-import ForProgramsTyping
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Interpreter
+import ForPrograms.HighLevel.Typing
 import Parser.ParseHighLevel
-import Typing.Inference (inferAndCheckProgram)
-import FunctionElimination (eliminateFunctionCalls)
-import BooleanElimination (hasBooleanGen, removeBooleanGen)
+import ForPrograms.HighLevel.Typing.Inference (inferAndCheckProgram)
+import ForPrograms.HighLevel.Transformations.FunctionElimination (eliminateFunctionCalls)
+import ForPrograms.HighLevel.Transformations.BooleanElimination (hasBooleanGen, removeBooleanGen)
 
 fromRight' :: (Show b, Show a) => Either a b -> b
 fromRight' (Right x) = x

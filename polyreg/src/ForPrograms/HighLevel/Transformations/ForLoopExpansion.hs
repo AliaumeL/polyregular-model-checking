@@ -1,16 +1,16 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveTraversable #-}
-module ForLoopExpansion where
+module ForPrograms.HighLevel.Transformations.ForLoopExpansion where
 
 -- In this module, we expand for loops
 -- on generators, so that the *only* for loops
 -- that exist are on variables or reverse variables.
 
 import QuantifierFree
-import ForPrograms
-import ForProgramsTyping (ValueType(..),OutputType(..))
-import ForProgramsPrettyPrint (prettyPrintStmtWithNls, prettyPrintProgramWithNls)
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing(ValueType(..),OutputType(..))
+import ForPrograms.HighLevel.PrettyPrint (prettyPrintStmtWithNls, prettyPrintProgramWithNls)
 
 import Control.Monad
 import Control.Monad.State
@@ -19,7 +19,7 @@ import Control.Monad.Except
 import Data.Map (Map)
 import qualified Data.Map as M
 
-import AddrVarElimination (StmtZip(..), ExtVars(..), eliminateExtVarsProg, reverseStmtZip)
+import ForPrograms.HighLevel.Transformations.AddrVarElimination (StmtZip(..), ExtVars(..), eliminateExtVarsProg, reverseStmtZip)
 
 import Debug.Trace
 

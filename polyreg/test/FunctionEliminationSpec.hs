@@ -6,12 +6,12 @@ import Data.Map (Map)
 import qualified Data.Map as M
 
 import QuantifierFree
-import ForPrograms
-import ForProgramInterpreter
-import Typing.Inference (inferAndCheckProgram)
-import ForProgramsTyping
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Interpreter
+import ForPrograms.HighLevel.Typing.Inference (inferAndCheckProgram)
+import ForPrograms.HighLevel.Typing
 import Parser.ParseHighLevel
-import FunctionElimination
+import ForPrograms.HighLevel.Transformations.FunctionElimination
 
 fromRight' :: (Show a, Show b) => Either a b -> b
 fromRight' (Right x) = x

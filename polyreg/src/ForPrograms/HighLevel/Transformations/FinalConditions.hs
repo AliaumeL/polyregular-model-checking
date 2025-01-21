@@ -1,6 +1,6 @@
-module FinalConditions where 
+module ForPrograms.HighLevel.Transformations.FinalConditions where 
 
-import ForPrograms
+import ForPrograms.HighLevel
 
 -- 1. The program does not contain any generator expressions.
 

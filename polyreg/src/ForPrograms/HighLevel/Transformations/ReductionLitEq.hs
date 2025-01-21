@@ -1,10 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module ReductionLitEq (removeBLitEq, hasLitEq)
+module ForPrograms.HighLevel.Transformations.ReductionLitEq (removeBLitEq, hasLitEq)
 where
 
-import ForPrograms
-import ForProgramsTyping
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing
 
 import Control.Monad.State
 

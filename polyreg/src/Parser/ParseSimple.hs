@@ -2,7 +2,7 @@ module Parser.ParseSimple where
 
 import Parser.SimpleForProgram.Par   ( pProgram, myLexer )
 import Parser.ParsedToSimpleForProgram ( parsedToForProgram )
-import SimpleForPrograms
+import ForPrograms.Simple
 
 parseSimpleForProgram :: String -> Either String ForProgram
 parseSimpleForProgram s = do

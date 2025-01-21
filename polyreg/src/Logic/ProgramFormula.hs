@@ -2,8 +2,8 @@
 
 module Logic.ProgramFormula where
 
-import qualified SimpleForPrograms as SFP
-import SimpleForPrograms (Direction(..), BName(..), PName(..), Movement(..))
+import qualified ForPrograms.Simple as SFP
+import ForPrograms.Simple (Direction(..), BName(..), PName(..), Movement(..))
 
 import Data.Map (Map)
 import qualified Data.Map as M

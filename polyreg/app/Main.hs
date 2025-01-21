@@ -1,26 +1,26 @@
 module Main (main) where
 
 
-import ForPrograms
-import ForProgramsTyping (ValueType(..))
-import Typing.Inference (inferAndCheckProgram)
-import ForProgramInterpreter (runProgramString, InterpretError(..))
-import BooleanElimination (removeBooleanGen)
-import FunctionElimination (eliminateFunctionCalls)
-import LiteralElimination (eliminateLiterals)
-import LetElimination (eliminateLetProgram)
-import ForLoopExpansion (forLoopExpansion, forLoopExpansionFix)
-import ReturnElimination (retElimProgram)
-import ReductionLitEq (removeBLitEq)
-import ForProgramsPrettyPrint
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing(ValueType(..))
+import ForPrograms.HighLevel.Typing.Inference (inferAndCheckProgram)
+import ForPrograms.HighLevel.Interpreter (runProgramString, InterpretError(..))
+import ForPrograms.HighLevel.Transformations.BooleanElimination (removeBooleanGen)
+import ForPrograms.HighLevel.Transformations.FunctionElimination (eliminateFunctionCalls)
+import ForPrograms.HighLevel.Transformations.LiteralElimination (eliminateLiterals)
+import ForPrograms.HighLevel.Transformations.LetElimination (eliminateLetProgram)
+import ForPrograms.HighLevel.Transformations.ForLoopExpansion (forLoopExpansion, forLoopExpansionFix)
+import ForPrograms.HighLevel.Transformations.ReturnElimination (retElimProgram)
+import ForPrograms.HighLevel.Transformations.ReductionLitEq (removeBLitEq)
+import ForPrograms.HighLevel.PrettyPrint
 import Parser.ParseHighLevel (parseHighLevel)
-import Typing.TypeChecker (typeCheckProgram)
-import FinalConditions (finalConditions, displayBrokenConditions)
-import ToSimpleForProgram (toSimpleForProgram)
-import SimpleForPrograms (runProgram, pathToTag)
-import qualified SimpleForPrograms as SFP
-import LetBoolsToTop (bringLetBoolsToTopAndRefresh)
-import SimpleForProgramSimplification (simplifyForProgram)
+import ForPrograms.HighLevel.Typing.TypeChecker (typeCheckProgram)
+import ForPrograms.HighLevel.Transformations.FinalConditions (finalConditions, displayBrokenConditions)
+import ForPrograms.HighLevel.ToSimple (toSimpleForProgram)
+import ForPrograms.Simple (runProgram, pathToTag)
+import qualified ForPrograms.Simple as SFP
+import ForPrograms.HighLevel.Transformations.LetBoolsToTop (bringLetBoolsToTopAndRefresh)
+import ForPrograms.Simple.Optimization(simplifyForProgram)
 import QuantifierFree
 import Logic.Formulas 
 import Logic.PullBack (pullBack)

@@ -4,15 +4,15 @@ import Test.Hspec
 
 import Control.Monad
 
-import qualified Typing.Constraints as C
-import qualified Typing.Inference as I
+import qualified ForPrograms.HighLevel.Typing.Constraints as C
+import qualified ForPrograms.HighLevel.Typing.Inference as I
 
-import ForPrograms
-import ForProgramsTyping
-import ForProgramInterpreter
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing
+import ForPrograms.HighLevel.Interpreter
 import Parser.ParseHighLevel
 
-import ForProgramsPrettyPrint
+import ForPrograms.HighLevel.PrettyPrint
 
 -- traverse to list
 import Data.Foldable (toList)

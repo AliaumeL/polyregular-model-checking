@@ -2,20 +2,20 @@ module ForLoopExpansionSpec where
 
 import Test.Hspec
 
-import ForPrograms
-import ForProgramsTyping
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing
 import Parser.ParseHighLevel
-import ForProgramInterpreter
-import Typing.Inference (inferAndCheckProgram)
+import ForPrograms.HighLevel.Interpreter
+import ForPrograms.HighLevel.Typing.Inference (inferAndCheckProgram)
 
-import BooleanElimination
-import FunctionElimination
-import LiteralElimination
-import ReductionLitEq
-import AddrVarElimination
-import LetElimination (eliminateLetProgram)
-import ReturnElimination (retElimProgram)
-import ForLoopExpansion
+import ForPrograms.HighLevel.Transformations.BooleanElimination
+import ForPrograms.HighLevel.Transformations.FunctionElimination
+import ForPrograms.HighLevel.Transformations.LiteralElimination
+import ForPrograms.HighLevel.Transformations.ReductionLitEq
+import ForPrograms.HighLevel.Transformations.AddrVarElimination
+import ForPrograms.HighLevel.Transformations.LetElimination (eliminateLetProgram)
+import ForPrograms.HighLevel.Transformations.ReturnElimination (retElimProgram)
+import ForPrograms.HighLevel.Transformations.ForLoopExpansion
 
 import Control.Monad
 

@@ -1,7 +1,7 @@
 module Parser.ParsedToSimpleForProgram where
 
 import qualified Parser.SimpleForProgram.Abs as P 
-import qualified SimpleForPrograms as T 
+import qualified ForPrograms.Simple as T 
 import QuantifierFree (TestOp(..), BinOp(..)) 
 
 parsedToForProgram :: P.Program -> T.ForProgram

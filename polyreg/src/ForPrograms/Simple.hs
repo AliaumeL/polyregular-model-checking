@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module SimpleForPrograms where
+module ForPrograms.Simple where
 
 import QuantifierFree
 

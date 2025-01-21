@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Logic.ProgramFormulaSpec where 
 
-import SimpleForPrograms
+import ForPrograms.Simple
 
 import Logic.Interpretation
 import Logic.PullBack

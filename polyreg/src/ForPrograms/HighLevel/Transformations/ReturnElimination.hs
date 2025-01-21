@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module ReturnElimination where
+module ForPrograms.HighLevel.Transformations.ReturnElimination where
 
 -- This module is used to remove return statements
 -- from a program. This is done by using the following 
@@ -15,8 +15,8 @@ module ReturnElimination where
 --        yield  x -> if not has_returned then yield x
 --       ]
 
-import ForPrograms
-import ForProgramsTyping
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing
 import Control.Monad
 
 import Control.Monad.State

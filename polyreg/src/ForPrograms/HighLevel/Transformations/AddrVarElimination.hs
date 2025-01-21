@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveTraversable #-}
-module AddrVarElimination --(StmtZip(..), ExtVars(..), eliminateExtVarsProg)
+module ForPrograms.HighLevel.Transformations.AddrVarElimination --(StmtZip(..), ExtVars(..), eliminateExtVarsProg)
 where
 
 -- In this module, we expand for loops
@@ -9,8 +9,8 @@ where
 -- that exist are on variables or reverse variables.
 
 import QuantifierFree
-import ForPrograms
-import ForProgramsTyping
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing
 
 -- addresses in generator expressions
 data StmtZip v t = 

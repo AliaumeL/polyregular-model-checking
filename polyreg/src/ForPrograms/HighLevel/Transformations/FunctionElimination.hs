@@ -1,10 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module FunctionElimination (eliminateFunctionCalls, hasFunctionCall, substStmt, substOExpr, substBExpr, SubstMap(..)) where
+module ForPrograms.HighLevel.Transformations.FunctionElimination (eliminateFunctionCalls, hasFunctionCall, substStmt, substOExpr, substBExpr, SubstMap(..)) where
 
-import ForPrograms
-import ForProgramsTyping
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing
 
 import Control.Monad
 import Control.Monad.State

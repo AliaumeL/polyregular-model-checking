@@ -1,4 +1,5 @@
 module QuantifierFree where
+-- TODO: Rename to Logic.QuantifierFree
 
 data BinOp  = Conj | Disj | Impl | Equiv deriving (Show, Eq, Ord)
 

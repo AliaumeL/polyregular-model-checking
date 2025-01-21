@@ -3,8 +3,8 @@ module ForProgramInterpreterSpec where
 
 import Test.Hspec
 
-import ForPrograms
-import ForProgramInterpreter
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Interpreter
 import Parser.ParseHighLevel
 
 

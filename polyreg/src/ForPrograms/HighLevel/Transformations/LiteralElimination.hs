@@ -1,4 +1,4 @@
-module LiteralElimination where
+module ForPrograms.HighLevel.Transformations.LiteralElimination where
 
 -- This module is made to ensure that
 -- every expression that is iterated over in a
@@ -11,8 +11,8 @@ module LiteralElimination where
 -- our conversion to the "simple for program" case.
 
 
-import ForPrograms
-import ForProgramsTyping
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing
 
 eliminateLiterals :: Program String ValueType -> Program String ValueType
 eliminateLiterals (Program funcs main) = Program (map eliminateLiteralFun funcs) main

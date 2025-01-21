@@ -2,12 +2,12 @@ module ReductionLitEqSpec where
 
 import Test.Hspec
 
-import ForPrograms
-import ForProgramInterpreter
-import ForProgramsTyping
-import Typing.Inference (inferAndCheckProgram)
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Interpreter
+import ForPrograms.HighLevel.Typing
+import ForPrograms.HighLevel.Typing.Inference (inferAndCheckProgram)
 import Parser.ParseHighLevel
-import ReductionLitEq
+import ForPrograms.HighLevel.Transformations.ReductionLitEq
 
 fromRight' :: (Show b, Show a) => Either a b -> b
 fromRight' (Right x) = x

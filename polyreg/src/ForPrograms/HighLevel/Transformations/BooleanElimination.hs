@@ -1,8 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module BooleanElimination (hasBooleanGen, removeBooleanGen) where
+module ForPrograms.HighLevel.Transformations.BooleanElimination (hasBooleanGen, removeBooleanGen) where
 
-import ForPrograms
-import ForProgramsTyping
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing
 
 import Control.Monad.State
 

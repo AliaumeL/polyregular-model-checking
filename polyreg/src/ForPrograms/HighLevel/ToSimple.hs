@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module ToSimpleForProgram where
+module ForPrograms.HighLevel.ToSimple where
 
 -- This converts a ForProgram to a SimpleForProgram
 -- assuming 
@@ -21,8 +21,8 @@ module ToSimpleForProgram where
 --    entrypoint that has type [Char] -> [Char]
 --    and takes no position variables as input
 
-import ForPrograms        as FP
-import SimpleForPrograms  as SFP
+import ForPrograms.HighLevel        as FP
+import ForPrograms.Simple  as SFP
 
 import Debug.Trace (traceM)
 

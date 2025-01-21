@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Typing.Constraints where
+module ForPrograms.HighLevel.Typing.Constraints where
 
-import qualified ForPrograms as FP
+import qualified ForPrograms.HighLevel as FP
 import qualified Data.Map as M
 import qualified Data.Set    as S
 

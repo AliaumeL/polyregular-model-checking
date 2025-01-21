@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module ForProgramInterpreter where
+module ForPrograms.HighLevel.Interpreter where
 
 import Control.Monad
 import Control.Monad.State 
@@ -8,7 +8,7 @@ import qualified Data.Map as M
 import Data.Tuple.Extra
 
 import QuantifierFree
-import ForPrograms 
+import ForPrograms.HighLevel
 
 data Value = VBool Bool | VOutput (CExpr String ()) deriving (Show, Eq)
 data StmtValue = StmtNoOp | StmtReturn Value | StmtYield Value deriving (Show, Eq)

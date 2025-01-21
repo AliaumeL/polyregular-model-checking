@@ -2,7 +2,7 @@ module ForProgramSpec where
 
 import Test.Hspec
 
-import ForPrograms
+import ForPrograms.HighLevel
 
 {- 
 simpleForLoopText :: String

@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module SimpleForProgramSimplification (simplifyForProgram, eliminateUnusedVars, eliminateInconsequentialStmts, bconstSimplForProgram, staticVarCompForProgramFO) where 
+module ForPrograms.Simple.Optimization (simplifyForProgram, eliminateUnusedVars, eliminateInconsequentialStmts, bconstSimplForProgram, staticVarCompForProgramFO) where 
 
-import SimpleForPrograms 
+import ForPrograms.Simple
 
 import qualified Data.Map as M
 import qualified Data.Set as S

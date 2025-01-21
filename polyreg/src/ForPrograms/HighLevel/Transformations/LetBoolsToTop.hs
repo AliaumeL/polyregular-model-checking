@@ -1,12 +1,12 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module LetBoolsToTop(bringLetBoolsToTopAndRefresh) where 
+module ForPrograms.HighLevel.Transformations.LetBoolsToTop (bringLetBoolsToTopAndRefresh) where 
 
 import Control.Monad.State
 
 import Data.Map (Map)
 import qualified Data.Map as M
 
-import ForPrograms 
+import ForPrograms.HighLevel 
 
 bringLetBoolsToTopAndRefresh :: Program String t -> Program String t
 bringLetBoolsToTopAndRefresh = bringLetBoolsToTop . refreshBoolsProg

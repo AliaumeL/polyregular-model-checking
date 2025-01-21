@@ -3,8 +3,8 @@ module Parser.ParsedToForProgram where
 import Control.Monad
 
 import qualified Parser.HighLevelForProgram.Abs as P
-import qualified ForProgramsTyping as T
-import ForPrograms 
+import qualified ForPrograms.HighLevel.Typing as T
+import ForPrograms.HighLevel 
 import QuantifierFree
 
 import Control.Monad.Except

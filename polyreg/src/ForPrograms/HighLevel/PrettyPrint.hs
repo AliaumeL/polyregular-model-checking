@@ -1,7 +1,7 @@
-module ForProgramsPrettyPrint  where
+module ForPrograms.HighLevel.PrettyPrint  where
 
-import ForPrograms
-import ForProgramsTyping
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing
 import Parser.HighLevelForProgram.Print (printTree)
 import qualified Parser.HighLevelForProgram.Abs as A
 import Parser.HighLevelForProgram.Abs (Ident(..))

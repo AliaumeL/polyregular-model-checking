@@ -5,8 +5,8 @@ import Logic.Formulas
 import QuantifierFree
 import Logic.ProgramFormula (computeUntil)
 import qualified Logic.ProgramFormula as PF
-import qualified SimpleForPrograms as SFP
-import SimpleForPrograms (Movement(..))
+import qualified ForPrograms.Simple as SFP
+import ForPrograms.Simple (Movement(..))
 
 import Data.Map (Map)
 import qualified Data.Map as M

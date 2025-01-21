@@ -1,13 +1,13 @@
 -- We enable some extensions 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module LetElimination where
+module ForPrograms.HighLevel.Transformations.LetElimination where
 
 import Control.Monad 
 import Control.Monad.Reader
 import qualified Data.Map as M
 
-import ForPrograms
-import ForProgramsTyping
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing
 
 class (Monad m) => LetEliminationMonad m where 
     withVarVal :: String -> OExpr String ValueType  -> m a -> m a

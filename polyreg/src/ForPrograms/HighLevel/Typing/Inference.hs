@@ -1,21 +1,21 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Typing.Inference (inferAndCheckProgram)
+module ForPrograms.HighLevel.Typing.Inference (inferAndCheckProgram)
 where
 
 import qualified Data.Map as M
 import qualified Data.IntSet as IntSet
 import qualified Data.IntMap as IntMap
 
-import qualified Typing.Constraints as C
-import ForPrograms
-import ForProgramsTyping (ValueType(..), 
+import qualified ForPrograms.HighLevel.Typing.Constraints as C
+import ForPrograms.HighLevel
+import ForPrograms.HighLevel.Typing(ValueType(..), 
                           OutputType(..), 
                           Position(..), 
                           eraseTypesO,
                           outputTypeDepth,
                           depthToType)
 import QuantifierFree
-import ForProgramsPrettyPrint
+import ForPrograms.HighLevel.PrettyPrint
 
 import Control.Monad
 import Control.Monad.State

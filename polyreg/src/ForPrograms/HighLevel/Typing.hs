@@ -6,9 +6,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module ForProgramsTyping where
+module ForPrograms.HighLevel.Typing where
 
-import ForPrograms
+import ForPrograms.HighLevel
 
 import Data.Map    (Map)
 import qualified Data.Map as Map

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveTraversable #-}
-module ForPrograms where
+module ForPrograms.HighLevel where
 
 import           Data.Set (Set, empty, singleton, union, unions)
 import qualified Data.Set as S
