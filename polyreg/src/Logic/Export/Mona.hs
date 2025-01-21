@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Logic.Export.Mona where
 
-import QuantifierFree
+import Logic.QuantifierFree
 
 import Data.List (isInfixOf)
 

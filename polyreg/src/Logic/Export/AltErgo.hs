@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Logic.Export.AltErgo where
 
-import QuantifierFree
+import Logic.QuantifierFree
 
 import System.Process (readProcessWithExitCode)
 import System.Exit (ExitCode(..))

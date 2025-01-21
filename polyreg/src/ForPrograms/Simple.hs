@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module ForPrograms.Simple where
 
-import QuantifierFree
+import Logic.QuantifierFree
 
 import Control.Monad
 import Control.Monad.State 

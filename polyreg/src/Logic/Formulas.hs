@@ -12,7 +12,7 @@ quantOutVars, quantInVars, injectTags, evalFormula, evalFormulaWithFreeVars,
 showFormulaGeneric)
 where
 
-import QuantifierFree
+import Logic.QuantifierFree
 
 import Control.Monad
 import Control.Monad.State

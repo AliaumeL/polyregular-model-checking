@@ -2,7 +2,7 @@
 module Logic.Interpretation where
 
 import Logic.Formulas
-import QuantifierFree
+import Logic.QuantifierFree
 import Logic.ProgramFormula (computeUntil)
 import qualified Logic.ProgramFormula as PF
 import qualified ForPrograms.Simple as SFP

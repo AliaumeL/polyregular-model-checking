@@ -21,7 +21,7 @@ import ForPrograms.Simple (runProgram, pathToTag)
 import qualified ForPrograms.Simple as SFP
 import ForPrograms.HighLevel.Transformations.LetBoolsToTop (bringLetBoolsToTopAndRefresh)
 import ForPrograms.Simple.Optimization(simplifyForProgram)
-import QuantifierFree
+import Logic.QuantifierFree
 import Logic.Formulas 
 import Logic.HoareTriple    (HoareTriple(..), verifyHoareTriple, encodeHoareTriple)
 import Logic.Export         (ExportResult(..), EncodeParams(..), allSolvers, installedSolvers)

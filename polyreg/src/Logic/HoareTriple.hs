@@ -7,7 +7,7 @@ module Logic.HoareTriple
 where
 
 import Logic.Formulas
-import QuantifierFree
+import Logic.QuantifierFree
 
 import Logic.Interpretation
 import Logic.PullBack

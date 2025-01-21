@@ -6,7 +6,7 @@ module ForPrograms.HighLevel where
 import           Data.Set (Set, empty, singleton, union, unions)
 import qualified Data.Set as S
 
-import QuantifierFree
+import Logic.QuantifierFree
 
 -- | we add a type parameter "t" for decorating the AST with types later on
 data BExpr v t = BConst Bool t

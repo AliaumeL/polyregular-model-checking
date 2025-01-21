@@ -7,7 +7,7 @@ import Control.Monad.Except
 import qualified Data.Map as M
 import Data.Tuple.Extra
 
-import QuantifierFree
+import Logic.QuantifierFree
 import ForPrograms.HighLevel
 
 data Value = VBool Bool | VOutput (CExpr String ()) deriving (Show, Eq)

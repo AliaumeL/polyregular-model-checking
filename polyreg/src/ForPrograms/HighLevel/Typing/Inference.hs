@@ -14,7 +14,7 @@ import ForPrograms.HighLevel.Typing(ValueType(..),
                           eraseTypesO,
                           outputTypeDepth,
                           depthToType)
-import QuantifierFree
+import Logic.QuantifierFree
 import ForPrograms.HighLevel.PrettyPrint
 
 import Control.Monad

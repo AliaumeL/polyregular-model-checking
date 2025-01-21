@@ -3,7 +3,7 @@ module Logic.PullBack where
 
 import Control.Monad.Reader
 
-import QuantifierFree
+import Logic.QuantifierFree
 import Logic.Formulas
 import Logic.Interpretation
 

@@ -5,7 +5,7 @@ import Control.Monad
 import qualified Parser.HighLevelForProgram.Abs as P
 import qualified ForPrograms.HighLevel.Typing as T
 import ForPrograms.HighLevel 
-import QuantifierFree
+import Logic.QuantifierFree
 
 import Control.Monad.Except
 

@@ -2,7 +2,7 @@ module Parser.ParsedToSimpleForProgram where
 
 import qualified Parser.SimpleForProgram.Abs as P 
 import qualified ForPrograms.Simple as T 
-import QuantifierFree (TestOp(..), BinOp(..)) 
+import Logic.QuantifierFree (TestOp(..), BinOp(..)) 
 
 parsedToForProgram :: P.Program -> T.ForProgram
 parsedToForProgram (P.Program (P.VarStmt vars stmt)) = T.ForProgram (map identToBName vars) $ stmtListToStmt stmt 

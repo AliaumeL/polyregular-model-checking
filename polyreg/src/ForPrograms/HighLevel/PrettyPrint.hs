@@ -6,7 +6,7 @@ import Parser.HighLevelForProgram.Print (printTree)
 import qualified Parser.HighLevelForProgram.Abs as A
 import Parser.HighLevelForProgram.Abs (Ident(..))
 
-import QuantifierFree
+import Logic.QuantifierFree
 
 -- To pretty print, we convert the program to 
 -- an abstract syntax tree and then print it

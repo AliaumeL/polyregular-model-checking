@@ -7,7 +7,7 @@ module ForPrograms.HighLevel.Transformations.ForLoopExpansion where
 -- on generators, so that the *only* for loops
 -- that exist are on variables or reverse variables.
 
-import QuantifierFree
+import Logic.QuantifierFree
 import ForPrograms.HighLevel
 import ForPrograms.HighLevel.Typing(ValueType(..),OutputType(..))
 import ForPrograms.HighLevel.PrettyPrint (prettyPrintStmtWithNls, prettyPrintProgramWithNls)

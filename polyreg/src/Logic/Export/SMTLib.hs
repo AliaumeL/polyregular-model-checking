@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Logic.Export.SMTLib where
 
-import QuantifierFree
+import Logic.QuantifierFree
 
 import System.Process (readProcessWithExitCode)
 import Data.List (isInfixOf)

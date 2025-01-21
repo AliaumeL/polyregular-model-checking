@@ -9,7 +9,7 @@ import Data.Map (Map)
 import qualified Data.Map as M
 
 import Logic.Formulas
-import QuantifierFree
+import Logic.QuantifierFree
 
 import Debug.Trace
 

@@ -10,7 +10,7 @@ import Control.Monad
 
 import Debug.Trace
 
-import QuantifierFree
+import Logic.QuantifierFree
 
 iterateToFix :: (Eq a) => (a -> a) -> a -> a 
 iterateToFix f a
