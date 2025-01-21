@@ -100,7 +100,6 @@ varExpInDomain i (VarExpansion tx xs) =
 
 pullBackM :: (MonadPB m) => Interpretation tag -> Formula () -> m (Formula tag)
 pullBackM i (FTag x tag) = error "pullBackM: tag"
-pullBackM i (FPredPos p x) = error "pullBackM: pred pos"
 pullBackM i (FRealPos x) = error "pullBackM: real pos"
 pullBackM i (FQuant _ _ Tag _) = error "pullBackM: quant tag"
 pullBackM i (FQuant _ _ Boolean _) = error "pullBackM: quant bool"

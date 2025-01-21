@@ -24,8 +24,10 @@ import ForPrograms.Simple.Optimization(simplifyForProgram)
 import QuantifierFree
 import Logic.Formulas 
 import Logic.PullBack (pullBack)
-import Logic.Mona (encodeMona, runMona, EncodeParams(..), MonaResult(..))
-import Logic.SMTLib (encodeSMTLib, runSMTLib, SMTLibResult(..), EncodeParams(..), SMTLibSolver(..))
+import Logic.Mona (encodeMona, runMona)
+import Logic.SMTLib (encodeSMTLib, runSMTLib,SMTLibSolver(..))
+import Logic.AltErgo (encodeAltErgo, runAltErgo)
+import Logic.Export.Utils (ExportResult(..), EncodeParams(..))
 import Logic.Interpreter (runInterpretation)
 import Logic.Interpretation (toInterpretation, stringify, Interpretation (..))
 
@@ -137,52 +139,51 @@ simpleShowEitherError (Right s) = "OK: " ++ s
 encodeHoareTriple :: Formula () -> Interpretation String -> Formula () -> Formula String
 encodeHoareTriple input i output = FBin Impl (addRealPositions (injectTags input)) (pullBack i output)
 
-containsAB :: Formula ()
-containsAB = quantifyList [("firstA", Pos, Exists), ("nextB", Pos, Exists)] $ andList [iLessThanJ, consecutive, iIsA, jIsB]
+containsAB :: Char -> Char -> Formula ()
+containsAB c1 c2 = quantifyList [("firstC", Pos, Exists), ("nextC", Pos, Exists)] $ andList [iLessThanJ, consecutive, iIsC, jIsC]
     where
-        iLessThanJ = FTestPos Lt (Local 1 "firstA") (Local 0 "nextB")
+        iLessThanJ = FTestPos Lt (Local 1 "firstC") (Local 0 "nextC")
         consecutive = FNot . quantifyList [("middleLetter", Pos, Exists)] . andList $ [
-            FTestPos Lt (Local 2 "firstA") (Local 0 "middleLetter"),
-            FTestPos Lt (Local 0 "middleLetter") (Local 1 "nextB") ]
-        iIsA       = FLetter (Local 1 "firstA") 'a'
-        jIsB       = FLetter (Local 0 "nextB")  'b'
+            FTestPos Lt (Local 2 "firstC") (Local 0 "middleLetter"),
+            FTestPos Lt (Local 0 "middleLetter") (Local 1 "nextC") ]
+        iIsC       = FLetter (Local 1 "firstC") c1
+        jIsC       = FLetter (Local 0 "nextC")  c2
 
-startsWithA :: Formula ()
-startsWithA = quantifyList [("firstA", Pos, Exists)] $ andList [iIsA, isFirst]
+startsWithChar :: Char -> Formula ()
+startsWithChar c = quantifyList [("firstC", Pos, Exists)] $ andList [iIsC, isFirst]
     where
-        iIsA       = FLetter (Local 0 "firstA") 'a'
-        isFirst    = FNot $ quantifyList [("beforeFirst", Pos, Exists)] $ FTestPos Lt (Local 0 "beforeFirst") (Local 1 "firstA")
+        iIsC       = FLetter (Local 0 "firstC") c
+        isFirst    = FNot $ quantifyList [("beforeFirst", Pos, Exists)] $ FTestPos Lt (Local 0 "beforeFirst") (Local 1 "firstC")
 
-endsWithB :: Formula ()
-endsWithB = quantifyList [("lastB", Pos, Exists)] $ andList [jIsB, isLast]
+endsWithChar :: Char -> Formula ()
+endsWithChar c = quantifyList [("lastC", Pos, Exists)] $ andList [jIsC, isLast]
     where
-        jIsB       = FLetter (Local 0 "lastB") 'b'
-        isLast     = FNot $ quantifyList [("afterLast", Pos, Exists)] $ FTestPos Lt (Local 1 "lastB") (Local 0 "afterLast")
-
-containsAA :: Formula ()
-containsAA = quantifyList [("firstA", Pos, Exists), ("nextB", Pos, Exists)] $ andList [iLessThanJ, consecutive, iIsA, jIsA]
-    where
-        iLessThanJ = FTestPos Lt (Local 1 "firstA") (Local 0 "nextB")
-        consecutive = FNot . quantifyList [("middleLetter", Pos, Exists)] . andList $ [
-            FTestPos Lt (Local 2 "firstA") (Local 0 "middleLetter"),
-            FTestPos Lt (Local 0 "middleLetter") (Local 1 "nextB") ]
-        iIsA       = FLetter (Local 1 "firstA") 'a'
-        jIsA       = FLetter (Local 0 "nextB")  'a'
+        jIsC       = FLetter (Local 0 "lastC") c
+        isLast     = FNot $ quantifyList [("afterLast", Pos, Exists)] $ FTestPos Lt (Local 1 "lastC") (Local 0 "afterLast")
 
 
-monaVerifyHoareTriple :: Interpretation String -> Formula String -> IO MonaResult
+
+monaVerifyHoareTriple :: Interpretation String -> Formula String -> IO ExportResult
 monaVerifyHoareTriple i tripleRaw = runMona encoded
     where
         triple  = simplifyFormula $ FNot tripleRaw
-        params  = Logic.Mona.EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
+        params  = EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
         encoded = encodeMona params triple
 
-smtLibVerifyHoareTriple :: SMTLibSolver -> Interpretation String -> Formula String -> IO SMTLibResult
+smtLibVerifyHoareTriple :: SMTLibSolver -> Interpretation String -> Formula String -> IO ExportResult
 smtLibVerifyHoareTriple solver i tripleRaw = runSMTLib solver encoded
     where
         triple  = simplifyFormula $ FNot tripleRaw
-        params  = Logic.SMTLib.EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
+        params  = EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
         encoded = encodeSMTLib params triple
+
+
+altErgoVerifyHoareTriple :: Interpretation String -> Formula String -> IO ExportResult
+altErgoVerifyHoareTriple i tripleRaw = runAltErgo encoded
+    where
+        triple  = simplifyFormula $ FNot tripleRaw
+        params  = EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
+        encoded = encodeAltErgo params triple
 
 
 higherToSimpleProgram :: Program String ValueType -> SFP.ForProgram
@@ -214,24 +215,29 @@ main = do
     let simpleForInterpretation = simpleForToInterpretation simpleForProg
     putStrLn $ "Program: converted to interpretation" ++ show simpleForInterpretation
     putStrLn $ "Program: interpretation runned on `adb` : " ++ (show $ runInterpretation simpleForInterpretation "adb")
-    let precondition  = andList [startsWithA, endsWithB] 
-    let postcondition = containsAB
+    let precondition  = containsAB 'a' 'b'
+    let postcondition = containsAB 'a' 'b'
     let hoareTriple   = encodeHoareTriple precondition simpleForInterpretation postcondition
     putStrLn $ "Program: transformed to hoare triple" ++ show hoareTriple
     verifyResult <- monaVerifyHoareTriple simpleForInterpretation hoareTriple
     putStrLn $ "Program: verified using MONA"
     case verifyResult of
-        Logic.Mona.Unsat     -> putStrLn "[MONA] YES! The Hoare triple is       valid"
-        Logic.Mona.Sat       -> putStrLn "[MONA] NO ! The Hoare triple is *not* valid"
-        Logic.Mona.Unknown   -> putStrLn "[MONA] ???"
+        Unsat     -> putStrLn "[MONA] YES! The Hoare triple is       valid"
+        Sat       -> putStrLn "[MONA] NO ! The Hoare triple is *not* valid"
+        Unknown   -> putStrLn "[MONA] ???"
+    verifyResult <- altErgoVerifyHoareTriple simpleForInterpretation hoareTriple
+    putStrLn $ "Program: verified using AltErgo (ae file)"
+    case verifyResult of
+        Unsat   -> putStrLn "[AltErgo] YES! The Hoare triple is       valid"
+        Sat     -> putStrLn "[AltErgo] NO ! The Hoare triple is *not* valid"
+        Unknown -> putStrLn "[AltErgo] ???"
     forM_ [CVC5, AltErgo] $ \solver -> do
         verifyResult <- smtLibVerifyHoareTriple solver simpleForInterpretation hoareTriple
         putStrLn $ "Program: verified using SMTLib "  ++ show solver
         case verifyResult of
-            Logic.SMTLib.Unsat   -> putStrLn "[SMTLib] YES! The Hoare triple is       valid"
-            Logic.SMTLib.Sat     -> putStrLn "[SMTLib] NO ! The Hoare triple is *not* valid"
-            Logic.SMTLib.Unknown -> putStrLn "[SMTLib] ???"
-    
+            Unsat   -> putStrLn "[SMTLib] YES! The Hoare triple is       valid"
+            Sat     -> putStrLn "[SMTLib] NO ! The Hoare triple is *not* valid"
+            Unknown -> putStrLn "[SMTLib] ???"
 
 
 {- 

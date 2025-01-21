@@ -70,11 +70,6 @@ data Formula tag  =
     -- This is needed for the later "pullBack" construction
     -- where we will quantify over "real+imaginary" positions
     | FRealPos Var 
-    -- It will also be super useful to have a "predecessor"
-    -- relation for positions: this can be efficiently
-    -- converted in MONA using (p - 1) = q
-    -- and also in most SMT solvers
-    | FPredPos Var Var
   deriving (Show, Eq, Ord)
 
 
@@ -131,7 +126,6 @@ quantifierDepth (FTag _ _) = 0
 quantifierDepth (FLetter _ _) = 0
 quantifierDepth (FTestPos _ _ _) = 0
 quantifierDepth (FRealPos _) = 0
-quantifierDepth (FPredPos _ _) = 0
 
 
 showFormulaGeneric :: Formula tag -> String 
@@ -144,7 +138,6 @@ showFormulaGeneric (FTag x t) = show x ++ " ∈ " ++ " SomeTag"
 showFormulaGeneric (FLetter x l) = show x ++ " = " ++ show l
 showFormulaGeneric (FTestPos t x y) = show x ++ " " ++ show t ++ " " ++ show y
 showFormulaGeneric (FRealPos x) = "real(" ++ show x ++ ")"
-showFormulaGeneric (FPredPos x y) = show x ++ " = " ++ show y ++ " - 1"
 
 
 injectTags :: Formula () -> Formula t
@@ -157,7 +150,6 @@ injectTags (FTag _ _) = FConst False
 injectTags (FLetter x l) = FLetter x l
 injectTags (FTestPos t x y) = FTestPos t x y
 injectTags (FRealPos x) = FRealPos x
-injectTags (FPredPos x y) = FPredPos x y
 
 addRealPositions :: Formula tag -> Formula tag
 addRealPositions (FConst b) = FConst b
@@ -171,7 +163,6 @@ addRealPositions (FTag x t) = FTag x t
 addRealPositions (FLetter x l) = FLetter x l
 addRealPositions (FTestPos t x y) = FTestPos t x y
 addRealPositions (FRealPos x) = FRealPos x
-addRealPositions (FPredPos x y) = FPredPos x y
 
 
 
@@ -185,7 +176,6 @@ mapTags f (FTag v t) = FTag v (f t)
 mapTags _ (FLetter x l) = FLetter x l
 mapTags _ (FTestPos t x y) = FTestPos t x y
 mapTags _ (FRealPos x) = FRealPos x
-mapTags _ (FPredPos x y) = FPredPos x y
 
 
 
@@ -318,7 +308,6 @@ prettyPrintFormula (FTag x t) = prettyPrintVar x ++ " ∈ " ++ show t
 prettyPrintFormula (FLetter x l) = [l] ++ "(" ++ prettyPrintVar x ++ ")"
 prettyPrintFormula (FTestPos t x y) = prettyPrintVar x ++ " " ++ prettyPrintOp t ++ " " ++ prettyPrintVar y
 prettyPrintFormula (FRealPos x) = "real(" ++ prettyPrintVar x ++ ")"
-prettyPrintFormula (FPredPos x y) = prettyPrintVar x ++ " = " ++ prettyPrintVar y ++ " - 1"
 
 
 -- formula evaluation
@@ -441,12 +430,6 @@ evalFormulaM (FRealPos v) = do
     x' <- getVar v
     case x' of
         PosVal x'' -> return $ x'' >= 0
-        _ -> error "Type error"
-evalFormulaM (FPredPos v1 v2) = do
-    x' <- getVar v1
-    y' <- getVar v2
-    case (x', y') of
-        (PosVal x'', PosVal y'') -> return $ x'' == y'' + 1
         _ -> error "Type error"
 evalFormulaM f = error $ "Not implemented: " ++ show f
 

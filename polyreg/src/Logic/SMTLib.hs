@@ -3,51 +3,13 @@ module Logic.SMTLib where
 
 import QuantifierFree
 
-import Control.Monad
-import Control.Monad.State
-
-import Data.Map (Map)
-import qualified Data.Map as M
-
-import System.IO.Temp (withSystemTempFile)
 import System.Process (readProcessWithExitCode)
 import System.Exit (ExitCode(..))
 import Data.List (isInfixOf)
 
-import Data.Char
+import Logic.Export.Utils
 
 import Logic.Formulas
-
-intersperse :: a -> [a] -> [a]
-intersperse _ [] = []
-intersperse _ [x] = [x]
-intersperse sep (x:xs) = x : sep : intersperse sep xs
-
-class (Monad m) => MonadExport m where
-    withVariable  :: Sort -> m a -> m a
-    getVarName    :: Int -> m String
-
-data ExportState = ExportState { varStack :: [String], nextVar :: Int } deriving(Eq, Show)
-
-newtype ExportM a = ExportM (State ExportState a) 
-    deriving(Monad,Applicative,Functor, MonadState ExportState)
-
-instance MonadExport ExportM where
-    withVariable s (ExportM m) = do
-        count <- gets nextVar
-        stack <- gets varStack
-        let newVar = take 1 (show s) ++ show count
-        modify (\(ExportState m n) -> ExportState (newVar : m) (n+1))
-        res <- ExportM m
-        modify (\(ExportState m n) -> ExportState stack n)
-        return res
-    getVarName i = do
-        stack <- gets varStack
-        return $ stack !! i
-
-runExportM :: ExportM a -> a
-runExportM (ExportM m) = evalState m (ExportState [] 0)
-
 
 binOpToSMTLib :: BinOp -> String
 binOpToSMTLib Conj = "and"
@@ -65,10 +27,7 @@ tagToSMTLib ::  String -> String
 tagToSMTLib x = "T" ++ x
 
 letterToSMTLib :: Char -> String
-letterToSMTLib x = if Data.Char.isAlpha x then 
-                      "L" ++ [x]
-                   else 
-                      "L" ++ show (Data.Char.ord x)
+letterToSMTLib x = "L" ++ safeEncodeLetter x
 
 boolSetSMTLib :: String
 boolSetSMTLib = "Bool"
@@ -122,13 +81,10 @@ formulaToSMTLib (FLetter x letter) = do
     vx <- varToSMTLib x
     let lx = letterToSMTLib letter
     return $ "(= (word " ++ vx ++ ") " ++ lx ++ ")"
-formulaToSMTLib (FPredPos p x) = do
-    px <- varToSMTLib p
-    vx <- varToSMTLib x
-    return $ "(= " ++ px ++ " (- " ++ vx ++ " ))"
 formulaToSMTLib (FRealPos x) = do
     vx <- varToSMTLib x
-    return $ "(distinct Blank (word " ++ vx ++ "))"
+    -- return $ "(distinct Blank (word " ++ vx ++ "))"
+    return $ "(and (>= " ++ vx ++ " 0) (< " ++ vx ++ " size) (distinct Blank (word " ++ vx ++ ")))"
 formulaToSMTLib (FQuant Exists _ s inner) = do
     withVariable s $ do
         n <- getVarName 0
@@ -140,12 +96,6 @@ formulaToSMTLib (FQuant Forall _ s inner) = do
         i <- formulaToSMTLib inner
         return $ "(forall ((" ++ n ++ " " ++ sortToSMTLib s ++ ")) " ++ i ++ ")"
  
-data EncodeParams = EncodeParams {
-    alphabet :: String,
-    tags     :: [String]
-} deriving (Eq,Show)
-
-
 -- (declare-datatype Name ((Constr1) (Constr2) ...))
 declateDatatype :: String -> [String] -> String
 declateDatatype name constructors = "(declare-datatype " ++ name ++ " (" ++ unwords cstrs ++ "))"
@@ -160,8 +110,7 @@ encodeSMTLib (EncodeParams alphabet tags) formula = unlines $ [preamble,
                                                                wordFunc,
                                                                wordSize,
                                                                wordSizeNonNeg,
-                                                               blankOutsideWord,
-                                                               notBlankInsideWord,
+                                                               blankDesc,
                                                                formula',
                                                                checkSat]
     where
@@ -196,21 +145,13 @@ encodeSMTLib (EncodeParams alphabet tags) formula = unlines $ [preamble,
         wordFunc = "(declare-fun word (Int) " ++ alphSetSMTLib ++ ")"
 
         wordSizeNonNeg = "(assert (>= size 0))"
-        blankOutsideWord   = "(assert (forall ((i Int)) (=> (or (< i 0) (>= i size)) (= (word i) Blank))))"
-        notBlankInsideWord = "(assert (forall ((i Int)) (=> (and (>= i 0) (< i size)) (distinct (word i) Blank))))"
+        blankDesc      = "(assert (forall ((i Int)) (= (or (< i 0) (>= i size)) (= (word i) Blank))))"
 
         formula' = "(assert " ++ (runExportM $ formulaToSMTLib formula) ++ ")"
 
         checkSat = "(check-sat)"
 
 
-data SMTLibResult = Sat | Unsat | Unknown
-  deriving (Show, Eq)
-
-
-
-parseSMTLibOutput :: String -> SMTLibResult
-parseSMTLibOutput output = if "Formula is valid" `isInfixOf` output then Sat else if "A satisfying example" `isInfixOf` output then Sat else if "Formula is unsatisfiable" `elem` lines output then Unsat else Unknown
 
 
 data SMTLibSolver = CVC5 | Z3 | Yices | AltErgo deriving (Show, Eq)
@@ -235,7 +176,7 @@ callSMTSolver AltErgo file = readProcessWithExitCode "alt-ergo" [
                                     "--timelimit=30"
                                 ] ""
 
-outputToSMTLibResult :: SMTLibSolver -> String -> SMTLibResult
+outputToSMTLibResult :: SMTLibSolver -> String -> ExportResult
 outputToSMTLibResult _ output = if isUnsat then Unsat else if isSat then Sat else Unknown
     where
         containsUnsat = "unsat"   `isInfixOf` output
@@ -247,7 +188,7 @@ outputToSMTLibResult _ output = if isUnsat then Unsat else if isSat then Sat els
         isSat   = (not containsUnsat) && (not containsUnk) && containsSat
 
 
-runSMTLib :: SMTLibSolver -> String -> IO SMTLibResult
+runSMTLib :: SMTLibSolver -> String -> IO ExportResult
 runSMTLib solver input = do
     writeFile "tmp.smtlib" input
     (exitCode, output, _) <- callSMTSolver solver "tmp.smtlib"
