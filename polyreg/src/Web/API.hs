@@ -8,6 +8,8 @@ module Web.API (webApp) where
 import GHC.Generics
 import Data.Aeson (FromJSON, ToJSON)
 
+import Control.Exception
+
 
 import Web.Scotty
 
@@ -39,6 +41,9 @@ import Logic.Interpretation (toInterpretation, stringify, Interpretation (..))
 
 import Logic.Formulas 
 import Logic.FormulaExamples
+
+catchAny :: IO a -> (SomeException -> IO a) -> IO a
+catchAny = Control.Exception.catch
 
 data VerifyRequest = VerifyRequest {
     program  :: String,
@@ -82,11 +87,6 @@ inferAndCheckProgram' p = case inferAndCheckProgram p of
     Left err -> Left $ show err
     Right p  -> Right p
 
-toSimpleForProgram' :: Program String ValueType -> Either String SFP.ForProgram
-toSimpleForProgram' p = case toSimpleForProgram p of 
-    Left err -> Left $ show err
-    Right p  -> Right p
-
 simpleForToInterpretation :: SFP.ForProgram -> Interpretation String
 simpleForToInterpretation sfp = Interpretation tags alphabet simplifiedDomain simplifiedOrder labelOrCopy arity
     where
@@ -94,15 +94,21 @@ simpleForToInterpretation sfp = Interpretation tags alphabet simplifiedDomain si
         simplifiedDomain = \s vs -> simplifyFormula $ domain s vs
         simplifiedOrder  = \s1 s2 vs1 vs2 -> simplifyFormula $ order s1 s2 vs1 vs2
 
+higherToSimpleProgram :: Program String ValueType -> Either String SFP.ForProgram
+higherToSimpleProgram p = simplifyForProgram <$> toSimpleForProgram' transformedProg
+    where
+        toSimpleForProgram' x = case toSimpleForProgram x of
+            Left err -> Left $ show err
+            Right sfp -> Right sfp
+        transformedProg = foldl (flip applyTransform) p transformationsInOrder
+
 
 parseVerifyRequest :: VerifyRequest -> Either String (HoareTriple, SFP.ForProgram)
 parseVerifyRequest (VerifyRequest p σ τ) = do
-    partiallyTyped <- parseHighLevel p
-    typed          <- inferAndCheckProgram' partiallyTyped
-    let transformedProg = foldl (flip applyTransform) typed transformationsInOrder
-    simple         <- toSimpleForProgram' transformedProg
+    partiallyTyped  <- parseHighLevel p
+    typed           <- inferAndCheckProgram' partiallyTyped
+    simple          <- higherToSimpleProgram typed
     let interpreted = simpleForToInterpretation simple
-    
     -- remove extra whitespace for τ and σ and then read them as formulas
     let precond    = read σ
     let postcond   = read τ
@@ -168,11 +174,14 @@ webApp = scotty 3000 $ do
     case hoareTriple of
         Left err -> json $ VerifyResponse req err "" []
         Right (ht,simple) -> do
+            liftAndCatchIO $ putStrLn $ "Program: parsed and transformed" ++ show simple
             liftAndCatchIO $ putStrLn $ "Program: transformed to hoare triple" ++ show ht
             solvers <- liftAndCatchIO $ installedSolvers
             liftAndCatchIO $ putStrLn $ "Program: potential solvers " ++ show solvers
-            solverResults <- liftAndCatchIO $ mapM (\s -> do
-                                                    res <- verifyHoareTriple s ht
-                                                    return $ SolverResponse (show s) (show res)) (Mona : solvers)
+            -- TODO: catch exceptions and return them as error messages
+            solverResults <- liftAndCatchIO $ mapM (\s -> catchAny (do
+                                                                       res <- verifyHoareTriple s ht
+                                                                       return $ SolverResponse (show s) (show res)) 
+                                                                   (\e -> return $ SolverResponse (show s) (show e))) (Mona : solvers)
             liftAndCatchIO $ putStrLn $ "Results: " ++ show solverResults
             json $ VerifyResponse req "" (prettyPrintForProgram simple) solverResults
