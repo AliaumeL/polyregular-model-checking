@@ -157,7 +157,7 @@ data SMTLibSolver =  Z3 | CVC5 | Yices | AltErgo deriving (Show, Eq, Enum, Ord)
 smtSolverToCommand :: SMTLibSolver -> String -> (String, [String])
 smtSolverToCommand CVC5   file  = ("cvc5", [
                                     "--lang=smt2", file,
-                                    "--tlimit=30000",
+                                    "--tlimit=10000",
                                     "--cut-all-bounded",
                                     "--dt-blast-splits",
                                     "--dt-infer-as-lemmas",
@@ -170,7 +170,7 @@ smtSolverToCommand AltErgo file = ("alt-ergo", [
                                     "--input=smtlib2", file,
                                     "--instantiation-heuristic=greedy",
                                     "--no-nla",
-                                    "--timelimit=30"
+                                    "--timelimit=10"
                                 ])
 
 outputToSMTLibResult :: SMTLibSolver -> String -> ExportResult

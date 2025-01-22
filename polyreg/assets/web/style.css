@@ -62,62 +62,202 @@ body {
     line-height: 1.5;
     color: #333;
     background-color: #fff;
+    margin: 0px 20px;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas: "header" "input" "output" "about" "footer";
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
 
 /* Header */
 header {
-    background-color: #333;
-    color: #fff;
     padding: 20px 0;
+    grid-area: header;
 }
 
 header h1 {
+    border-bottom: 1px solid #333;
+}
+
+/* headers */
+h1 {
     font-size: 2em;
     margin: 0;
+    text-transform: uppercase;
 }
 
-/* Navigation */
-
-nav {
-    background-color: #333;
-    color: #fff;
-    padding: 10px 0;
-}
-
-nav ul {
-    list-style: none;
-    text-align: center;
-}
-
-nav ul li {
-    display: inline;
-    margin-right: 10px;
-}
-
-nav ul li a {
-    color: #fff;
-    text-decoration: none;
+h2 {
+    font-size: 1.5em;
+    margin: 0;
+    text-transform: uppercase;
 }
 
 /* Main */
 
-main {
+div#input {
+    padding: 20px 0px;
+}
+
+form#user-input {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas: "code-label"
+                         "code-assets"
+                         "code"
+                         "pre-label"
+                         "pre-assets"
+                         "pre"
+                         "post-label"
+                         "post-assets"
+                         "post"
+                         "submit";
+}
+
+form#user-input select#pre-assets {
+    grid-area: pre-assets;
+}
+
+form#user-input select#code-assets {
+    grid-area: code-assets;
+}
+
+form#user-input select#post-assets {
+    grid-area: post-assets;
+}
+
+form#user-input label#code-label {
+    grid-area: code-label;
+}
+
+form#user-input label#pre-label {
+    grid-area: pre-label;
+}
+
+form#user-input label#post-label {
+    grid-area: post-label;
+}
+
+form#user-input textarea#code {
+    grid-area: code;
+}
+
+form#user-input textarea#pre {
+    grid-area: pre;
+}
+
+form#user-input textarea#post {
+    grid-area: post;
+}
+
+form#user-input input#submit {
+    grid-area: submit;
+    padding: 10px;
+    margin-top: 10px;
+    border: 1px solid #333;
+    border-radius: 5px;
+    background-color: #333;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+form label {
+    display: block;
+    margin-bottom: 5px;
+    margin-top: 10px;
+    text-transform: uppercase;
+}
+
+textarea {
+    width: 100%;
+    min-height: 15em;
+    height: 100%;
+    padding: 10px;
+    border: 1px solid #333;
+    /* shadow */
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    border-radius: 5px;
+    margin-bottom: 10px;
+    /* font monospace */
+    font-family: monospace;
+}
+
+textarea:hover {
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+
+div#output {
+    padding: 20px;
+    grid-area: output;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    /* overflow x - scroll */
+    overflow-x: scroll;
+    overflow-y: scroll;
+}
+
+article#about {
     padding: 20px 0;
+    grid-area: about;
+}
+
+.error {
+    color: red;
+}
+
+.success {
+    color: green;
+}
+
+.neutral {
+    color: #ff8c00;
 }
 
 /* Footer */
 
 footer {
-    background-color: #333;
-    color: #fff;
+    grid-area: footer;
     padding: 20px 0;
     text-align: center;
+    border-top: 1px solid #333;
 }
 
 
+
+@media screen and (min-width: 800px) {
+    body {
+        grid-template-columns: 1fr 1fr;
+        /* column separation */
+        grid-column-gap: 20px;
+        grid-template-areas: "header header" 
+                             "input output" 
+                             "about about"
+                             "footer footer";
+        grid-template-rows: auto 2fr 1fr 1fr;
+    }
+}
+
+@media screen and (min-width: 1200px) {
+    body {
+        grid-template-columns: 2fr 1fr;
+        /* column separation */
+        grid-column-gap: 20px;
+        grid-template-areas: "header header" 
+                            "input output" 
+                            "about about"
+                            "footer footer";
+    }
+
+
+    form#user-input {
+        display: grid;
+        grid-template-columns: 2fr 1fr ;
+        grid-column-gap: 20px;
+        grid-template-areas: "code-label   pre-label"
+                             "code-assets  pre-assets"
+                             "code         pre"
+                             "code         post-label"
+                             "code         post-assets"
+                             "code         post"
+                             ". submit";
+    }
+}

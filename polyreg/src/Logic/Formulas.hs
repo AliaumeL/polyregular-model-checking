@@ -33,15 +33,15 @@ import qualified Data.Set as S
 -- and a sort (Tag) of finitely many tags.
 
 data Sort = Pos | Tag | Boolean
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord, Read)
 
 data Quant = Exists | Forall 
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord, Read)
 
 data Var   = In    String 
            | Out   String 
            | Local Int String 
-    deriving (Show, Eq, Ord) 
+    deriving (Show, Eq, Ord, Read) 
 
 
 shiftVar :: Int -> Var -> Var
@@ -70,7 +70,7 @@ data Formula tag  =
     -- This is needed for the later "pullBack" construction
     -- where we will quantify over "real+imaginary" positions
     | FRealPos Var 
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord, Read)
 
 
 varEquality :: Var -> Var -> Bool

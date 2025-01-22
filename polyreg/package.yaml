@@ -23,12 +23,14 @@ dependencies:
   - base >= 4.7 && < 5
   - containers
   - process
+  - directory
   - extra
   - mtl
   - text
   - array
   - temporary
   - scotty
+  - aeson
 
 build-tools:
   - alex

@@ -145,7 +145,7 @@ encodeAltErgo (EncodeParams alphabet tags) formula = unlines $ [
 
 altErgoCmd :: String -> (String, [String])
 altErgoCmd file = ("alt-ergo", [
-                                           "--timelimit=30",
+                                           "--timelimit=10",
                                            "--instantiation-heuristic=greedy",
                                            "--no-nla",
                                            file

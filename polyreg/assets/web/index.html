@@ -1,12 +1,55 @@
 <!html>
 <head>
     <title>Home</title>
+    <meta lang="en">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="style.css">
     <script src="app.js"></script>
 </head>
 <body>
-    <h1>Home</h1>
-    <p>Welcome to the home page.</p>
-    <p><a href="about.php">About</a></p>
+    <header>
+    <h1>Polycheck</h1>
+    <p>Checking Hoare Triples for polyregular functions.</p>
+    </header>
+    <div id="input">
+        <h2> Input Form </h2>
+        <p>Welcome to the home page.</p>
+        <form id="user-input">
+            <!-- input form:
+                - selectable list of predefined code assets 
+                - textarea to write the code 
+                - selectable list of predefined formulas assets (precondition)
+                - textarea to write the formula (precondition)
+                - selectable list of predefined formulas assets (postcondition)
+                - textarea to write the formula (postcondition)
+            -->
+            <label for="code" id="code-label">Code:</label>
+            <select id="code-assets">
+            </select>
+            <textarea id="code"></textarea>
+            <label for="pre" id="pre-label">Precondition:</label>
+            <select id="pre-assets">
+            </select>
+            <textarea id="pre"></textarea>
+            <label for="post" id="post-label">Postcondition:</label>
+            <select id="post-assets">
+            </select>
+            <textarea id="post"></textarea>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+    <div id="output">
+        <h2> Output View </h2>
+        <div id="output-view">
+        </div>
+    </div>
+    <article id="about">
+        <h2>About</h2>
+        <p>TODO: describe the project.</p>
+    </article>
+    <footer>
+        <p>&copy; 2025 Aliaume Lopez and Rafał Stefanski. </p>
+    </footer>
 </body>
 </html>
