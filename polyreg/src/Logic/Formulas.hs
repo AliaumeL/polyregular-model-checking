@@ -86,6 +86,8 @@ simplifyFormula = fixpoint simplifyOnce
         fixpoint :: Eq a => (a -> a) -> a -> a
         fixpoint f x = let x' = f x in if x == x' then x else fixpoint f x'
         
+        simplifyOnce  (FBin Disj (FTestPos Eq x y) (FTestPos Lt x' y')) | x == x' && y == y' = FTestPos Le x y
+        simplifyOnce  (FBin Disj (FTestPos Eq x y) (FTestPos Gt x' y')) | x == x' && y == y' = FTestPos Ge x y
         simplifyOnce  (FBin Conj (FConst True) x)   = simplifyOnce x
         simplifyOnce  (FBin Conj x (FConst True))   = simplifyOnce x
         simplifyOnce  (FBin Conj (FConst False) x)  = FConst False

@@ -1,6 +1,9 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Logic.Export.Mona where
 
+
+import System.Timeout
+
 import Logic.QuantifierFree
 
 import Data.List (isInfixOf)
@@ -168,10 +171,12 @@ parseMonaOutput :: String -> ExportResult
 parseMonaOutput output = if "Formula is valid" `isInfixOf` output then Sat else if "A satisfying example" `isInfixOf` output then Sat else if "Formula is unsatisfiable" `elem` lines output then Unsat else Unknown
 
 runMona :: String -> IO ExportResult
-runMona input = do
-    -- write using the handle and not the file name
-    writeFile "tmp.mona" input
-    outputCmd <- safeRunProcess "mona" ["-q", "tmp.mona"]
-    case outputCmd of
-        Left err     -> return $ Error err
-        Right output -> return $ parseMonaOutput output
+runMona input = withTempFileContent input $ \ifile -> do
+        outputCmd <- timeout 10000000 $ safeRunProcess "mona" ["-o2", "-q", ifile]
+        case outputCmd of
+            Just (Left err)     -> do
+                putStrLn $ "File: " ++ ifile
+                putStrLn input
+                return $ Error err
+            Just (Right output) -> return $ parseMonaOutput output
+            Nothing             -> return $ Unknown

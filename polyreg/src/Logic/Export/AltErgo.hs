@@ -146,6 +146,8 @@ encodeAltErgo (EncodeParams alphabet tags) formula = unlines $ [
 altErgoCmd :: String -> (String, [String])
 altErgoCmd file = ("alt-ergo", [
                                            "--timelimit=10",
+                                           "--input=altergo",
+                                           "--output=smtlib2",
                                            "--instantiation-heuristic=greedy",
                                            "--no-nla",
                                            file
@@ -154,9 +156,9 @@ altErgoCmd file = ("alt-ergo", [
 outputToResult :: String -> ExportResult
 outputToResult output = if isUnsat then Unsat else if isSat then Sat else Unknown
     where
-        containsUnsat = "unsat"   `isInfixOf` output
-        containsUnk   = "unknown" `isInfixOf` output
-        containsSat   = "sat"     `isInfixOf` output
+        containsUnsat = "unsat"    `isInfixOf` output
+        containsUnk   = ("unknown" `isInfixOf` output || "timeout" `isInfixOf` output)
+        containsSat   = "sat"      `isInfixOf` output
 
         isUnsat = containsUnsat && (not containsUnk)
         isUnk   = (not containsUnsat) && (not containsSat) && containsUnk
@@ -164,11 +166,10 @@ outputToResult output = if isUnsat then Unsat else if isSat then Sat else Unknow
 
 
 runAltErgo :: String -> IO ExportResult
-runAltErgo input = do
-    writeFile "tmp.ae" input
-    let (cmd, args) = altErgoCmd "tmp.ae"
-    outputCmd <- safeRunProcess cmd args
-    case outputCmd of
-        Left err     -> return $ Error err
-        Right output -> return $ outputToResult output
+runAltErgo input = withTempFileContent input $ \ifile -> do
+        let (cmd, args) = altErgoCmd ifile
+        outputCmd <- safeRunProcess cmd args
+        case outputCmd of
+            Left err     -> return $ Error err
+            Right output -> return $ outputToResult output
 

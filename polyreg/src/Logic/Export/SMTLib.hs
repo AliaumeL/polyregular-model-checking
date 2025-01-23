@@ -151,33 +151,37 @@ encodeSMTLib (EncodeParams alphabet tags) formula = unlines $ [preamble,
         checkSat = "(check-sat)"
 
 
-data SMTLibSolver =  Z3 | CVC5 | Yices | AltErgo deriving (Show, Eq, Enum, Ord)
+data SMTLibSolver =  Z3 | CVC5 | Yices | AltErgo deriving (Show, Eq, Enum, Ord, Read)
 
 
 smtSolverToCommand :: SMTLibSolver -> String -> (String, [String])
 smtSolverToCommand CVC5   file  = ("cvc5", [
-                                    "--lang=smt2", file,
+                                    "--lang=smt2",
                                     "--tlimit=10000",
                                     "--cut-all-bounded",
                                     "--dt-blast-splits",
                                     "--dt-infer-as-lemmas",
                                     "--cbqi",
                                     "--cegqi",
-                                    "--cegqi-nested-qe"])
-smtSolverToCommand Z3     file  = ("z3", ["-smt2", file])
+                                    "--cegqi-nested-qe",
+                                    file
+                                    ])
+smtSolverToCommand Z3     file  = ("z3", ["-smt2", "-T:10",  file])
 smtSolverToCommand Yices  file  = ("yices-smt2", [file])
 smtSolverToCommand AltErgo file = ("alt-ergo", [
-                                    "--input=smtlib2", file,
                                     "--instantiation-heuristic=greedy",
                                     "--no-nla",
-                                    "--timelimit=10"
+                                    "--input=smtlib2-v2.6",
+                                    "--output=smtlib2",
+                                    "--timelimit=10",
+                                    file
                                 ])
 
 outputToSMTLibResult :: SMTLibSolver -> String -> ExportResult
 outputToSMTLibResult _ output = if isUnsat then Unsat else if isSat then Sat else Unknown
     where
         containsUnsat = "unsat"   `isInfixOf` output
-        containsUnk   = "unknown" `isInfixOf` output
+        containsUnk   = ("unknown" `isInfixOf` output || "timeout" `isInfixOf` output)
         containsSat   = "sat"     `isInfixOf` output
 
         isUnsat = containsUnsat && (not containsUnk)
@@ -186,11 +190,10 @@ outputToSMTLibResult _ output = if isUnsat then Unsat else if isSat then Sat els
 
 
 runSMTLib :: SMTLibSolver -> String -> IO ExportResult
-runSMTLib solver input = do
-    writeFile "tmp.smtlib" input
-    let (cmd, args) = smtSolverToCommand solver "tmp.smtlib"
-    cmdOutput <- safeRunProcess cmd args
-    case cmdOutput of
-        Left err       -> return $ Error err
-        Right (output) -> return $ outputToSMTLibResult solver output
+runSMTLib solver input = withTempFileContent input $ \file -> do
+        let (cmd, args) = smtSolverToCommand solver file
+        cmdOutput <- safeRunProcess cmd args
+        case cmdOutput of
+            Left err       -> return $ Error err
+            Right (output) -> return $ outputToSMTLibResult solver output
 

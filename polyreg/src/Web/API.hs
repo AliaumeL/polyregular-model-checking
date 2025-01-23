@@ -146,6 +146,7 @@ webApp = scotty 3000 $ do
     file "assets/web/index.html"
   get "/api/solvers" $ do
     ilist <- liftAndCatchIO $ installedSolvers
+    liftAndCatchIO $ putStrLn $ show ilist
     let solverList = SolverList $ map (\s -> SolverStatus (show s) (if s `elem` ilist then "installed" else "not installed")) allSolvers
     json solverList 
   get "/api/transformations" $ do
@@ -168,20 +169,29 @@ webApp = scotty 3000 $ do
     name    <- captureParam "name"
     content <- liftAndCatchIO $ readFile $ "assets/Formulas/" ++ name
     json $ AssetContent name content
+  Web.Scotty.post "/api/solver/:name/verify" $ do
+    req <- jsonData :: ActionM VerifyRequest
+    nam <- captureParam "name"
+    let hoareTriple = parseVerifyRequest req
+    case hoareTriple of
+        Left err -> json $ VerifyResponse req err "" []
+        Right (ht,simple) -> do
+            let s = read nam
+            solverResult <- liftAndCatchIO $ catchAny (do
+                                                           res <- verifyHoareTriple s ht
+                                                           return $ SolverResponse (show s) (show res))
+                                                      (\e -> return $ SolverResponse (show s) (show e))
+            json $ solverResult
   Web.Scotty.post "/api/verify" $ do
     req <- jsonData :: ActionM VerifyRequest
     let hoareTriple = parseVerifyRequest req
     case hoareTriple of
         Left err -> json $ VerifyResponse req err "" []
         Right (ht,simple) -> do
-            liftAndCatchIO $ putStrLn $ "Program: parsed and transformed" ++ show simple
-            liftAndCatchIO $ putStrLn $ "Program: transformed to hoare triple" ++ show ht
             solvers <- liftAndCatchIO $ installedSolvers
-            liftAndCatchIO $ putStrLn $ "Program: potential solvers " ++ show solvers
             -- TODO: catch exceptions and return them as error messages
             solverResults <- liftAndCatchIO $ mapM (\s -> catchAny (do
                                                                        res <- verifyHoareTriple s ht
                                                                        return $ SolverResponse (show s) (show res)) 
-                                                                   (\e -> return $ SolverResponse (show s) (show e))) (Mona : solvers)
-            liftAndCatchIO $ putStrLn $ "Results: " ++ show solverResults
+                                                                   (\e -> return $ SolverResponse (show s) (show e))) solvers
             json $ VerifyResponse req "" (prettyPrintForProgram simple) solverResults

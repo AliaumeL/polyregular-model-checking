@@ -13,9 +13,15 @@ import System.Process (readProcessWithExitCode)
 import GHC.IO.Exception
 import Control.Exception (catch)
 
+
+import System.Directory
+import System.IO.Temp
+import System.IO
+
 import Data.Char
 
 import Logic.Formulas
+
 
 intersperse :: a -> [a] -> [a]
 intersperse _ [] = []
@@ -70,12 +76,22 @@ safeRunProcess p args = catch callCommand handler
             (exitCode, stdout, stderr) <- readProcessWithExitCode p args ""
             case exitCode of
                 ExitSuccess   -> return $ Right stdout
-                ExitFailure i -> return $ Left $ (show  i) ++ " : " ++ stderr
+                ExitFailure i -> return $ Left $ (show  i) ++ " / " ++ stdout ++ " / " ++ " : " ++ stderr
+
+
+-- | Run a process with a temporary file as input, 
+-- the name of the file is given as a first argument,
+-- the content of the file as a second argument.
+withTempFileContent :: String -> (FilePath -> IO a) -> IO a
+withTempFileContent content f = withSystemTempFile "smt-temp" $ \path h -> do
+    hPutStr h content
+    hFlush h
+    f path
 
 
 processIsInstalled :: String -> IO Bool
 processIsInstalled p = do
-    res <- safeRunProcess p ["--version"]
+    res <- findExecutable p
     case res of
-        Left _  -> return False
-        Right _ -> return True
+        Nothing -> return False
+        Just _  -> return True

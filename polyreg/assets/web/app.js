@@ -14,6 +14,7 @@ window.onload = () => {
 
     const codeAssetList = {};
     const formAssetList = {};
+    const solversList   = [];
 
     /* prevent submission from inputForm, and register our own handler */
     inputForm.addEventListener('submit', (e) => {
@@ -22,60 +23,48 @@ window.onload = () => {
         const precond  = preInput.value;
         const postcond = postInput.value;
 
-        output.textContent = 'Verifying...';
+        output.textContent = '💭 Verifying...';
 
-        fetch('/api/verify/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ program, precond, postcond })
-            })
-            .then(res => res.json())
-            .then(data => {
-                output.innerHTML = '';
-                const banner = document.createElement('p');
-                if (data.error) {
-                    banner.textContent = data.error;
-                    banner.classList.add('error');
-                } else {
-                    banner.textContent = 'Verification completed';
-                    banner.classList.add('success');
-                }
-                output.appendChild(banner);
-                /* add hrule */
-                output.appendChild(document.createElement('hr'));
+        output.innerHTML = '';
+        const banner = document.createElement('p');
+        const ul     = document.createElement('ul');
+        banner.textContent = 'Verifying...';
+        /* add hrule */
+        output.appendChild(document.createElement('hr'));
+        output.appendChild(ul);
+        output.appendChild(document.createElement('hr'));
+        output.appendChild(banner);
+        
+        const solverPromises = solversList.map(({ solverName, solverStatus }) => {
+          if (solverStatus === "installed") {
+            const li = document.createElement('li');
+            ul.appendChild(li);
+            li.textContent = `💭 Verifying with ${solverName}...`;
+            return getSolverResult(solverName, program, precond, postcond)
+                   .then(response => {
+                        li.textContent = JSON.stringify(response);
+                        const answer     = response.answer;
+                        if (answer === 'Unsat') {
+                            li.textContent = `✅ ${solverName}: OK!`;
+                            li.classList.add('success');
+                        } else if (answer === 'Sat') {
+                            li.textContent = `❌ ${solverName}: NO!`;
+                            li.classList.add('error');
+                        } else if (answer === 'Unknown') {
+                            li.textContent = `🤷 ${solverName}: ???`;
+                            li.classList.add('neutral');
+                        } else {
+                            li.textContent = `🪲 ${solverName}: ${answer}`;
+                        }
+                   });
+          }
+        });
 
-                const ul = document.createElement('ul');
-                data.responses.forEach(response => {
-                    const li = document.createElement('li');
-                    const solverUsed = response.solverUsed;
-                    const answer     = response.answer;
+        Promise.all(solverPromises).then(() => {
+           banner.textContent = '💯 Verification complete!';
+        });
+        
 
-                    if (answer === 'Unsat') {
-                        li.textContent = `${solverUsed}: OK!`;
-                        li.classList.add('success');
-                    } else if (answer === 'Sat') {
-                        li.textContent = `${solverUsed}: NO!`;
-                        li.classList.add('error');
-                    } else if (answer === 'Unknown') {
-                        li.textContent = `${solverUsed}: ???`;
-                        li.classList.add('neutral');
-                    } else {
-                        li.textContent = `${solverUsed}: ${answer}`;
-                        li.classList.add('error');
-                    }
-                    ul.appendChild(li);
-                });
-                output.appendChild(ul);
-                output.appendChild(document.createElement('hr'));
-                const simpleCode = document.createElement('pre');
-                simpleCode.textContent = data.simplified;
-                output.appendChild(simpleCode);
-            })
-            .catch(err => {
-                console.error(err);
-            });
     });
 
     codeAssets.addEventListener('change', () => {
@@ -87,6 +76,23 @@ window.onload = () => {
     postAsset.addEventListener('change', () => {
         postInput.value = formAssetList[postAsset.value].content;
     });
+
+    const getSolverResult = (solverName, program, precond, postcond) => {
+        return fetch(`/api/solver/${solverName}/verify`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ program, precond, postcond, })
+        })
+        .then(res => res.json());
+    };
+
+    fetch('/api/solvers')
+        .then(res => res.json())
+        .then(data => {
+            data.solvers.forEach(solver => solversList.push(solver));
+        });
 
     fetch('/api/code/assets')
         .then(res => res.json())
