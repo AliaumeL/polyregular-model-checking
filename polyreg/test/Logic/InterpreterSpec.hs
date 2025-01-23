@@ -3,7 +3,7 @@ module Logic.InterpreterSpec where
 
 import Logic.Interpretation
 import Logic.Interpreter
-import QuantifierFree
+import Logic.QuantifierFree
 import Logic.Formulas
 
 import Test.Hspec

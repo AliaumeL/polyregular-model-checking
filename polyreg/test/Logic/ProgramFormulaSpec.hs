@@ -5,10 +5,9 @@ import ForPrograms.Simple
 
 import Logic.Interpretation
 import Logic.PullBack
-import Logic.Mona
 import Logic.ProgramFormula
 import Logic.Formulas
-import QuantifierFree
+import Logic.QuantifierFree
 
 import Test.Hspec 
 

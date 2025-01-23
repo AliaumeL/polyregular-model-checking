@@ -3,7 +3,7 @@ module SimpleForProgramsSpec where
 import Test.Hspec
 
 import ForPrograms.Simple
-import QuantifierFree
+import Logic.QuantifierFree
 
 -- | example program
 -- that prints everything and replaces "a" by "b"s 

@@ -5,7 +5,7 @@ import Test.Hspec
 import Data.Map (Map)
 import qualified Data.Map as M
 
-import QuantifierFree
+import Logic.QuantifierFree
 import ForPrograms.HighLevel
 import ForPrograms.HighLevel.Interpreter
 import ForPrograms.HighLevel.Typing.Inference (inferAndCheckProgram)

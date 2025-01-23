@@ -50,30 +50,30 @@ testProgramOn inputs program = do
 spec :: Spec
 spec = do
     describe "We correctly compute reverseOrderOfWords" $ do
-        testProgram <- runIO $ parseFromFile "assets/word_split.pr"
+        testProgram <- runIO $ parseFromFile "assets/HighLevel/word_split.pr"
         let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
         testProgramAgainst ["go to park", "", "one_word", "a  b", "       "] 
                            untypedTestProgram
                            reverseOrderOfWords
     describe "We correctly compute `bibtex`" $ do
-        testProgram <- runIO $ parseFromFile "assets/bibtex.pr"
+        testProgram <- runIO $ parseFromFile "assets/HighLevel/bibtex.pr"
         let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
         testProgramOn [("John", "John"), ("", ""), ("John Doe", "Doe, John"), ("John and Jane Doe", "John and Doe, Jane"), ("John F. Kennedy", "Kennedy, John F.")]
                       untypedTestProgram
     describe "We correctly compute `reverse`" $ do
-        testProgram <- runIO $ parseFromFile "assets/reverse.pr"
+        testProgram <- runIO $ parseFromFile "assets/HighLevel/reverse.pr"
         let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
         testProgramAgainst ["", "a", "ab", "abc", "abcd", "abcde", "abcdef", "abcdefg", "abcdefgh"]
                       untypedTestProgram
                       reverse
     describe "We correctly compute `identity`" $ do
-        testProgram <- runIO $ parseFromFile "assets/identity.pr"
+        testProgram <- runIO $ parseFromFile "assets/HighLevel/identity.pr"
         let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
         testProgramAgainst ["", "a", "ab", "abc", "abcd", "abcde", "abcdef", "abcdefg", "abcdefgh"]
                       untypedTestProgram
                       (\x -> x)
     describe "We correctly compute `map reverse`" $ do
-        testProgram <- runIO $ parseFromFile "assets/map_reverse.pr"
+        testProgram <- runIO $ parseFromFile "assets/HighLevel/map_reverse.pr"
         let untypedTestProgram = fmap (const ()) $ fromRight' testProgram
         testProgramAgainst ["a", "", "a b", "ab abc", "abcd a a abcd", "abc def ghi"]
                       untypedTestProgram

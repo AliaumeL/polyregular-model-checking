@@ -19,7 +19,7 @@ untypeProgram = fmap (const ())
 
 spec :: Spec
 spec = do 
-    testProgram <- runIO $ parseFromFile "assets/boolean_funcs.pr"
+    testProgram <- runIO $ parseFromFile "assets/HighLevel/boolean_funcs.pr"
     let infered = fromRight' (inferAndCheckProgram (fromRight' testProgram))
     let elim    = eliminateFunctionCalls infered
     describe "We actually remove boolean generators" $ do

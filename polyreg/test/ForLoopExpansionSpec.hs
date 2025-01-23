@@ -61,18 +61,18 @@ transformProgram p = case forLoopExpansion p of
 spec :: Spec
 spec = do
     describe "We correctly expand loops" $ do
-        p <- runIO $ getProgram "assets/identity.pr"
+        p <- runIO $ getProgram "assets/HighLevel/identity.pr"
         testProgramAgainst ["go to park", "", "one_word", "a  b", "       "] 
                            (transformProgram p)
                            (\x -> x) 
     describe "We correctly expand loops" $ do
-        p <- runIO $ getProgram "assets/reverse.pr"
+        p <- runIO $ getProgram "assets/HighLevel/reverse.pr"
         let newProgClassicalVars = transformProgram p
         testProgramAgainst ["go to park", "", "one_word", "a  b", "       "] 
                            (transformProgram p)
                            reverse
     describe "We correctly compute `bibtex`" $ do
-        testProgram <- runIO $ getProgram "assets/bibtex.pr"
+        testProgram <- runIO $ getProgram "assets/HighLevel/bibtex.pr"
         testProgramOn [("John", "John"), ("", ""), ("John Doe", "Doe, John"), ("John and Jane Doe", "John and Doe, Jane"), ("John F. Kennedy", "Kennedy, John F.")]
                       (transformProgram testProgram)
     {- 
