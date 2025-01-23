@@ -4,260 +4,347 @@
  * */
 
 /* Reset */
-html, body, div, span, applet, object, iframe,
-h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-a, abbr, acronym, address, big, cite, code,
-del, dfn, em, img, ins, kbd, q, s, samp,
-small, strike, strong, sub, sup, tt, var,
-b, u, i, center,
-dl, dt, dd, ol, ul, li,
-fieldset, form, label, legend,
-table, caption, tbody, tfoot, thead, tr, th, td,
-article, aside, canvas, details, embed,
-figure, figcaption, footer, header, hgroup,
-menu, nav, output, ruby, section, summary,
-time, mark, audio, video {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    font-size: 100%;
-    font: inherit;
-    vertical-align: baseline;
+html,
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+embed,
+figure,
+figcaption,
+footer,
+header,
+hgroup,
+menu,
+nav,
+output,
+ruby,
+section,
+summary,
+time,
+mark,
+audio,
+video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
 }
 
 /* HTML5 display-role reset for older browsers */
-article, aside, details, figcaption, figure,
-footer, header, hgroup, menu, nav, section {
-    display: block;
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section {
+  display: block;
 }
 
 body {
-    line-height: 1;
+  line-height: 1;
 }
 
-ol, ul {
-    list-style: none;
+ol,
+ul {
+  list-style: none;
 }
 
-blockquote, q {
-    quotes: none;
+blockquote,
+q {
+  quotes: none;
 }
 
-blockquote:before, blockquote:after,
-q:before, q:after {
-    content: '';
-    content: none;
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+  content: "";
+  content: none;
 }
 
 table {
-    border-collapse: collapse;
-    border-spacing: 0;
+  border-collapse: collapse;
+  border-spacing: 0;
 }
 
 /* Custom */
 
 body {
-    font-family: 'Arial', sans-serif;
-    font-size: 16px;
-    line-height: 1.5;
-    color: #333;
-    background-color: #fff;
-    margin: 0px 20px;
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-areas: "header" "input" "output" "about" "footer";
+  font-family: "Arial", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+  background-color: #fff;
+  margin: 0px 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: "header" "input" "output" "about" "footer";
 }
-
 
 /* Header */
 header {
-    padding: 20px 0;
-    grid-area: header;
+  padding: 20px 0;
+  grid-area: header;
 }
 
 header h1 {
-    border-bottom: 1px solid #333;
+  border-bottom: 1px solid #333;
 }
 
 /* headers */
 h1 {
-    font-size: 2em;
-    margin: 0;
-    text-transform: uppercase;
+  font-size: 2em;
+  margin: 0;
+  text-transform: uppercase;
 }
 
 h2 {
-    font-size: 1.5em;
-    margin: 0;
-    text-transform: uppercase;
+  font-size: 1.5em;
+  margin: 0;
+  text-transform: uppercase;
 }
 
 /* Main */
 
 div#input {
-    padding: 20px 0px;
+  padding: 20px 0px;
 }
 
 form#user-input {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-areas: "code-label"
-                         "code-assets"
-                         "code"
-                         "pre-label"
-                         "pre-assets"
-                         "pre"
-                         "post-label"
-                         "post-assets"
-                         "post"
-                         "submit";
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "code-label"
+    "code-assets"
+    "code"
+    "pre-label"
+    "pre-assets"
+    "pre"
+    "post-label"
+    "post-assets"
+    "post"
+    "submit";
 }
 
 form#user-input select#pre-assets {
-    grid-area: pre-assets;
+  grid-area: pre-assets;
 }
 
 form#user-input select#code-assets {
-    grid-area: code-assets;
+  grid-area: code-assets;
 }
 
 form#user-input select#post-assets {
-    grid-area: post-assets;
+  grid-area: post-assets;
 }
 
 form#user-input label#code-label {
-    grid-area: code-label;
+  grid-area: code-label;
 }
 
 form#user-input label#pre-label {
-    grid-area: pre-label;
+  grid-area: pre-label;
 }
 
 form#user-input label#post-label {
-    grid-area: post-label;
+  grid-area: post-label;
 }
 
 form#user-input textarea#code {
-    grid-area: code;
+  grid-area: code;
 }
 
 form#user-input textarea#pre {
-    grid-area: pre;
+  grid-area: pre;
 }
 
 form#user-input textarea#post {
-    grid-area: post;
+  grid-area: post;
 }
 
 form#user-input input#submit {
-    grid-area: submit;
-    padding: 10px;
-    margin-top: 10px;
-    border: 1px solid #333;
-    border-radius: 5px;
-    background-color: #333;
-    color: #fff;
-    text-transform: uppercase;
+  grid-area: submit;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #333;
+  border-radius: 5px;
+  background-color: #333;
+  color: #fff;
+  text-transform: uppercase;
 }
 
 form label {
-    display: block;
-    margin-bottom: 5px;
-    margin-top: 10px;
-    text-transform: uppercase;
+  display: block;
+  margin-bottom: 5px;
+  margin-top: 10px;
+  text-transform: uppercase;
 }
 
 textarea {
-    width: 100%;
-    min-height: 15em;
-    height: 100%;
-    padding: 10px;
-    border: 1px solid #333;
-    /* shadow */
-    box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    border-radius: 5px;
-    margin-bottom: 10px;
-    /* font monospace */
-    font-family: monospace;
+  width: 100%;
+  min-height: 15em;
+  height: 100%;
+  padding: 10px;
+  border: 1px solid #333;
+  /* shadow */
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  margin-bottom: 10px;
+  /* font monospace */
+  font-family: monospace;
 }
 
 textarea:hover {
-    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
 }
 
 div#output {
-    padding: 20px;
-    grid-area: output;
-    border-radius: 10px;
-    background-color: #f9f9f9;
-    /* overflow x - scroll */
-    overflow-x: scroll;
-    overflow-y: scroll;
+  padding: 20px;
+  grid-area: output;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+  /* overflow x - scroll */
+  overflow-x: scroll;
+  overflow-y: scroll;
+}
+
+div#output div#output-content {
+  /* slightly bigger font */
+  font-size: 1.3em;
+  text-transform: uppercase;
 }
 
 article#about {
-    padding: 20px 0;
-    grid-area: about;
+  padding: 20px 0;
+  grid-area: about;
 }
 
 .error {
-    color: red;
+  color: red;
 }
 
 .success {
-    color: green;
+  color: green;
 }
 
 .neutral {
-    color: #ff8c00;
+  color: #ff8c00;
 }
 
 /* Footer */
 
 footer {
-    grid-area: footer;
-    padding: 20px 0;
-    text-align: center;
-    border-top: 1px solid #333;
+  grid-area: footer;
+  padding: 20px 0;
+  text-align: center;
+  border-top: 1px solid #333;
 }
 
-
-
 @media screen and (min-width: 800px) {
-    body {
-        grid-template-columns: 1fr 1fr;
-        /* column separation */
-        grid-column-gap: 20px;
-        grid-template-areas: "header header" 
-                             "input output" 
-                             "about about"
-                             "footer footer";
-        grid-template-rows: auto 2fr 1fr 1fr;
-    }
+  body {
+    grid-template-columns: 1fr 1fr;
+    /* column separation */
+    grid-column-gap: 20px;
+    grid-template-areas:
+      "header header"
+      "input output"
+      "about about"
+      "footer footer";
+    grid-template-rows: auto 2fr 1fr 1fr;
+  }
 }
 
 @media screen and (min-width: 1200px) {
-    body {
-        grid-template-columns: 2fr 1fr;
-        /* column separation */
-        grid-column-gap: 20px;
-        grid-template-areas: "header header" 
-                            "input output" 
-                            "about about"
-                            "footer footer";
-    }
+  body {
+    grid-template-columns: 2fr 1fr;
+    /* column separation */
+    grid-column-gap: 20px;
+    grid-template-areas:
+      "header header"
+      "input output"
+      "about about"
+      "footer footer";
+  }
 
-
-    form#user-input {
-        display: grid;
-        grid-template-columns: 2fr 1fr ;
-        grid-column-gap: 20px;
-        grid-template-areas: "code-label   pre-label"
-                             "code-assets  pre-assets"
-                             "code         pre"
-                             "code         post-label"
-                             "code         post-assets"
-                             "code         post"
-                             ". submit";
-    }
+  form#user-input {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-column-gap: 20px;
+    grid-template-areas:
+      "code-label   pre-label"
+      "code-assets  pre-assets"
+      "code         pre"
+      "code         post-label"
+      "code         post-assets"
+      "code         post"
+      ". submit";
+  }
 }
