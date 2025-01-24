@@ -10,7 +10,9 @@ SRC=src/*.tex             \
     $(PAPER).md
 
 TEMPLATES=templates/plain-article.tex \
-	  templates/git-meta.lua 
+	  templates/git-meta.lua      \
+	  templates/lipics/lipics.tex \
+	  templates/lncs/lncs.tex
 
 FIGURES=
 

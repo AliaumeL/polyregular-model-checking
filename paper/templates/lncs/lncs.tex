@@ -17,6 +17,12 @@
 \usepackage{lineno}
 $if(final)$
 \nolinenumbers
+$else$
+\linenumbers
+$endif$
+
+$if(draft)$
+\usepackage{todonotes}
 $endif$
 
 % babel for language settings
@@ -61,6 +67,9 @@ $endif$
 \usepackage{tokcycle}
 \usepackage{ifthen}
 
+% Proof trees
+\usepackage{bussproofs}
+
 % Colors 
 \usepackage{ensps-colorscheme}
 
@@ -77,7 +86,14 @@ $endfor$
 
 \begin{document}
 %
+$if(draft)$
+\title{$title$ \\
+       $git-meta.branch$ $git-meta.commit$ \\
+       $git-meta.date$
+}
+$else$
 \title{$title$}
+$endif$
 $if(short-title)$
 \titlerunning{$short-title$}
 $endif$
@@ -87,6 +103,8 @@ $endif$
     $author.name$\inst{1}$if(author.orcid)$\orcidID{$author.orcid$}$endif$$sep$ \and
     $endfor$
 }
+
+\date{\today}
 
 \authorrunning{$for(author)$$author.initials$$sep$ and $endfor$}
 
@@ -106,6 +124,12 @@ $for(keywords)$$it$$sep$ and  $endfor$
 
 % Include the content of the paper
 $body$
+
+% Include acknowledgements
+$if(acknowledgements)$
+\section*{Acknowledgements}
+$acknowledgements$
+$endif$
 
 % Include the bibliography
 $if(bibliography)$
