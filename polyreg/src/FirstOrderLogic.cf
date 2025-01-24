@@ -1,0 +1,36 @@
+-- Translate to haskell with `bnfc --haskell -d -p Parser FirstOrderLogic.cf`
+-- Remember to remove the Test.hs file, which breaks the build
+
+comment "--" ;
+
+-- Abstract syntax
+FQuant. Formula ::= Quantifier Formula1 ;
+FIff. Formula1 ::= Formula2 "↔" Formula1 ;
+FImpl. Formula2 ::= Formula3 "→" Formula2 ;
+FAnd. Formula3 ::= Formula4 "∧" Formula3 ;
+FOr. Formula4 ::= Formula5 "∨" Formula4 ;
+FNot. Formula5 ::= "¬" Formula5 ;
+FTrue. Formula5 ::= "true" ;
+FFalse. Formula5 ::= "false" ;
+FAtom. Formula5 ::= Predicate ;
+
+coercions Formula 5 ;
+
+QuantForall. Quantifier ::= "∀" Ident ":" Type "." ;
+QuantExists. Quantifier ::= "∃" Ident ":" Type "." ;
+
+TPos . Type ::= "Pos" ;
+TBool . Type ::= "Bool" ;
+TTag  . Type ::= "Tag" ;
+
+BoolVar . Predicate ::= Ident ; 
+BinTest . Predicate ::= Ident TestOp Ident ; 
+BinLetEq . Predicate ::= Ident "=" Char ;
+BinTagEq . Predicate ::= Ident  "=" String ;
+
+TLe . TestOp ::= "<=" ; 
+TLt . TestOp ::= "<" ; 
+TGe . TestOp ::= ">=" ; 
+TGt . TestOp ::= ">" ; 
+TEq . TestOp ::= "=" ; 
+TNeq . TestOp ::= "!=" ;
