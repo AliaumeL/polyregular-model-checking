@@ -22,7 +22,7 @@ jobs:
       - name: Install additional LaTeX packages
         run: |
           tlmgr update --self
-          tlmgr install stmaryrd thmtools was tokcycle l3packages microtype svn-prov standalone xpatch todonotes tikz-cd knowledge booktabs varwidth bussproofs cleveref hyperref
+          tlmgr install stmaryrd thmtools was tokcycle l3packages microtype svn-prov standalone xpatch todonotes tikz-cd knowledge booktabs varwidth bussproofs cleveref hyperref tikzmark
           tlmgr list --only-installed
       - name: Build
         run: |
