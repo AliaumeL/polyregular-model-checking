@@ -37,7 +37,9 @@ let
         src = polyreg-pkg.src;
         installPhase = ''
             mkdir -p $out/bin
+            mkdir -p $out/assets
             cp ${polyreg-pkg}/bin/polyreg-exe $out/bin
+            cp -r ${./polyreg/assets}/* $out/assets/
         '';
     };
 
@@ -66,20 +68,30 @@ let
 
     # build the docker image for the polyreg project
     # it contains the polyreg executable,
-    polyreg-img-small = pkgs.dockerTools.buildImage {
-        name = "polyreg-docker-small";
+    polycheck-img-small = pkgs.dockerTools.buildImage {
+        name = "aliaume/polycheck-small";
         tag  = "latest";
         copyToRoot = pkgs.buildEnv { 
             name = "image-root-small";
             paths = [
                 polyreg-runtime
                 pkgs.fish
-                pkgs.git
+                pkgs.git 
+                pkgs.deterministic-uname
+                pkgs.coreutils
+                (pkgs.runCommand "copy-assets" {} ''
+                    mkdir -p $out/assets
+                    cp -r ${./polyreg/assets}/* $out/assets/
+                '')
             ];
-            pathsToLink = ["/bin"];
+            pathsToLink = ["/bin" "/assets" "/tmp"];
         };
         config = {
             Cmd = [ "${pkgs.fish}/bin/fish" ];
+            WorkingDir = "/";
+            ExposedPorts = {
+                "3000/tcp" = {};
+            };
         };
     };
 
@@ -91,13 +103,20 @@ let
         copyToRoot = polyreg-devenv;
         config = {
             Cmd = [ "${pkgs.fish}/bin/fish" ];
+            # workdir = /app 
+            WorkingDir = "/app";
+            extraCommands = ''
+                mkdir -p $out/app/assets
+                cp -r ${./polyreg/assets}/* $out/app/assets/
+            '';
+            exposedPorts = [ 3000 ];
         };
     };
 
 in {
     polyreg-exe     = polyreg-exe;
     polyreg-runtime = polyreg-runtime;
-    polyreg-img     = polyreg-img-small;
+    polycheck-img   = polycheck-img-small;
     polyreg-dev     = polyreg-img-dev;
     polyreg-devenv  = polyreg-devenv;
 }

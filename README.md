@@ -14,7 +14,7 @@ directory.
 The program can be run using the following methods:
 
 ```bash
-polycheck -i <input_file> -p <pre_condition_file> -q <post_condition_file>
+polyreg-exe -i <input_file> -p <pre_condition_file> -q <post_condition_file>
 ```
 
 A list of examples input files and pre/post condition files can be found in the
@@ -31,7 +31,7 @@ using the `--web` flag. In this mode, the program will start a web server on
 the port `3000` and will provide a web interface to run the model checker.
 
 ```bash
-polycheck --web
+polyreg-exe --web
 ```
 
 ## Installing
@@ -39,15 +39,22 @@ polycheck --web
 The installation of the program can be done using the following methods
 listed by order of preference:
 
-- Using the docker image `aliaumeL/polycheck:latest` available on Docker Hub.
-- Using the `nix` package manager, by running `nix-build -A polycheck` in the
-  root directory of the repository.
+- Using the docker image `aliaume/polycheck-small:latest` available on Docker
+  Hub.
+- Using a `nix-shell` environment, by just running `nix-shell` in the root
+  directory of the repository.
+- Using the `nix` package manager, by running `nix-build polyreg.nix -A
+  polyreg-exe` in the root directory of the repository.
 - Using the `stack` Haskell build tool, by running `stack build` in the
   `polyreg` directory.
 
 Note that the installation process requires the installation of external
 solvers, which are included in the docker image and the nix derivation, but
 cannot be build by the `stack` tool.
+
+The easiest way is to use `docker run -it -p 3000:3000
+aliaume/polycheck-small:latest polyreg-exe --web` to run the program in
+a docker container which turns on the web interface.
 
 ## Building instructions
 
