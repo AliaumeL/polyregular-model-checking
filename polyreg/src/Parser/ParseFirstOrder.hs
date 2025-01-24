@@ -1,4 +1,4 @@
-module Parser.ParseSimple where
+module Parser.ParseFirstOrder where
 
 import Parser.FirstOrderLogic.Par   ( pFormula, myLexer )
 import Parser.ParsedToFirstOrderLogic ( parsedToFirstOrderLogic )
