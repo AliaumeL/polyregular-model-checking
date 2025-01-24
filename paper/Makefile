@@ -72,7 +72,7 @@ $(PAPER).arxiv.tex: $(SRC) $(TEMPLATES) ../paper-meta.yaml
 	latexpand -o $(PAPER).arxiv.tex         \
 		      --empty-comments          \
 		      --expand-bbl $(PAPER)-arxiv-tmp.bbl \
-              $(PAPER).tex
+              $(PAPER)-arxiv-tmp.tex
 	@rm $(PAPER)-arxiv-tmp.*
 
 # Create an archive with the single file tex document and the license

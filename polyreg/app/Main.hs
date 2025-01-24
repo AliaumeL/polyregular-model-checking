@@ -84,7 +84,10 @@ cliApp :: Options -> IO ()
 cliApp opts = do
     progString <- readInputFile (optInputProg opts)
     putStrLn $ "Program: read"
-    let (Right parsedProg)      = parseHighLevel progString
+    let parsedProg'             = parseHighLevel progString
+    let parsedProg = case parsedProg' of
+        Left err -> putStrLn $ "Error: " ++ err
+        Right parsedProg -> parsedProg
     putStrLn $ "Program: parsed"
     let (Right typedProg)       = inferAndCheckProgram parsedProg
     putStrLn $ "Program: typed"
