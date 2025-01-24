@@ -21,7 +21,7 @@ jobs:
         uses: r-lib/actions/setup-tinytex@v2
       - name: Build
         run: |
-          cd polyregular-model-checking/paper
+          cd paper
           make all
   build:
     runs-on: ubuntu-latest
