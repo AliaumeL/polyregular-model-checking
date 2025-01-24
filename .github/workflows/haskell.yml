@@ -1,4 +1,4 @@
-name: Haskell CI
+name: haskell and latex CI
 
 on:
   push:
@@ -10,6 +10,21 @@ permissions:
   contents: read
 
 jobs:
+  paper:
+    runs-on: ubuntu-latest
+    container:
+      image: pandoc/latex:latest-ubuntu
+    steps:
+      # https://github.com/commercialhaskell/stack/issues/2187
+      - name: Permissions bug workaround
+        run: "chown -R $(id -un):$(id -gn) ~"
+      - name: Check out code
+        run: |
+          git clone https://github.com/AliaumeL/polyregular-model-checking.git
+      - name: Build
+        run: |
+          cd polyregular-model-checking/paper
+          make all
   build:
     runs-on: ubuntu-latest
     container:
