@@ -22,7 +22,7 @@ jobs:
       - name: Install additional LaTeX packages
         run: |
           tlmgr update --self
-          tlmgr install microtype todonotes tikz-cd knowledge booktabs varwidth bussproofs
+          tlmgr install stmaryrd thmtools upgreek tikz tokcycle ifthen xparse microtype todonotes tikz-cd knowledge booktabs varwidth bussproofs
           tlmgr list --only-installed
       - name: Build
         run: |
