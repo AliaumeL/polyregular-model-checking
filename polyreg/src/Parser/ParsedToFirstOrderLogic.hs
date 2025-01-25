@@ -7,7 +7,7 @@ import Logic.QuantifierFree
 capture :: String -> Formula String  -> Formula String
 capture name f = quantInVars fun f
   where 
-    fun _ x | x == name = Just (In x)
+    fun _ x | x == name = Just (Local 0 x)
     fun _ _ = Nothing
 
 parsedToFirstOrderLogic :: P.Formula -> Formula String

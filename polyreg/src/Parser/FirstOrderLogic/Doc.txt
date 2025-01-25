@@ -31,15 +31,14 @@ except ``"`` unless preceded by ``\``.
 The set of reserved words is the set of terminals appearing in the grammar. Those reserved words that consist of non-letter characters are called symbols, and they are treated in a different way from those that are similar to identifiers. The lexer follows rules familiar from languages like Haskell, C, and Java, including longest match and spacing conventions.
 
 The reserved words used in FirstOrderLogic are the following:
-  | ``Bool`` | ``Pos`` | ``Tag`` | ``false``
-  | ``true`` |  |  |
+  | ``Bool`` | ``Pos`` | ``Tag`` | ``exists``
+  | ``false`` | ``forall`` | ``not`` | ``true``
 
 The symbols used in FirstOrderLogic are the following:
-  | ↔ | → | ∧ | ∨
-  | ¬ | ( | ) | ∀
-  | : | . | ∃ | =
-  | <= | < | >= | >
-  | != |  |  |
+  | <-> | -> | /\ | \/
+  | ( | ) | : | .
+  | = | <= | < | >=
+  | > | != |  |
 
 ===Comments===
 Single-line comments begin with --.There are no multiple-line comments in the grammar.
@@ -50,23 +49,22 @@ The symbols -> (production),  **|**  (union)
 and **eps** (empty rule) belong to the BNF notation.
 All other symbols are terminals.
 
-  | //Formula// | -> | //Quantifier// //Formula1//
+  | //Formula// | -> | //Quantifier// //Formula//
+  |  |  **|**  | //Formula1// ``<->`` //Formula//
   |  |  **|**  | //Formula1//
-  | //Formula1// | -> | //Formula2// ``↔`` //Formula1//
+  | //Formula1// | -> | //Formula2// ``->`` //Formula1//
   |  |  **|**  | //Formula2//
-  | //Formula2// | -> | //Formula3// ``→`` //Formula2//
+  | //Formula2// | -> | //Formula3// ``/\`` //Formula2//
   |  |  **|**  | //Formula3//
-  | //Formula3// | -> | //Formula4// ``∧`` //Formula3//
+  | //Formula3// | -> | //Formula4// ``\/`` //Formula3//
   |  |  **|**  | //Formula4//
-  | //Formula4// | -> | //Formula5// ``∨`` //Formula4//
-  |  |  **|**  | //Formula5//
-  | //Formula5// | -> | ``¬`` //Formula5//
+  | //Formula4// | -> | ``not`` //Formula4//
   |  |  **|**  | ``true``
   |  |  **|**  | ``false``
   |  |  **|**  | //Predicate//
   |  |  **|**  | ``(`` //Formula// ``)``
-  | //Quantifier// | -> | ``∀`` //Ident// ``:`` //Type// ``.``
-  |  |  **|**  | ``∃`` //Ident// ``:`` //Type// ``.``
+  | //Quantifier// | -> | ``forall`` //Ident// ``:`` //Type// ``.``
+  |  |  **|**  | ``exists`` //Ident// ``:`` //Type// ``.``
   | //Type// | -> | ``Pos``
   |  |  **|**  | ``Bool``
   |  |  **|**  | ``Tag``

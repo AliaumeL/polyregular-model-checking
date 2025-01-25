@@ -1,1 +1,8 @@
-FQuant Exists "firstC" Pos (FQuant Exists "nextC" Pos (FBin Conj (FTestPos Lt (Local 1 "firstC") (Local 0 "nextC")) (FBin Conj (FNot (FQuant Exists "middleLetter" Pos (FBin Conj (FTestPos Lt (Local 2 "firstC") (Local 0 "middleLetter")) (FTestPos Lt (Local 0 "middleLetter") (Local 1 "nextC"))))) (FBin Conj (FLetter (Local 1 "firstC") 'a') (FLetter (Local 0 "nextC") 'b')))))
+exists firstC : Pos . exists nextC : Pos .
+    firstC < nextC /\
+    not (exists middleLetter : Pos .
+        firstC < middleLetter /\
+        middleLetter < nextC
+    ) /\
+    firstC = 'a' /\
+    nextC = 'b' 

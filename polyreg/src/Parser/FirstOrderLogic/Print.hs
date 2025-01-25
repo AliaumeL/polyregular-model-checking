@@ -141,20 +141,20 @@ instance Print Parser.FirstOrderLogic.Abs.Ident where
   prt _ (Parser.FirstOrderLogic.Abs.Ident i) = doc $ showString i
 instance Print Parser.FirstOrderLogic.Abs.Formula where
   prt i = \case
-    Parser.FirstOrderLogic.Abs.FQuant quantifier formula -> prPrec i 0 (concatD [prt 0 quantifier, prt 1 formula])
-    Parser.FirstOrderLogic.Abs.FIff formula1 formula2 -> prPrec i 1 (concatD [prt 2 formula1, doc (showString "\8596"), prt 1 formula2])
-    Parser.FirstOrderLogic.Abs.FImpl formula1 formula2 -> prPrec i 2 (concatD [prt 3 formula1, doc (showString "\8594"), prt 2 formula2])
-    Parser.FirstOrderLogic.Abs.FAnd formula1 formula2 -> prPrec i 3 (concatD [prt 4 formula1, doc (showString "\8743"), prt 3 formula2])
-    Parser.FirstOrderLogic.Abs.FOr formula1 formula2 -> prPrec i 4 (concatD [prt 5 formula1, doc (showString "\8744"), prt 4 formula2])
-    Parser.FirstOrderLogic.Abs.FNot formula -> prPrec i 5 (concatD [doc (showString "\172"), prt 5 formula])
-    Parser.FirstOrderLogic.Abs.FTrue -> prPrec i 5 (concatD [doc (showString "true")])
-    Parser.FirstOrderLogic.Abs.FFalse -> prPrec i 5 (concatD [doc (showString "false")])
-    Parser.FirstOrderLogic.Abs.FAtom predicate -> prPrec i 5 (concatD [prt 0 predicate])
+    Parser.FirstOrderLogic.Abs.FQuant quantifier formula -> prPrec i 0 (concatD [prt 0 quantifier, prt 0 formula])
+    Parser.FirstOrderLogic.Abs.FIff formula1 formula2 -> prPrec i 0 (concatD [prt 1 formula1, doc (showString "<->"), prt 0 formula2])
+    Parser.FirstOrderLogic.Abs.FImpl formula1 formula2 -> prPrec i 1 (concatD [prt 2 formula1, doc (showString "->"), prt 1 formula2])
+    Parser.FirstOrderLogic.Abs.FAnd formula1 formula2 -> prPrec i 2 (concatD [prt 3 formula1, doc (showString "/\\"), prt 2 formula2])
+    Parser.FirstOrderLogic.Abs.FOr formula1 formula2 -> prPrec i 3 (concatD [prt 4 formula1, doc (showString "\\/"), prt 3 formula2])
+    Parser.FirstOrderLogic.Abs.FNot formula -> prPrec i 4 (concatD [doc (showString "not"), prt 4 formula])
+    Parser.FirstOrderLogic.Abs.FTrue -> prPrec i 4 (concatD [doc (showString "true")])
+    Parser.FirstOrderLogic.Abs.FFalse -> prPrec i 4 (concatD [doc (showString "false")])
+    Parser.FirstOrderLogic.Abs.FAtom predicate -> prPrec i 4 (concatD [prt 0 predicate])
 
 instance Print Parser.FirstOrderLogic.Abs.Quantifier where
   prt i = \case
-    Parser.FirstOrderLogic.Abs.QuantForall id_ type_ -> prPrec i 0 (concatD [doc (showString "\8704"), prt 0 id_, doc (showString ":"), prt 0 type_, doc (showString ".")])
-    Parser.FirstOrderLogic.Abs.QuantExists id_ type_ -> prPrec i 0 (concatD [doc (showString "\8707"), prt 0 id_, doc (showString ":"), prt 0 type_, doc (showString ".")])
+    Parser.FirstOrderLogic.Abs.QuantForall id_ type_ -> prPrec i 0 (concatD [doc (showString "forall"), prt 0 id_, doc (showString ":"), prt 0 type_, doc (showString ".")])
+    Parser.FirstOrderLogic.Abs.QuantExists id_ type_ -> prPrec i 0 (concatD [doc (showString "exists"), prt 0 id_, doc (showString ":"), prt 0 type_, doc (showString ".")])
 
 instance Print Parser.FirstOrderLogic.Abs.Type where
   prt i = \case

@@ -13,7 +13,6 @@ module Parser.FirstOrderLogic.Par
   , pFormula2
   , pFormula3
   , pFormula4
-  , pFormula5
   , pQuantifier
   , pType
   , pPredicate
@@ -32,7 +31,6 @@ import Parser.FirstOrderLogic.Lex
 %name pFormula2 Formula2
 %name pFormula3 Formula3
 %name pFormula4 Formula4
-%name pFormula5 Formula5
 %name pQuantifier Quantifier
 %name pType Type
 %name pPredicate Predicate
@@ -44,25 +42,25 @@ import Parser.FirstOrderLogic.Lex
   '!='     { PT _ (TS _ 1)  }
   '('      { PT _ (TS _ 2)  }
   ')'      { PT _ (TS _ 3)  }
-  '.'      { PT _ (TS _ 4)  }
-  ':'      { PT _ (TS _ 5)  }
-  '<'      { PT _ (TS _ 6)  }
-  '<='     { PT _ (TS _ 7)  }
-  '='      { PT _ (TS _ 8)  }
-  '>'      { PT _ (TS _ 9)  }
-  '>='     { PT _ (TS _ 10) }
-  'Bool'   { PT _ (TS _ 11) }
-  'Pos'    { PT _ (TS _ 12) }
-  'Tag'    { PT _ (TS _ 13) }
-  'false'  { PT _ (TS _ 14) }
-  'true'   { PT _ (TS _ 15) }
-  '¬'      { PT _ (TS _ 16) }
-  '→'      { PT _ (TS _ 17) }
-  '↔'      { PT _ (TS _ 18) }
-  '∀'      { PT _ (TS _ 19) }
-  '∃'      { PT _ (TS _ 20) }
-  '∧'      { PT _ (TS _ 21) }
-  '∨'      { PT _ (TS _ 22) }
+  '->'     { PT _ (TS _ 4)  }
+  '.'      { PT _ (TS _ 5)  }
+  '/\\'    { PT _ (TS _ 6)  }
+  ':'      { PT _ (TS _ 7)  }
+  '<'      { PT _ (TS _ 8)  }
+  '<->'    { PT _ (TS _ 9)  }
+  '<='     { PT _ (TS _ 10) }
+  '='      { PT _ (TS _ 11) }
+  '>'      { PT _ (TS _ 12) }
+  '>='     { PT _ (TS _ 13) }
+  'Bool'   { PT _ (TS _ 14) }
+  'Pos'    { PT _ (TS _ 15) }
+  'Tag'    { PT _ (TS _ 16) }
+  '\\/'    { PT _ (TS _ 17) }
+  'exists' { PT _ (TS _ 18) }
+  'false'  { PT _ (TS _ 19) }
+  'forall' { PT _ (TS _ 20) }
+  'not'    { PT _ (TS _ 21) }
+  'true'   { PT _ (TS _ 22) }
   L_Ident  { PT _ (TV $$)   }
   L_charac { PT _ (TC $$)   }
   L_quoted { PT _ (TL $$)   }
@@ -80,32 +78,28 @@ String   : L_quoted { $1 }
 
 Formula :: { Parser.FirstOrderLogic.Abs.Formula }
 Formula
-  : Quantifier Formula1 { Parser.FirstOrderLogic.Abs.FQuant $1 $2 }
+  : Quantifier Formula { Parser.FirstOrderLogic.Abs.FQuant $1 $2 }
+  | Formula1 '<->' Formula { Parser.FirstOrderLogic.Abs.FIff $1 $3 }
   | Formula1 { $1 }
 
 Formula1 :: { Parser.FirstOrderLogic.Abs.Formula }
 Formula1
-  : Formula2 '↔' Formula1 { Parser.FirstOrderLogic.Abs.FIff $1 $3 }
+  : Formula2 '->' Formula1 { Parser.FirstOrderLogic.Abs.FImpl $1 $3 }
   | Formula2 { $1 }
 
 Formula2 :: { Parser.FirstOrderLogic.Abs.Formula }
 Formula2
-  : Formula3 '→' Formula2 { Parser.FirstOrderLogic.Abs.FImpl $1 $3 }
+  : Formula3 '/\\' Formula2 { Parser.FirstOrderLogic.Abs.FAnd $1 $3 }
   | Formula3 { $1 }
 
 Formula3 :: { Parser.FirstOrderLogic.Abs.Formula }
 Formula3
-  : Formula4 '∧' Formula3 { Parser.FirstOrderLogic.Abs.FAnd $1 $3 }
+  : Formula4 '\\/' Formula3 { Parser.FirstOrderLogic.Abs.FOr $1 $3 }
   | Formula4 { $1 }
 
 Formula4 :: { Parser.FirstOrderLogic.Abs.Formula }
 Formula4
-  : Formula5 '∨' Formula4 { Parser.FirstOrderLogic.Abs.FOr $1 $3 }
-  | Formula5 { $1 }
-
-Formula5 :: { Parser.FirstOrderLogic.Abs.Formula }
-Formula5
-  : '¬' Formula5 { Parser.FirstOrderLogic.Abs.FNot $2 }
+  : 'not' Formula4 { Parser.FirstOrderLogic.Abs.FNot $2 }
   | 'true' { Parser.FirstOrderLogic.Abs.FTrue }
   | 'false' { Parser.FirstOrderLogic.Abs.FFalse }
   | Predicate { Parser.FirstOrderLogic.Abs.FAtom $1 }
@@ -113,8 +107,8 @@ Formula5
 
 Quantifier :: { Parser.FirstOrderLogic.Abs.Quantifier }
 Quantifier
-  : '∀' Ident ':' Type '.' { Parser.FirstOrderLogic.Abs.QuantForall $2 $4 }
-  | '∃' Ident ':' Type '.' { Parser.FirstOrderLogic.Abs.QuantExists $2 $4 }
+  : 'forall' Ident ':' Type '.' { Parser.FirstOrderLogic.Abs.QuantForall $2 $4 }
+  | 'exists' Ident ':' Type '.' { Parser.FirstOrderLogic.Abs.QuantExists $2 $4 }
 
 Type :: { Parser.FirstOrderLogic.Abs.Type }
 Type
