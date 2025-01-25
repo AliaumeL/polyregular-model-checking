@@ -33,17 +33,17 @@ import Web.API (webApp)
 
 
 data Options = Options
-    { optInputProg :: FilePath
-    , optPreCond   :: FilePath
-    , optPostCond  :: FilePath
+    { optInputProg :: Maybe FilePath
+    , optPreCond   :: Maybe FilePath
+    , optPostCond  :: Maybe FilePath
     , optWeb :: Bool
     } deriving (Eq,Show)
 
 options :: Parser Options
 options = Options
-      <$> (strOption (long "input-prog"    <> short 'i' <> metavar "FILE" <> help "The input file"))
-      <*> (strOption (long "precondition"  <> short 'b' <> metavar "FILE" <> help "The precondition file"))
-      <*> (strOption (long "postcondition" <> short 'a' <> metavar "FILE" <> help "The postcondition file"))
+      <$> optional (strOption (long "input-prog"    <> short 'i' <> metavar "FILE" <> help "The input file"))
+      <*> optional (strOption (long "precondition"  <> short 'b' <> metavar "FILE" <> help "The precondition file"))
+      <*> optional (strOption (long "postcondition" <> short 'a' <> metavar "FILE" <> help "The postcondition file"))
       <*> switch   (long "web" <> short 'w' <> help "Start the web server")
 
 
@@ -79,11 +79,21 @@ unwrapEither :: (Show b) => String -> Either b a -> IO a
 unwrapEither ctx (Left err) = error $ "[" ++ ctx ++ "]" ++ "Error: " ++ show err
 unwrapEither ctx (Right x) = return x
 
+unwrapMaybe :: String -> Maybe a -> IO a
+unwrapMaybe ctx (Just x) = return x
+unwrapMaybe ctx Nothing = error $ "[" ++ ctx ++ "]" ++ "Error: Nothing"
+
 cliApp :: Options -> IO ()
 cliApp opts = do
-    parsedProg <- PHL.parseFromFile (optInputProg opts) >>= unwrapEither "Parsing Program"
-    precond    <- PFO.parseFromFileWithoutTags (optPreCond opts)   >>= unwrapEither "Parsing Precondition"
-    postcond   <- PFO.parseFromFileWithoutTags (optPostCond opts)  >>= unwrapEither "Parsing Postcondition"
+    parsedProg <- unwrapMaybe "Program file" (optInputProg opts) 
+                        >>= PHL.parseFromFile 
+                        >>= unwrapEither "Parsing Program"
+    precond    <- unwrapMaybe "Postcondition file" (optPreCond opts)
+                        >>= PFO.parseFromFileWithoutTags 
+                        >>= unwrapEither "Parsing Precondition"
+    postcond   <- unwrapMaybe "Postcondition file" (optPostCond opts)
+                        >>= PFO.parseFromFileWithoutTags
+                        >>= unwrapEither "Parsing Postcondition"
     typedProg  <- unwrapEither "Typing" $ inferAndCheckProgram parsedProg
     let simpleForProg           = higherToSimpleProgram typedProg
     putStrLn $ "Program: converted to simple for" ++ show simpleForProg

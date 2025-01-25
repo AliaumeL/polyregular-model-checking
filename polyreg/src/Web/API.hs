@@ -32,6 +32,7 @@ import ForPrograms.HighLevel (Program)
 import ForPrograms.HighLevel.Typing.Inference   (inferAndCheckProgram)
 import ForPrograms.HighLevel.Typing(ValueType(..))
 import Parser.ParseHighLevel (parseHighLevel,PartiallyTypedProgram)
+import Parser.ParseFirstOrder (parseWithoutTags)
 import ForPrograms.Simple (prettyPrintForProgram)
 
 import Logic.HoareTriple    (HoareTriple(..), verifyHoareTriple, encodeHoareTriple)
@@ -56,6 +57,11 @@ data SolverResponse = SolverResponse {
     answer     :: String
 } deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
+data ParseResponse = ParseResponse {
+    parseErrProg :: Maybe String,
+    parseErrPre  :: Maybe String,
+    parseErrPost :: Maybe String
+} deriving (Eq, Show, Generic, FromJSON, ToJSON)
 
 data VerifyResponse = VerifyResponse {
     request     :: VerifyRequest,
@@ -110,8 +116,8 @@ parseVerifyRequest (VerifyRequest p σ τ) = do
     simple          <- higherToSimpleProgram typed
     let interpreted = simpleForToInterpretation simple
     -- remove extra whitespace for τ and σ and then read them as formulas
-    let precond    = read σ
-    let postcond   = read τ
+    precond         <- parseWithoutTags σ
+    postcond        <- parseWithoutTags τ
     return $ (HoareTriple (precond) interpreted (postcond), simple)
 
 getAssetContent :: String -> String -> IO AssetContent
@@ -131,6 +137,24 @@ listDirectoryAssets path = do
     alist <- getDirectoryContents path
     cnts  <- mapM (getAssetContent path) $ filter (\a -> not( a `startsWith` ".")) alist
     return $ AssetList cnts
+
+checkParseErrors :: VerifyRequest -> ParseResponse
+checkParseErrors (VerifyRequest p σ τ) = ParseResponse progErr preErr postErr
+    where
+        progParsed = do 
+            partiallyTyped  <- parseHighLevel p
+            inferAndCheckProgram' partiallyTyped
+        precond    = parseWithoutTags σ 
+        postcond   = parseWithoutTags τ
+        progErr    = case progParsed of
+            Left err -> Just err
+            Right _  -> Nothing
+        preErr     = case precond of
+            Left err -> Just $ show err
+            Right _  -> Nothing
+        postErr    = case postcond of
+            Left err -> Just $ show err
+            Right _  -> Nothing
 
 
 webApp :: IO ()
@@ -182,6 +206,10 @@ webApp = scotty 3000 $ do
                                                            return $ SolverResponse (show s) (show res))
                                                       (\e -> return $ SolverResponse (show s) (show e))
             json $ solverResult
+  Web.Scotty.post "/api/parse"  $ do
+    req <- jsonData :: ActionM VerifyRequest
+    json $ checkParseErrors req
+    
   Web.Scotty.post "/api/verify" $ do
     req <- jsonData :: ActionM VerifyRequest
     let hoareTriple = parseVerifyRequest req
@@ -189,7 +217,6 @@ webApp = scotty 3000 $ do
         Left err -> json $ VerifyResponse req err "" []
         Right (ht,simple) -> do
             solvers <- liftAndCatchIO $ installedSolvers
-            -- TODO: catch exceptions and return them as error messages
             solverResults <- liftAndCatchIO $ mapM (\s -> catchAny (do
                                                                        res <- verifyHoareTriple s ht
                                                                        return $ SolverResponse (show s) (show res)) 

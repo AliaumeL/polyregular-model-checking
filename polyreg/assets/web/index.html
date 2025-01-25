@@ -1,6 +1,6 @@
 <!html>
 <head>
-    <title>💋 Polycheck</title>
+    <title>Polycheck</title>
     <meta lang="en">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,15 +9,20 @@
 </head>
 <body>
     <header>
-    <h1>💋 Polycheck / Policzek </h1>
+    <h1>Polycheck / Policzek </h1>
     <p>Checking Hoare Triples for polyregular functions.</p>
     </header>
     <div id="input">
         <h2>🍴 Input Form </h2>
         <p>
-            Write a <em>For-Program</em>, a <em>precondition</em>, 
-            and a <em>postcondition</em>. To check that the program satisfies
-            the specification, validate the form by pressing the <code>CHECK</code> button.
+            Write a <em>For-Program</em> Π, a <em>precondition</em> Φ, 
+            and a <em>postcondition</em> Ψ in the textareas below.
+            To check that the program Π 
+            satisfies the specification <code>{Φ} Π {Ψ}</code>,
+            i.e. that for every input word, if the precondition Φ holds, 
+            then the postcondition Ψ holds for the output of the program Π
+            on this word,
+            validate the form by pressing the <code>CHECK</code> button.
         </p>
         <form id="user-input">
             <!-- input form:
@@ -28,23 +33,26 @@
                 - selectable list of predefined formulas assets (postcondition)
                 - textarea to write the formula (postcondition)
             -->
-            <label for="code" id="code-label">Code:</label>
+            <label for="code" id="code-label">Π — Code:</label>
             <select id="code-assets">
             </select>
             <textarea id="code"></textarea>
-            <label for="pre" id="pre-label">Precondition:</label>
+            <label for="pre" id="pre-label">Φ — Precondition:</label>
             <select id="pre-assets">
             </select>
             <textarea id="pre"></textarea>
-            <label for="post" id="post-label">Postcondition:</label>
+            <label for="post" id="post-label">Ψ — Postcondition:</label>
             <select id="post-assets">
             </select>
             <textarea id="post"></textarea>
-            <input type="submit" value="CHECK">
+            <input    id="submit" type="submit" value="CHECK">
         </form>
     </div>
     <div id="output">
         <h2>🎰 Output View </h2>
+        <div id="output-warn">
+            <p>Warnings and errors will be displayed here.</p>
+        </div>
         <div id="output-view">
             <p>The results of the different validating programs 
                 will be displayed here.</p>
