@@ -1,15 +1,16 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Logic.Formulas (Sort(..), Quant(..), Var(..), Formula(..), Value(..),
-shiftVar,
-quantifierDepth,
-simplifyFormula,
-addRealPositions,
-andList, orList, quantifyList, mapInVars, mapOutVars, mapVars,
-nestQuantVars, nestQuantVar, mapTags,
-substituteBooleanVar, freeVars, prettyPrintFormula, 
-quantInOutVarsGeneric,
-quantOutVars, quantInVars, injectTags, evalFormula, evalFormulaWithFreeVars, 
-showFormulaGeneric)
+    shiftVar,
+    quantifierDepth,
+    simplifyFormula,
+    addRealPositions,
+    andList, orList, quantifyList, mapInVars, mapOutVars, mapVars,
+    nestQuantVars, nestQuantVar, mapTags,
+    substituteBooleanVar, freeVars, prettyPrintFormula, 
+    quantInOutVarsGeneric,
+    quantOutVars, quantInVars, injectTags, removeTags, evalFormula, evalFormulaWithFreeVars, 
+    showFormulaGeneric
+)
 where
 
 import Logic.QuantifierFree
@@ -152,6 +153,29 @@ injectTags (FTag _ _) = FConst False
 injectTags (FLetter x l) = FLetter x l
 injectTags (FTestPos t x y) = FTestPos t x y
 injectTags (FRealPos x) = FRealPos x
+
+removeTags :: Formula t -> Either String (Formula ())
+removeTags (FConst b) = Right $ FConst b
+removeTags (FVar x) = Right $ FVar x
+removeTags (FBin op l r) = do
+    l' <- removeTags l
+    r' <- removeTags r
+    return $ FBin op l' r'
+removeTags (FNot l) = do
+    l' <- removeTags l
+    return $ FNot l'
+removeTags (FQuant q x Tag l) = Left "Cannot remove tags from quantified variables"
+removeTags (FQuant q x s l) = do
+    l' <- removeTags l
+    return $ FQuant q x s l'
+removeTags (FTag _ _) = Left "Cannot remove tags"
+removeTags (FLetter x l) = Right $ FLetter x l
+removeTags (FTestPos t x y) = Right $ FTestPos t x y
+removeTags (FRealPos x) = Right $ FRealPos x
+
+
+    
+
 
 addRealPositions :: Formula tag -> Formula tag
 addRealPositions (FConst b) = FConst b

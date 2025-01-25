@@ -3,7 +3,6 @@ module Main (main) where
 
 import ForPrograms.HighLevel
 
-import Parser.ParseHighLevel (parseHighLevel)
 import ForPrograms.HighLevel.Interpreter (runProgramString, InterpretError(..))
 import ForPrograms.HighLevel.Typing.Inference   (inferAndCheckProgram)
 import ForPrograms.HighLevel.Transformations    (applyTransform, transformationsInOrder)
@@ -11,6 +10,10 @@ import ForPrograms.HighLevel.ToSimple (toSimpleForProgram)
 import ForPrograms.Simple (runProgram, pathToTag)
 import qualified ForPrograms.Simple as SFP
 import ForPrograms.Simple.Optimization(simplifyForProgram)
+
+
+import qualified Parser.ParseFirstOrder as PFO
+import qualified Parser.ParseHighLevel  as PHL
 
 
 import ForPrograms.HighLevel.Typing(ValueType(..))
@@ -30,34 +33,25 @@ import Web.API (webApp)
 
 
 data Options = Options
-    { optInputProg :: Maybe FilePath
-    , optInputWord :: Maybe String
-    , optTransformations :: Maybe Int
-    , optOutputProg :: Maybe FilePath
-    , optOutputWord :: Maybe String
-    , optNoSimplify :: Bool
-    , optList :: Bool
+    { optInputProg :: FilePath
+    , optPreCond   :: FilePath
+    , optPostCond  :: FilePath
     , optWeb :: Bool
     } deriving (Eq,Show)
 
 options :: Parser Options
 options = Options
-      <$> optional (strOption (long "input-prog" <> short 'i' <> metavar "FILE" <> help "The input file"))
-      <*> optional (strOption (long "input-word" <> short 'w' <> metavar "WORD" <> help "The input word"))
-      <*> optional (option auto (long "transformation" <> short 't' <> metavar "TRANSFORMATION" <> help "The transformation to apply"))
-      <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE" <> help "The output file"))
-      <*> optional (strOption (long "output-word" <> short 'W' <> metavar "WORD" <> help "The output word"))
-      <*> switch   (long "no-simplify" <> short 'f' <> help "Do not simplify the resulting simple for program")
-      <*> switch   (long "list" <> short 'l' <> help "List all the transformations")
-      <*> switch   (long "web" <> short 'b' <> help "Start the web server")
-
+      <$> (strOption (long "input-prog"    <> short 'i' <> metavar "FILE" <> help "The input file"))
+      <*> (strOption (long "precondition"  <> short 'b' <> metavar "FILE" <> help "The precondition file"))
+      <*> (strOption (long "postcondition" <> short 'a' <> metavar "FILE" <> help "The postcondition file"))
+      <*> switch   (long "web" <> short 'w' <> help "Start the web server")
 
 
 cmdParser :: ParserInfo Options
 cmdParser = info (options <**> helper)
     ( fullDesc
-    <> progDesc "Transform a program"
-    <> header "ForPrograms - a program transformation tool" )
+    <> progDesc "Formal verification of programs."
+    <> header "Policzek" )
 
 readInputFile :: Maybe FilePath -> IO String
 readInputFile Nothing = getContents
@@ -80,26 +74,24 @@ simpleForToInterpretation sfp = Interpretation tags alphabet simplifiedDomain si
         simplifiedDomain = \s vs -> simplifyFormula $ domain s vs
         simplifiedOrder  = \s1 s2 vs1 vs2 -> simplifyFormula $ order s1 s2 vs1 vs2
 
+
+unwrapEither :: (Show b) => String -> Either b a -> IO a
+unwrapEither ctx (Left err) = error $ "[" ++ ctx ++ "]" ++ "Error: " ++ show err
+unwrapEither ctx (Right x) = return x
+
 cliApp :: Options -> IO ()
 cliApp opts = do
-    progString <- readInputFile (optInputProg opts)
-    putStrLn $ "Program: read"
-    let parsedProg'             = parseHighLevel progString
-    let parsedProg = case parsedProg' of
-        Left err -> putStrLn $ "Error: " ++ err
-        Right parsedProg -> parsedProg
-    putStrLn $ "Program: parsed"
-    let (Right typedProg)       = inferAndCheckProgram parsedProg
-    putStrLn $ "Program: typed"
+    parsedProg <- PHL.parseFromFile (optInputProg opts) >>= unwrapEither "Parsing Program"
+    precond    <- PFO.parseFromFileWithoutTags (optPreCond opts)   >>= unwrapEither "Parsing Precondition"
+    postcond   <- PFO.parseFromFileWithoutTags (optPostCond opts)  >>= unwrapEither "Parsing Postcondition"
+    typedProg  <- unwrapEither "Typing" $ inferAndCheckProgram parsedProg
     let simpleForProg           = higherToSimpleProgram typedProg
     putStrLn $ "Program: converted to simple for" ++ show simpleForProg
     putStrLn $ "Program: runned on `adb` : " ++ (show $ runProgram simpleForProg "adb")
     let simpleForInterpretation = simpleForToInterpretation simpleForProg
     putStrLn $ "Program: converted to interpretation" ++ show simpleForInterpretation
     putStrLn $ "Program: interpretation runned on `adb` : " ++ (show $ runInterpretation simpleForInterpretation "adb")
-    let precondition  = containsAB 'a' 'b'
-    let postcondition = containsAB 'a' 'b'
-    let hoareTriple = HoareTriple precondition simpleForInterpretation postcondition
+    let hoareTriple   = HoareTriple precond simpleForInterpretation postcond 
     putStrLn $ "Program: transformed to hoare triple" ++ show hoareTriple
     solvers <- installedSolvers
     putStrLn $ "Program: potential solvers " ++ show allSolvers
@@ -108,9 +100,9 @@ cliApp opts = do
         verifyResult <- verifyHoareTriple solver hoareTriple
         putStrLn $ "Program: verified using " ++ show solver
         case verifyResult of
-            Unsat     -> putStrLn $ "[" ++ show solver ++ "] YES! The Hoare triple is       valid"
-            Sat       -> putStrLn $ "[" ++ show solver ++ "] NO ! The Hoare triple is *not* valid"
-            Unknown   -> putStrLn $ "[" ++ show solver ++ "] ???"
+            Unsat     -> putStrLn $ "[" ++ show solver ++ "] OK ! The Hoare triple is       valid"
+            Sat       -> putStrLn $ "[" ++ show solver ++ "] KO ! The Hoare triple is *not* valid"
+            Unknown   -> putStrLn $ "[" ++ show solver ++ "] ?? ! The Hoare triple is       unknown"
             Error msg -> putStrLn $ "[" ++ show solver ++ "] ERROR: " ++ msg
 
 main :: IO ()
