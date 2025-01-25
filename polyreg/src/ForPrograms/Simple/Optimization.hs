@@ -8,8 +8,6 @@ import qualified Data.Set as S
 import Control.Monad.State
 import Control.Monad
 
-import Debug.Trace
-
 import Logic.QuantifierFree
 
 iterateToFix :: (Eq a) => (a -> a) -> a -> a 

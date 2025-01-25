@@ -1,5 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
-module Logic.ProgramFormulaSpec where 
+module Logic.ProgramFormulaSpec where
+    
+--import Control.Exception (evaluate)
+--import Control.DeepSeq (deepseq) 
 
 import ForPrograms.Simple
 
@@ -70,7 +73,6 @@ f4 = ProgramFormula { .. }
         inputVars = M.fromList [("x", Boolean), ("p1", Pos)]
         outputVars = M.fromList [("x", Boolean)]
         formula = FBin Equiv (FVar (Out "x")) (FBin Disj (FLetter (In "p1") 'a') (FVar (In "x")))
-
 
 
 checkFormulaRel :: M.Map String Bool -> M.Map String Bool -> ProgramFormula String -> Bool 
@@ -223,6 +225,36 @@ containsAB = quantifyList [("firstA", Pos, Exists), ("nextB", Pos, Exists)] $ an
         jIsB       = FLetter (Local 0 "nextB")  'b'
 
 
+----- PROGRAM #3
+
+forKPrintK :: ForStmt
+forKPrintK = For (PName "k") LeftToRight [] (PrintPos (PName "k"))
+
+forKPrintKAndSetBTrue :: ForStmt
+forKPrintKAndSetBTrue = Seq [forKPrintK, setBTrue]
+
+ifBThenSkipElseForKPrintK :: ForStmt
+ifBThenSkipElseForKPrintK = If (BVar (BName "b")) skip forKPrintKAndSetBTrue
+
+ifLTijThenIfBThenSkipElseForKPrintK :: ForStmt
+ifLTijThenIfBThenSkipElseForKPrintK = If (BTest Lt (PName "i") (PName "j")) ifBThenSkipElseForKPrintK skip
+
+forJForwards3 :: ForStmt
+forJForwards3 = For (PName "j") LeftToRight [] ifLTijThenIfBThenSkipElseForKPrintK
+
+forIForwards3 :: ForStmt
+forIForwards3 = For (PName "i") LeftToRight [BName "b"] forJForwards3
+
+program3 :: ForProgram
+program3 = ForProgram [BName "b"] forIForwards3
+
+pathToPrint3 :: [Movement]
+pathToPrint3 = [MoveFor (PName "i") LeftToRight [BName "b"],
+                MoveFor (PName "j") LeftToRight [],MoveIfL (BTest Lt (PName "i") (PName "j")),
+                MoveIfR (BVar (BName "b")),
+                MoveSeq 0,
+                MoveFor (PName "k") LeftToRight []]
+
 
 spec :: Spec
 spec = do
@@ -270,6 +302,19 @@ spec = do
             let i2 = M.fromList [("x", True)]
             let o2 = M.fromList [("x", True)]
             checkFormulaFunctionWord i2 o2 M.empty w f4iter
+        -- describe "Transforming program3 to formula should not call `error`" $ do 
+        --     let f3 = sfpStmtToProgramFormula forIForwards3
+        --     -- force evaluation
+        --     --runIO $ putStrLn $ show $ listPrintStatements program3
+        --     -- _ <- runIO $ putStrLn $ show $ length $ show f3
+        --     _ <- runIO $ putStrLn $ show $ typeCheckOrFailId $ computeUntil (drop 5 pathToPrint3) forKPrintK
+        --     -- _ <- runIO $ putStrLn $ show $ typeCheckOrFailId $ computeUntil (drop 4 pathToPrint3) forKPrintKAndSetBTrue
+        --     --_ <- runIO $ putStrLn $ show $ typeCheckOrFailId $ computeUntil (drop 3 pathToPrint3) ifBThenSkipElseForKPrintK
+        --     -- _ <- runIO $ putStrLn $ show $ typeCheckOrFailId $ computeUntil (drop 2 pathToPrint3) ifLTijThenIfBThenSkipElseForKPrintK
+        --     -- _ <- runIO $ putStrLn $ show $ typeCheckOrFailId $ computeUntil (drop 1 pathToPrint3) forJForwards3
+        --     --_ <- runIO $ putStrLn $ show $ length $ show $ computeUntil pathToPrint3 forIForwards3
+        --     it "Should not call error" $ do 
+        --         True `shouldBe` True
         -- describe "The simple program works" $ do
         --     runIO $ putStrLn $ printProgramFormulaGeneric (sfpStmtToProgramFormula forIForwards)
         --     runIO $ putStrLn $ printProgramFormulaGeneric (computeUntil pathToPrint forIForwards)

@@ -7,8 +7,6 @@ import Logic.QuantifierFree
 import Logic.Formulas
 import Logic.Interpretation
 
-import Debug.Trace
-
 
 -- A position variable in the "pullback" is a 
 -- tag variable + a list of position variables.

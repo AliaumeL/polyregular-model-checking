@@ -21,8 +21,6 @@ import qualified Data.Map as M
 
 import ForPrograms.HighLevel.Transformations.AddrVarElimination (StmtZip(..), ExtVars(..), eliminateExtVarsProg, reverseStmtZip)
 
-import Debug.Trace
-
 emptyStmt :: t -> Stmt v t
 emptyStmt t = SSeq [] t
 --emptyStmt t = SYield (OConst (CList [] t) t) t
@@ -172,7 +170,6 @@ forLoopExpansionFunM :: (MonadForElim m) =>
                         StmtFun (ExtVars String ValueType) ValueType ->
                         m (StmtFun (ExtVars String ValueType) ValueType)
 forLoopExpansionFunM (StmtFun v args s t) = do
-    traceM $ "Expanding for loop in function " ++ show v
     s' <- forLoopExpansionStmtM s
     return $ StmtFun v args s' t
 
@@ -201,17 +198,13 @@ forLoopExpansionStmtM (SLetBoolean v s t) = do
 forLoopExpansionStmtM (SSetTrue v t) = return $ SSetTrue v t
 forLoopExpansionStmtM (SFor _ _ (OConst (CList [] _) _) _ t) = return $ emptyStmt t
 forLoopExpansionStmtM (SFor Forward (OldVar i, OldVar e, _) (OGen stmt _) body _) = do
-    traceM "Here!!!"
     stmtRefreshedFors <- refreshForLoopsStmt stmt
     stmtRefreshedBools <- refreshBooleanVariablesStmt stmtRefreshedFors
     stmt' <- forLoopExpansionStmtM stmtRefreshedBools
     body' <- forLoopExpansionStmtM body
-    --traceM $ "Expanding for loop. Generator stmt:\n " ++ prettyPrintStmtWithNls 0 (mapVarsStmt show stmt') 
-    --traceM $ "Expanding for loop. Body stmt:\n " ++ prettyPrintStmtWithNls 0 (mapVarsStmt show body')
     let expansion = substituteYieldStmts AddrVar i e body' stmt'
     return expansion
 forLoopExpansionStmtM (SFor Backward (OldVar i, OldVar e, _) (OGen stmt _) body t) = do
-    traceM "Here, but backward!!!"
     body'  <- forLoopExpansionStmtM body
     stmtRefreshedFors <- refreshForLoopsStmt stmt
     stmtRefreshedBools  <- refreshBooleanVariablesStmt stmtRefreshedFors
@@ -407,8 +400,7 @@ refreshForLoopsBExpr (BLitEq t c o t') = BLitEq t c <$> refreshForLoopsOExpr o <
 
 refreshForLoopsPExpr :: (MonadForElim m) => PExpr ExStr ValueType -> m (PExpr ExStr ValueType)
 refreshForLoopsPExpr (PVar (OldVar v) t) = PVar <$> getVarOrSame v <*> pure t
--- trace ("refresh-for-loop: " ++ show v) $ return $ PVar (OldVar v) t
-refreshForLoopsPExpr (PVar v t) = trace (show v) $ return $ PVar v t
+refreshForLoopsPExpr (PVar v t) = return $ PVar v t
 
 
 hasForLoopOverGenProgram :: Program s t -> Bool

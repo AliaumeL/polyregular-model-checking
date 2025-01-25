@@ -96,11 +96,11 @@ cliApp opts = do
                         >>= unwrapEither "Parsing Postcondition"
     typedProg  <- unwrapEither "Typing" $ inferAndCheckProgram parsedProg
     let simpleForProg           = higherToSimpleProgram typedProg
-    putStrLn $ "Program: converted to simple for" ++ show simpleForProg
-    putStrLn $ "Program: runned on `adb` : " ++ (show $ runProgram simpleForProg "adb")
+    putStrLn $ "Program: converted to simple for:\n" ++ SFP.prettyPrintForProgram simpleForProg ++ "\n"
+    putStrLn $ "Program: ran on `adb` : " ++ (show $ runProgram simpleForProg "adb")
     let simpleForInterpretation = simpleForToInterpretation simpleForProg
     putStrLn $ "Program: converted to interpretation" ++ show simpleForInterpretation
-    putStrLn $ "Program: interpretation runned on `adb` : " ++ (show $ runInterpretation simpleForInterpretation "adb")
+    putStrLn $ "Program: interpretation ran on `adb` : " ++ (show $ runInterpretation simpleForInterpretation "adb")
     let hoareTriple   = HoareTriple precond simpleForInterpretation postcond 
     putStrLn $ "Program: transformed to hoare triple" ++ show hoareTriple
     solvers <- installedSolvers

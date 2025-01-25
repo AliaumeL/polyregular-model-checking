@@ -20,11 +20,6 @@ import ForPrograms.HighLevel.PrettyPrint
 import Control.Monad
 import Control.Monad.State
 
-import Debug.Trace (trace)
-
-traceM :: Monad m => String -> m ()
-traceM s = return ()
-
 data PosMove = PosIfL 
              | PosIfR 
              | PosIfB 
@@ -228,10 +223,6 @@ instance MonadPos PosStateM where
         --let pos = Pos p
         let pos = Pos (reverse p)
         PosCoding c _ <- gets coding 
-        if M.member pos c then
-            traceM $ "Position " ++ show pos ++ " already registered"
-        else return ()
-        traceM $ "Registering " ++ show pos ++ " as " ++ show (i + 1)
         modify $ \s -> s { counter = i + 1, coding = insertCoding pos (i+1) (coding s) }
         return (i+1)
 
@@ -244,7 +235,6 @@ instance MonadPos PosStateM where
         return $ readIntCoding coding i
 
     logConstraint c = do 
-        traceM $ "Logging constraint " ++ show c
         modify $ \s -> s { constraints = c : constraints s }
 
     getConstraints = gets constraints

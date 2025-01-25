@@ -12,9 +12,6 @@ import Data.Map (Map)
 import qualified Data.Map as M
 
 
-import Debug.Trace
-
-
 data Interpretation tag = Interpretation {
     tags         :: [tag],
     alphabet     :: String,

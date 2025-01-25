@@ -11,8 +11,6 @@ import qualified Data.Map as M
 import Logic.Formulas
 import Logic.QuantifierFree
 
-import Debug.Trace
-
 import Control.Monad (guard)
 
 -- | A formula seen as a morphism in the category of something
@@ -45,6 +43,9 @@ typeCheckOrFail φ x = if typeCheckProgramFormula φ then x else error $ unlines
     [ "typeCheckOrFail: type error",
       (printProgramFormulaGeneric φ),
       "FreeVars: " ++ show (freeVars $ formula φ) ]
+
+typeCheckOrFailId :: ProgramFormula tag  -> ProgramFormula tag
+typeCheckOrFailId φ = typeCheckOrFail φ φ
 
 
 instance Show tag => Show (ProgramFormula tag ) where
@@ -240,6 +241,7 @@ ifThenElse θ (ProgramFormula φ iφ oφ) (ProgramFormula ψ iψ oψ) = ProgramF
 
 
 iterOverVarNew :: Direction -> String -> Maybe Var -> ProgramFormula tag  -> ProgramFormula tag
+iterOverVarNew _   _ _   (ProgramFormula φ iφ oφ) | M.size oφ == 0 = mempty
 iterOverVarNew dir p bound (ProgramFormula φ iφ oφ) = finalOutput
     where
         -- We assume that we are not using an empty iteration: 

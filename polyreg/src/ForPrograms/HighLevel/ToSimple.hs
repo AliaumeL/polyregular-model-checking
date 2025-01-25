@@ -26,8 +26,6 @@ import ForPrograms.Simple           as SFP
 
 import ForPrograms.HighLevel.Transformations.FinalConditions (finalConditions, displayBrokenConditions)
 
-import Debug.Trace (traceM)
-
 import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.Except
@@ -134,7 +132,6 @@ stmtToSimpleForStmt (FP.SFor dir (i, e, _) (OVar v _) s _) = do
         (bs, s') <- forLoopBodyToSimpleForProgram s
         return $ SFP.For (PName i) dir' bs s'
 stmtToSimpleForStmt (FP.SFor _ _ v _ _) = do
-    traceM $ "Iterating over " ++ show v
     throwError IteratorOverNonVariable
 
 bExprToSimpleForBExpr :: (Show t) => FP.BExpr String t -> TSFPMonad SFP.BoolExpr
