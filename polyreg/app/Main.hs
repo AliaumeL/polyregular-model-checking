@@ -23,8 +23,9 @@ import Logic.Export         (ExportResult(..), EncodeParams(..), allSolvers, ins
 import Logic.Interpreter    (runInterpretation)
 import Logic.Interpretation (toInterpretation, stringify, Interpretation (..))
 
-import Logic.Formulas (simplifyFormula)
+import Logic.Formulas (simplifyFormula, Formula)
 import Logic.FormulaExamples
+import Logic.FormulaChecker (checkFormulaTypes, TypeError(..))
 
 import Options.Applicative
 import Control.Monad (forM_)
@@ -83,6 +84,14 @@ unwrapMaybe :: String -> Maybe a -> IO a
 unwrapMaybe ctx (Just x) = return x
 unwrapMaybe ctx Nothing = error $ "[" ++ ctx ++ "]" ++ "Error: Nothing"
 
+
+typeCheckFormula :: Formula t -> IO (Formula t)
+typeCheckFormula f = do
+    let checked = checkFormulaTypes f
+    case checked of
+        Left err -> error $ "Type error: " ++ show err
+        Right _  -> return f
+
 cliApp :: Options -> IO ()
 cliApp opts = do
     parsedProg <- unwrapMaybe "Program file" (optInputProg opts) 
@@ -91,9 +100,11 @@ cliApp opts = do
     precond    <- unwrapMaybe "Postcondition file" (optPreCond opts)
                         >>= PFO.parseFromFileWithoutTags 
                         >>= unwrapEither "Parsing Precondition"
+                        >>= typeCheckFormula
     postcond   <- unwrapMaybe "Postcondition file" (optPostCond opts)
                         >>= PFO.parseFromFileWithoutTags
                         >>= unwrapEither "Parsing Postcondition"
+                        >>= typeCheckFormula
     typedProg  <- unwrapEither "Typing" $ inferAndCheckProgram parsedProg
     let simpleForProg           = higherToSimpleProgram typedProg
     putStrLn $ "Program: converted to simple for:\n" ++ SFP.prettyPrintForProgram simpleForProg ++ "\n"
