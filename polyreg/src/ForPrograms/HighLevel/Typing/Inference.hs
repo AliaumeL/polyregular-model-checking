@@ -2,7 +2,7 @@
 module ForPrograms.HighLevel.Typing.Inference (inferAndCheckProgram)
 where
 
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import qualified Data.IntSet as IntSet
 import qualified Data.IntMap as IntMap
 

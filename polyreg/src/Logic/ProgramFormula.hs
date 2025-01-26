@@ -5,8 +5,8 @@ module Logic.ProgramFormula where
 import qualified ForPrograms.Simple as SFP
 import ForPrograms.Simple (Direction(..), BName(..), PName(..), Movement(..))
 
-import Data.Map (Map)
-import qualified Data.Map as M
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 
 import Logic.Formulas
 import Logic.QuantifierFree

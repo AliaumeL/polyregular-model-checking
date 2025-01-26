@@ -10,8 +10,8 @@ module ForPrograms.HighLevel.Typing where
 
 import ForPrograms.HighLevel
 
-import Data.Map    (Map)
-import qualified Data.Map as Map
+import Data.Map.Strict    (Map)
+import qualified Data.Map.Strict as Map
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad (forM)

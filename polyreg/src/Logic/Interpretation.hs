@@ -8,8 +8,8 @@ import qualified Logic.ProgramFormula as PF
 import qualified ForPrograms.Simple as SFP
 import ForPrograms.Simple (Movement(..))
 
-import Data.Map (Map)
-import qualified Data.Map as M
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 
 
 data Interpretation tag = Interpretation {

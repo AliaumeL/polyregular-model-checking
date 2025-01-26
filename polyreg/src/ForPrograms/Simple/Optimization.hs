@@ -3,7 +3,7 @@ module ForPrograms.Simple.Optimization (simplifyForProgram, eliminateUnusedVars,
 
 import ForPrograms.Simple
 
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Control.Monad.State
 import Control.Monad

@@ -3,7 +3,7 @@ module ForPrograms.HighLevel.Typing.TypeChecker (typeCheckProgram) where
 
 import ForPrograms.HighLevel 
 import ForPrograms.HighLevel.Typing
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 
 import Control.Monad
 import Control.Monad.Reader 

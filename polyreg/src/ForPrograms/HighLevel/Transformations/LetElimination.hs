@@ -4,7 +4,7 @@ module ForPrograms.HighLevel.Transformations.LetElimination where
 
 import Control.Monad 
 import Control.Monad.Reader
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 
 import ForPrograms.HighLevel
 import ForPrograms.HighLevel.Typing

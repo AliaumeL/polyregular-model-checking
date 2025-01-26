@@ -22,8 +22,8 @@ import Control.Monad.Extra (anyM, allM)
 
 import qualified ForPrograms.Simple as SFP
 
-import Data.Map (Map)
-import qualified Data.Map as M
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 
 import Data.Set (Set)
 import qualified Data.Set as S
