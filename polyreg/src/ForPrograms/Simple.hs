@@ -294,36 +294,44 @@ indentStr n s = replicate n ' ' ++ s
 -- with indentation level n
 -- knowing that lines cannot be longer than 80 characters (so we split them)
 prettyPrintBoolList :: Int -> [BName] -> String
-prettyPrintBoolList n bs = ans ++ "\n"
+prettyPrintBoolList _ [] = ""
+prettyPrintBoolList n bs = line ++ "\n"
   where 
-    (ans, _) = foldl' f ("", length indent) bs
-    indent = replicate n ' '
-    initLen = length indent
-    f :: (String, Int) -> BName -> (String, Int)
-    f (ans, size) (BName b) = 
-        let bsize = length b in
-        let size' = size + bsize + 2 in
-        if size' > 80 then (ans ++ "\n" ++ indent ++ b ++ ", ", initLen + bsize + 2) else (ans ++ b ++ ", ", size')
+    names = (map (\(BName b) -> b) bs) :: [String]
+    line = "let " ++ (concat $ intersperse ", " names) ++ " := false in"
+    -- (ans, _) = foldl' f ("", length indent) bs
+    -- indent = replicate n ' '
+    -- initLen = length indent
+    -- f :: (String, Int) -> BName -> (String, Int)
+    -- f (ans, size) (BName b) = 
+    --     let bsize = length b in
+    --     let size' = size + bsize + 2 in
+    --     if size' > 80 then (ans ++ "\n" ++ indent ++ b ++ ", ", initLen + bsize + 2) else (ans ++ b ++ ", ", size')
 
 prettyPrintForStmt :: Int -> ForStmt -> String
-prettyPrintForStmt n (SetTrue (BName b)) = indentStr n $ b ++ " := true;" ++ "\n"
+prettyPrintForStmt n (SetTrue (BName b)) = indentStr n $ b ++ " := true" ++ "\n"
 prettyPrintForStmt n (If e t f) = 
     let indent = replicate n ' ' in
     let e' = prettyPrintBoolExpr e in
     let t' = prettyPrintForStmt (n + 1) t in
     let f' = prettyPrintForStmt (n + 1) f in
-    indent ++ "if " ++ e' ++ " then\n" ++ t' ++ indent ++ "else\n" ++ f' ++ indent ++ "endif;\n"
+    indent ++ "if " ++ e' ++ " then\n" ++ t' ++ indent ++ "else\n" ++ f' ++ indent ++ "endif\n"
+prettyPrintForStmt n (If e t (Seq [])) = 
+    let indent = replicate n ' ' in
+    let e' = prettyPrintBoolExpr e in
+    let t' = prettyPrintForStmt (n + 1) t in
+    indent ++ "if " ++ e' ++ " then\n" ++ t' ++ indent ++ "endif\n"
 prettyPrintForStmt n (For (PName p) d bs stmt) =
     let indent = replicate n ' ' in
     let d' = case d of
-            LeftToRight -> "forward"
-            RightToLeft -> "backward" in
+            LeftToRight -> "input"
+            RightToLeft -> "reversed(input)" in
     let bs'   = prettyPrintBoolList (n + 1) bs in
     let stmt' = prettyPrintForStmt (n + 1) stmt in
-    indent ++ "for[" ++ d' ++ "]" ++ p ++  " do\n" ++ bs' ++ stmt' ++ indent ++ "done;\n"
-prettyPrintForStmt n (PrintPos (PName p)) = indentStr n $ "print " ++ p ++ ";" ++ "\n"
-prettyPrintForStmt n (PrintLbl l) = indentStr n $ "print " ++ show l ++ ";" ++ "\n"
-prettyPrintForStmt n (Seq []) = indentStr n $ "skip;\n"
+    indent ++ "for " ++ p ++ " in " ++ d' ++ " do\n" ++ bs' ++ stmt' ++ indent ++ "done\n"
+prettyPrintForStmt n (PrintPos (PName p)) = indentStr n $ "print " ++ p ++ "\n"
+prettyPrintForStmt n (PrintLbl l) = indentStr n $ "print " ++ show l ++ "\n"
+prettyPrintForStmt n (Seq []) = indentStr n $ "skip\n"
 prettyPrintForStmt n (Seq stmts) = concatMap (prettyPrintForStmt n) stmts
 prettyPrintForStmt _ _ = error "prettyPrintForStmt: not implemented"
 
@@ -331,9 +339,9 @@ prettyPrintBoolExpr :: BoolExpr -> String
 prettyPrintBoolExpr (BConst b) = show b
 prettyPrintBoolExpr (BVar (BName b)) = b
 prettyPrintBoolExpr (BTest op (PName p1) (PName p2)) = p1 ++ " " ++ show op ++ " " ++ p2
-prettyPrintBoolExpr (BLabelAt (PName p) l) = p ++ " == " ++ show l
+prettyPrintBoolExpr (BLabelAt (PName p) l) = "label(" ++ p ++ ") == " ++ show l
 prettyPrintBoolExpr (BNot e) = "not " ++ prettyPrintBoolExpr e
-prettyPrintBoolExpr (BBin op e1 e2) = prettyPrintBoolExpr e1 ++ " " ++ show op ++ " " ++ prettyPrintBoolExpr e2
+prettyPrintBoolExpr (BBin op e1 e2) = "(" ++ prettyPrintBoolExpr e1 ++ ")" ++ " " ++ show op ++ " " ++ "(" ++ prettyPrintBoolExpr e2 ++ ")"
 
 
 

@@ -13,28 +13,29 @@ import qualified Data.String
 data Program = Program VarStmt
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data VarStmt = VarStmt [Ident] [Stmt] | NoVarStmt [Stmt]
+data VarStmt = VarStmt [IdentHash] [Stmt] | NoVarStmt [Stmt]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data FORInput = FInput | FRevInput
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Stmt
-    = SFor Ident FORInput VarStmt
-    | SSetTrue Ident
+    = SFor IdentHash FORInput VarStmt
+    | SSetTrue IdentHash
     | SIfElse BExpr [Stmt] [Stmt]
     | SIf BExpr [Stmt]
     | SPrintChar Char
-    | SPrintLabel Ident
+    | SPrintLabel IdentHash
+    | SSkip
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data BExpr
     = BTrue
     | BFalse
-    | BVar Ident
+    | BVar IdentHash
     | BNot BExpr
-    | BTest Ident BTest Ident
-    | BLabelAt Ident Char
+    | BTest IdentHash BTest IdentHash
+    | BLabelAt IdentHash Char
     | BAnd BExpr BExpr
     | BOr BExpr BExpr
   deriving (C.Eq, C.Ord, C.Show, C.Read)
@@ -42,6 +43,6 @@ data BExpr
 data BTest = TLe | TLt | TGe | TGt | TEq | TNeq
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-newtype Ident = Ident String
+newtype IdentHash = IdentHash String
   deriving (C.Eq, C.Ord, C.Show, C.Read, Data.String.IsString)
 

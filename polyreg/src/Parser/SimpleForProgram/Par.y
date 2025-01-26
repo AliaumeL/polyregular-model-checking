@@ -9,7 +9,7 @@ module Parser.SimpleForProgram.Par
   ( happyError
   , myLexer
   , pListStmt
-  , pListIdent
+  , pListIdentHash
   , pProgram
   , pVarStmt
   , pFORInput
@@ -28,7 +28,7 @@ import Parser.SimpleForProgram.Lex
 }
 
 %name pListStmt ListStmt
-%name pListIdent ListIdent
+%name pListIdentHash ListIdentHash
 %name pProgram Program
 %name pVarStmt VarStmt
 %name pFORInput FORInput
@@ -41,57 +41,60 @@ import Parser.SimpleForProgram.Lex
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
 %token
-  '!='       { PT _ (TS _ 1)  }
-  '('        { PT _ (TS _ 2)  }
-  ')'        { PT _ (TS _ 3)  }
-  ','        { PT _ (TS _ 4)  }
-  ':='       { PT _ (TS _ 5)  }
-  '<'        { PT _ (TS _ 6)  }
-  '<='       { PT _ (TS _ 7)  }
-  '=='       { PT _ (TS _ 8)  }
-  '>'        { PT _ (TS _ 9)  }
-  '>='       { PT _ (TS _ 10) }
-  'and'      { PT _ (TS _ 11) }
-  'do'       { PT _ (TS _ 12) }
-  'done'     { PT _ (TS _ 13) }
-  'else'     { PT _ (TS _ 14) }
-  'endif'    { PT _ (TS _ 15) }
-  'false'    { PT _ (TS _ 16) }
-  'for'      { PT _ (TS _ 17) }
-  'if'       { PT _ (TS _ 18) }
-  'in'       { PT _ (TS _ 19) }
-  'input'    { PT _ (TS _ 20) }
-  'label'    { PT _ (TS _ 21) }
-  'let'      { PT _ (TS _ 22) }
-  'not'      { PT _ (TS _ 23) }
-  'or'       { PT _ (TS _ 24) }
-  'print'    { PT _ (TS _ 25) }
-  'reversed' { PT _ (TS _ 26) }
-  'then'     { PT _ (TS _ 27) }
-  'true'     { PT _ (TS _ 28) }
-  L_Ident    { PT _ (TV $$)   }
-  L_charac   { PT _ (TC $$)   }
+  '!='        { PT _ (TS _ 1)         }
+  '('         { PT _ (TS _ 2)         }
+  ')'         { PT _ (TS _ 3)         }
+  ','         { PT _ (TS _ 4)         }
+  ':='        { PT _ (TS _ 5)         }
+  '<'         { PT _ (TS _ 6)         }
+  '<='        { PT _ (TS _ 7)         }
+  '=='        { PT _ (TS _ 8)         }
+  '>'         { PT _ (TS _ 9)         }
+  '>='        { PT _ (TS _ 10)        }
+  'and'       { PT _ (TS _ 11)        }
+  'do'        { PT _ (TS _ 12)        }
+  'done'      { PT _ (TS _ 13)        }
+  'else'      { PT _ (TS _ 14)        }
+  'endif'     { PT _ (TS _ 15)        }
+  'false'     { PT _ (TS _ 16)        }
+  'for'       { PT _ (TS _ 17)        }
+  'if'        { PT _ (TS _ 18)        }
+  'in'        { PT _ (TS _ 19)        }
+  'input'     { PT _ (TS _ 20)        }
+  'label'     { PT _ (TS _ 21)        }
+  'let'       { PT _ (TS _ 22)        }
+  'not'       { PT _ (TS _ 23)        }
+  'or'        { PT _ (TS _ 24)        }
+  'print'     { PT _ (TS _ 25)        }
+  'reversed'  { PT _ (TS _ 26)        }
+  'skip'      { PT _ (TS _ 27)        }
+  'then'      { PT _ (TS _ 28)        }
+  'true'      { PT _ (TS _ 29)        }
+  L_charac    { PT _ (TC $$)          }
+  L_IdentHash { PT _ (T_IdentHash $$) }
 
 %%
-
-Ident :: { Parser.SimpleForProgram.Abs.Ident }
-Ident  : L_Ident { Parser.SimpleForProgram.Abs.Ident $1 }
 
 Char    :: { Char }
 Char     : L_charac { (read $1) :: Char }
 
+IdentHash :: { Parser.SimpleForProgram.Abs.IdentHash }
+IdentHash  : L_IdentHash { Parser.SimpleForProgram.Abs.IdentHash $1 }
+
 ListStmt :: { [Parser.SimpleForProgram.Abs.Stmt] }
 ListStmt : Stmt { (:[]) $1 } | Stmt ListStmt { (:) $1 $2 }
 
-ListIdent :: { [Parser.SimpleForProgram.Abs.Ident] }
-ListIdent : Ident { (:[]) $1 } | Ident ',' ListIdent { (:) $1 $3 }
+ListIdentHash :: { [Parser.SimpleForProgram.Abs.IdentHash] }
+ListIdentHash
+  : IdentHash { (:[]) $1 }
+  | IdentHash ',' ListIdentHash { (:) $1 $3 }
 
 Program :: { Parser.SimpleForProgram.Abs.Program }
 Program : VarStmt { Parser.SimpleForProgram.Abs.Program $1 }
 
 VarStmt :: { Parser.SimpleForProgram.Abs.VarStmt }
 VarStmt
-  : 'let' ListIdent ':=' 'false' 'in' ListStmt { Parser.SimpleForProgram.Abs.VarStmt $2 $6 }
+  : 'let' ListIdentHash ':=' 'false' 'in' ListStmt { Parser.SimpleForProgram.Abs.VarStmt $2 $6 }
   | ListStmt { Parser.SimpleForProgram.Abs.NoVarStmt $1 }
 
 FORInput :: { Parser.SimpleForProgram.Abs.FORInput }
@@ -101,21 +104,22 @@ FORInput
 
 Stmt :: { Parser.SimpleForProgram.Abs.Stmt }
 Stmt
-  : 'for' Ident 'in' FORInput 'do' VarStmt 'done' { Parser.SimpleForProgram.Abs.SFor $2 $4 $6 }
-  | Ident ':=' 'true' { Parser.SimpleForProgram.Abs.SSetTrue $1 }
+  : 'for' IdentHash 'in' FORInput 'do' VarStmt 'done' { Parser.SimpleForProgram.Abs.SFor $2 $4 $6 }
+  | IdentHash ':=' 'true' { Parser.SimpleForProgram.Abs.SSetTrue $1 }
   | 'if' BExpr 'then' ListStmt 'else' ListStmt 'endif' { Parser.SimpleForProgram.Abs.SIfElse $2 $4 $6 }
   | 'if' BExpr 'then' ListStmt 'endif' { Parser.SimpleForProgram.Abs.SIf $2 $4 }
   | 'print' Char { Parser.SimpleForProgram.Abs.SPrintChar $2 }
-  | 'print' Ident { Parser.SimpleForProgram.Abs.SPrintLabel $2 }
+  | 'print' IdentHash { Parser.SimpleForProgram.Abs.SPrintLabel $2 }
+  | 'skip' { Parser.SimpleForProgram.Abs.SSkip }
 
 BExpr2 :: { Parser.SimpleForProgram.Abs.BExpr }
 BExpr2
   : 'true' { Parser.SimpleForProgram.Abs.BTrue }
   | 'false' { Parser.SimpleForProgram.Abs.BFalse }
-  | Ident { Parser.SimpleForProgram.Abs.BVar $1 }
+  | IdentHash { Parser.SimpleForProgram.Abs.BVar $1 }
   | 'not' BExpr2 { Parser.SimpleForProgram.Abs.BNot $2 }
-  | Ident BTest Ident { Parser.SimpleForProgram.Abs.BTest $1 $2 $3 }
-  | 'label' '(' Ident ')' '==' Char { Parser.SimpleForProgram.Abs.BLabelAt $3 $6 }
+  | IdentHash BTest IdentHash { Parser.SimpleForProgram.Abs.BTest $1 $2 $3 }
+  | 'label' '(' IdentHash ')' '==' Char { Parser.SimpleForProgram.Abs.BLabelAt $3 $6 }
   | '(' BExpr ')' { $2 }
 
 BExpr1 :: { Parser.SimpleForProgram.Abs.BExpr }

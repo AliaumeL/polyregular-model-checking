@@ -15,9 +15,9 @@ type Result = Err String
 failure :: Show a => a -> Result
 failure x = Left $ "Undefined case: " ++ show x
 
-transIdent :: Parser.SimpleForProgram.Abs.Ident -> Result
-transIdent x = case x of
-  Parser.SimpleForProgram.Abs.Ident string -> failure x
+transIdentHash :: Parser.SimpleForProgram.Abs.IdentHash -> Result
+transIdentHash x = case x of
+  Parser.SimpleForProgram.Abs.IdentHash string -> failure x
 
 transProgram :: Parser.SimpleForProgram.Abs.Program -> Result
 transProgram x = case x of
@@ -25,7 +25,7 @@ transProgram x = case x of
 
 transVarStmt :: Parser.SimpleForProgram.Abs.VarStmt -> Result
 transVarStmt x = case x of
-  Parser.SimpleForProgram.Abs.VarStmt idents stmts -> failure x
+  Parser.SimpleForProgram.Abs.VarStmt identhashs stmts -> failure x
   Parser.SimpleForProgram.Abs.NoVarStmt stmts -> failure x
 
 transFORInput :: Parser.SimpleForProgram.Abs.FORInput -> Result
@@ -35,21 +35,22 @@ transFORInput x = case x of
 
 transStmt :: Parser.SimpleForProgram.Abs.Stmt -> Result
 transStmt x = case x of
-  Parser.SimpleForProgram.Abs.SFor ident forinput varstmt -> failure x
-  Parser.SimpleForProgram.Abs.SSetTrue ident -> failure x
+  Parser.SimpleForProgram.Abs.SFor identhash forinput varstmt -> failure x
+  Parser.SimpleForProgram.Abs.SSetTrue identhash -> failure x
   Parser.SimpleForProgram.Abs.SIfElse bexpr stmts1 stmts2 -> failure x
   Parser.SimpleForProgram.Abs.SIf bexpr stmts -> failure x
   Parser.SimpleForProgram.Abs.SPrintChar char -> failure x
-  Parser.SimpleForProgram.Abs.SPrintLabel ident -> failure x
+  Parser.SimpleForProgram.Abs.SPrintLabel identhash -> failure x
+  Parser.SimpleForProgram.Abs.SSkip -> failure x
 
 transBExpr :: Parser.SimpleForProgram.Abs.BExpr -> Result
 transBExpr x = case x of
   Parser.SimpleForProgram.Abs.BTrue -> failure x
   Parser.SimpleForProgram.Abs.BFalse -> failure x
-  Parser.SimpleForProgram.Abs.BVar ident -> failure x
+  Parser.SimpleForProgram.Abs.BVar identhash -> failure x
   Parser.SimpleForProgram.Abs.BNot bexpr -> failure x
-  Parser.SimpleForProgram.Abs.BTest ident1 btest ident2 -> failure x
-  Parser.SimpleForProgram.Abs.BLabelAt ident char -> failure x
+  Parser.SimpleForProgram.Abs.BTest identhash1 btest identhash2 -> failure x
+  Parser.SimpleForProgram.Abs.BLabelAt identhash char -> failure x
   Parser.SimpleForProgram.Abs.BAnd bexpr1 bexpr2 -> failure x
   Parser.SimpleForProgram.Abs.BOr bexpr1 bexpr2 -> failure x
 

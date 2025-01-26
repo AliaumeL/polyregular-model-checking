@@ -4,29 +4,30 @@
 comment "#" ;
 
 separator nonempty Stmt "" ;
-separator nonempty Ident "," ;
+separator nonempty IdentHash "," ;
 
 Program . Program ::= VarStmt ; 
 
-VarStmt . VarStmt ::= "let" [Ident] ":=" "false" "in" [Stmt] ;
+VarStmt . VarStmt ::= "let" [IdentHash] ":=" "false" "in" [Stmt] ;
 NoVarStmt . VarStmt ::= [Stmt] ;
 
 FInput . FORInput ::= "input" ; 
 FRevInput . FORInput ::= "reversed" "(" "input" ")" ;
 
-SFor. Stmt ::= "for" Ident "in" FORInput "do" VarStmt "done" ;
-SSetTrue. Stmt ::= Ident ":=" "true" ;
+SFor. Stmt ::= "for" IdentHash "in" FORInput "do" VarStmt "done" ;
+SSetTrue. Stmt ::= IdentHash ":=" "true" ;
 SIfElse. Stmt ::= "if" BExpr "then" [Stmt] "else" [Stmt] "endif" ;
 SIf. Stmt ::= "if" BExpr "then" [Stmt] "endif" ;
 SPrintChar . Stmt ::= "print" Char ; 
-SPrintLabel . Stmt ::= "print" Ident ;
+SPrintLabel . Stmt ::= "print" IdentHash ;
+SSkip . Stmt ::= "skip" ; 
 
 BTrue . BExpr2 ::= "true" ;
 BFalse . BExpr2 ::= "false" ; 
-BVar . BExpr2 ::= Ident ; 
+BVar . BExpr2 ::= IdentHash ; 
 BNot . BExpr2 ::= "not" BExpr2 ; 
-BTest . BExpr2 ::= Ident BTest Ident ;
-BLabelAt . BExpr2 ::= "label" "(" Ident ")" "==" Char ;
+BTest . BExpr2 ::= IdentHash BTest IdentHash ;
+BLabelAt . BExpr2 ::= "label" "(" IdentHash ")" "==" Char ;
 BAnd . BExpr1 ::= BExpr2 "and" BExpr1 ; 
 BOr .  BExpr ::= BExpr1 "or" BExpr ;
 coercions BExpr 2 ;
@@ -37,3 +38,5 @@ TGe . BTest ::= ">=" ;
 TGt . BTest ::= ">" ; 
 TEq . BTest ::= "==" ; 
 TNeq . BTest ::= "!=" ;
+
+token IdentHash letter (letter | digit | '_' | '\'' | '#')* 

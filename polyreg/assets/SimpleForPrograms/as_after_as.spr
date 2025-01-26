@@ -1,0 +1,13 @@
+let b#refresh#1 := false in
+for i in input do
+ if b#refresh#1 then
+  print 'a'
+ else
+  print i
+ endif
+ if label(i) == 'a' then
+  b#refresh#1 := true
+ else
+  skip
+ endif
+done

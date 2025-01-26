@@ -1,0 +1,7 @@
+let a := false in 
+a := true
+if a then 
+    print 'Y'
+else 
+    print 'N'
+endif

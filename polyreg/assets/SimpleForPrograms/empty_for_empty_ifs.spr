@@ -1,0 +1,11 @@
+let a := false in 
+
+for i in input do 
+    skip 
+done 
+
+if a then 
+    skip
+else 
+    skip
+endif

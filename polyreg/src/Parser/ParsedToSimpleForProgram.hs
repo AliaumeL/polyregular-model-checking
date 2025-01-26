@@ -7,11 +7,11 @@ import Logic.QuantifierFree (TestOp(..), BinOp(..))
 parsedToForProgram :: P.Program -> T.ForProgram
 parsedToForProgram (P.Program (P.VarStmt vars stmt)) = T.ForProgram (map identToBName vars) $ stmtListToStmt stmt 
 
-identToBName :: P.Ident -> T.BName
-identToBName (P.Ident s) = T.BName s
+identToBName :: P.IdentHash -> T.BName
+identToBName (P.IdentHash s) = T.BName s
 
-identToPName :: P.Ident -> T.PName
-identToPName (P.Ident s) = T.PName s
+identToPName :: P.IdentHash -> T.PName
+identToPName (P.IdentHash s) = T.PName s
 
 getVars :: P.VarStmt -> [T.BName]
 getVars (P.VarStmt vars _) = map identToBName vars
@@ -36,6 +36,7 @@ parsedToStmt (P.SIf b s) = T.If (parsedToBExpr b) (stmtListToStmt s) (T.Seq [])
 parsedToStmt (P.SSetTrue var) = T.SetTrue (identToBName var)
 parsedToStmt (P.SPrintChar c) = T.PrintLbl c
 parsedToStmt (P.SPrintLabel p) = T.PrintPos (identToPName p)
+parsedToStmt (P.SSkip) = T.Seq []
 
 parsedToBExpr :: P.BExpr -> T.BoolExpr
 parsedToBExpr (P.BTrue) = T.BConst True 

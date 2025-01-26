@@ -42,6 +42,10 @@ $white+ ;
 @rsyms
     { tok (eitherResIdent TV) }
 
+-- token IdentHash
+$l ([\# \' \_]| ($d | $l)) *
+    { tok (eitherResIdent T_IdentHash) }
+
 -- Keywords and Ident
 $l $i*
     { tok (eitherResIdent TV) }
@@ -63,6 +67,7 @@ data Tok
   | TV !String                    -- ^ Identifier.
   | TD !String                    -- ^ Float literal.
   | TC !String                    -- ^ Character literal.
+  | T_IdentHash !String
   deriving (Eq, Show, Ord)
 
 -- | Smart constructor for 'Tok' for the sake of backwards compatibility.
@@ -125,6 +130,7 @@ tokenText t = case t of
   PT _ (TD s)   -> s
   PT _ (TC s)   -> s
   Err _         -> "#error"
+  PT _ (T_IdentHash s) -> s
 
 -- | Convert a token to a string.
 prToken :: Token -> String
@@ -159,13 +165,13 @@ resWords =
        (b "do" 12
           (b ">=" 10 (b ">" 9 N N) (b "and" 11 N N))
           (b "else" 14 (b "done" 13 N N) N)))
-    (b "let" 22
+    (b "not" 23
        (b "in" 19
           (b "for" 17 (b "false" 16 N N) (b "if" 18 N N))
-          (b "label" 21 (b "input" 20 N N) N))
-       (b "reversed" 26
-          (b "or" 24 (b "not" 23 N N) (b "print" 25 N N))
-          (b "true" 28 (b "then" 27 N N) N)))
+          (b "label" 21 (b "input" 20 N N) (b "let" 22 N N)))
+       (b "skip" 27
+          (b "print" 25 (b "or" 24 N N) (b "reversed" 26 N N))
+          (b "true" 29 (b "then" 28 N N) N)))
   where
   b s n = B bs (TS bs n)
     where
