@@ -1,11 +1,11 @@
 def first_letter (w : [Char]) : Char :=
-    for (i, c : Char) in w do
+    for (i, c) in enumerate(w) do
         return c 
     done
 
 def buggy_has_a (w : [Char]) : Bool :=
-    for (i, c : Char) in w do
-        if c =Char= 'a' then
+    for (i, c) in enumerate(w) do
+        if c === 'a' then
             return True 
         endif
     done 

@@ -42,6 +42,9 @@ import Logic.Interpretation (toInterpretation, stringify, Interpretation (..))
 
 import Logic.Formulas 
 import Logic.FormulaExamples
+import Logic.FormulaChecker (checkFormulaTypes, TypeError(..))
+
+import Debug.Trace
 
 catchAny :: IO a -> (SomeException -> IO a) -> IO a
 catchAny = Control.Exception.catch
@@ -108,6 +111,14 @@ higherToSimpleProgram p = simplifyForProgram <$> toSimpleForProgram' transformed
             Right sfp -> Right sfp
         transformedProg = foldl (flip applyTransform) p transformationsInOrder
 
+showTypeError :: Logic.FormulaChecker.TypeError -> String
+showTypeError (TypeMismatch v s1 s2 f1 f2) = "Type mismatch for variable " ++ show v ++ " between " ++ show f1 ++ " and " ++ show f2 ++ ". Expected " ++ show s1 ++ " but got " ++ show s2
+showTypeError (Logic.FormulaChecker.IndexOutOfBounds v i) = "Index out of bounds for variable " ++ show v ++ " at index " ++ show i
+showTypeError (IndexWrongType v i s1 s2) = "Index " ++ show i ++ " for variable " ++ show v ++ " has wrong type. Expected " ++ show s1 ++ " but got " ++ show s2
+
+wrapShowTypeError :: Either Logic.FormulaChecker.TypeError a -> Either String a
+wrapShowTypeError (Left err) = Left $ showTypeError err
+wrapShowTypeError (Right x) = Right x
 
 parseVerifyRequest :: VerifyRequest -> Either String (HoareTriple, SFP.ForProgram)
 parseVerifyRequest (VerifyRequest p σ τ) = do
@@ -118,6 +129,8 @@ parseVerifyRequest (VerifyRequest p σ τ) = do
     -- remove extra whitespace for τ and σ and then read them as formulas
     precond         <- parseWithoutTags σ
     postcond        <- parseWithoutTags τ
+    _ <- wrapShowTypeError $ checkFormulaTypes precond
+    _ <- wrapShowTypeError $ checkFormulaTypes postcond
     return $ (HoareTriple (precond) interpreted (postcond), simple)
 
 getAssetContent :: String -> String -> IO AssetContent
@@ -144,8 +157,8 @@ checkParseErrors (VerifyRequest p σ τ) = ParseResponse progErr preErr postErr
         progParsed = do 
             partiallyTyped  <- parseHighLevel p
             inferAndCheckProgram' partiallyTyped
-        precond    = parseWithoutTags σ 
-        postcond   = parseWithoutTags τ
+        precond    = parseWithoutTags σ >>= wrapShowTypeError . checkFormulaTypes
+        postcond   = parseWithoutTags τ >>= wrapShowTypeError . checkFormulaTypes
         progErr    = case progParsed of
             Left err -> Just err
             Right _  -> Nothing

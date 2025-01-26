@@ -1,20 +1,20 @@
 def getFirstWord (s : [Char]) : [Char] :=
-    let mut seen_space : Bool := False in
-    for (i, v : Char) in s do 
-        if not seen_space and not (v =Char= ' ') then 
+    let mut seen_space := False in
+    for (i, v) in enumerate(s) do 
+        if not seen_space and not (v === ' ') then 
             yield v
         endif
-        if v =Char= ' ' then 
-            setTrue seen_space
+        if v === ' ' then 
+            seen_space := True
         endif
     done
 
 def getCurrentWord (s : [Char] with (i)) : [Char] :=
-    let mut seen_space : Bool := False in
-    for (j, v : Char) in s do 
+    let mut seen_space := False in
+    for (j, v) in enumerate(s) do 
        if j > i then 
-           if v =Char= ' ' then 
-               setTrue seen_space
+           if v === ' ' then 
+               seen_space := True
            endif
            if not seen_space then 
               yield v 
@@ -24,22 +24,22 @@ def getCurrentWord (s : [Char] with (i)) : [Char] :=
 
 def words (ss : [Char]) : [[Char]] :=
     yield getFirstWord(ss)
-    for (i, vv : Char) in ss do 
-        if vv =Char= ' ' then 
+    for (i, vv) in enumerate(ss) do 
+        if vv === ' ' then 
             yield getCurrentWord(ss with (i)) 
         endif 
      done
 
 
 def main (w : [Char]) : [Char] :=
-    let v : [[Char]] := words(w) in
-    if v =[[Char]]= [] then
+    let v  := words(w) in
+    if v === [] then
         return "No words found"
     else
-        if v =[[Char]]= [""] then
+        if v === [""] then
             return "It is the empty string"
         else
-            if v =[[Char]]= ["go", "to", "park"] then
+            if v === ["go", "to", "park"] then
                 return "gotopark!"
             else
                 return "No match"

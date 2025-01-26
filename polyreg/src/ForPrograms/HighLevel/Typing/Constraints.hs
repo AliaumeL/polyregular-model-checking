@@ -2,7 +2,7 @@
 module ForPrograms.HighLevel.Typing.Constraints where
 
 import qualified ForPrograms.HighLevel as FP
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import qualified Data.Set    as S
 
 import qualified Data.IntMap as IntMap

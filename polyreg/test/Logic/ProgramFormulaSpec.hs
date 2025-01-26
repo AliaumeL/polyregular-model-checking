@@ -18,7 +18,7 @@ import Test.Hspec
 
 import Control.Monad (forM_)
 
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 
 makeBoolVarsMap :: [String] -> M.Map String Sort
 makeBoolVarsMap vs = M.fromList [(x, Boolean) | x <- vs]

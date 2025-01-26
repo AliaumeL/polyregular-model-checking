@@ -4,8 +4,8 @@ module Logic.FormulaChecker (TypeError(..), checkFormulaTypes) where
 import Logic.Formulas
 import Control.Monad.Reader
 import Control.Monad.Except
-import Data.Map (Map)
-import qualified Data.Map as M
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 
 data TypeError = TypeMismatch     Var Sort Sort (Formula ()) (Formula ())
                | IndexOutOfBounds Var Int

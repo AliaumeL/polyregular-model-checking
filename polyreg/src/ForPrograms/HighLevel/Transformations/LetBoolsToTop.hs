@@ -3,8 +3,8 @@ module ForPrograms.HighLevel.Transformations.LetBoolsToTop (bringLetBoolsToTopAn
 
 import Control.Monad.State
 
-import Data.Map (Map)
-import qualified Data.Map as M
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 
 import ForPrograms.HighLevel 
 

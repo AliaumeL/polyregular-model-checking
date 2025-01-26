@@ -7,8 +7,8 @@ import System.FilePath ((</>), takeExtension)
 import Parser.ParseFirstOrder (parseFromFile)
 import Logic.FormulaChecker (checkFormulaTypes, TypeError(..))
 
-import Data.Map (Map)
-import qualified Data.Map as M
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 
 import Data.Either (isRight, isLeft)
 import Control.Monad (forM_)

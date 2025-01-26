@@ -1,13 +1,13 @@
 def first_a ( w : [Char]) : Char := 
-    for (i,v : Char) in w do 
-        if v =Char= 'a' then
+    for (i, v) in enumerate(w) do 
+        if v === 'a' then
             return 'a'
         endif
     done
 
 def second_a ( w : [Char]) : [Char] := 
-    for (i,v : Char) in w do 
-        if v =Char= 'a' then
+    for (i, v) in enumerate(w) do 
+        if v === 'a' then
             return "found a"
         endif
     done
