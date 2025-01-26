@@ -8,7 +8,7 @@ module Logic.Formulas (Sort(..), Quant(..), Var(..), Formula(..), Value(..),
     nestQuantVars, nestQuantVar, mapTags,
     substituteBooleanVar, freeVars, prettyPrintFormula, 
     quantInOutVarsGeneric,
-    quantOutVars, quantInVars, injectTags, removeTags, evalFormula, evalFormulaWithFreeVars, 
+    quantOutVars, quantInVars, injectTags, ignoreTags, removeTags, evalFormula, evalFormulaWithFreeVars, 
     showFormulaGeneric
 )
 where
@@ -153,6 +153,17 @@ injectTags (FTag _ _) = FConst False
 injectTags (FLetter x l) = FLetter x l
 injectTags (FTestPos t x y) = FTestPos t x y
 injectTags (FRealPos x) = FRealPos x
+
+ignoreTags :: Formula t -> Formula ()
+ignoreTags (FConst b) = FConst b
+ignoreTags (FVar x) = FVar x
+ignoreTags (FBin op l r) = FBin op (ignoreTags l) (ignoreTags r)
+ignoreTags (FNot l) = FNot (ignoreTags l)
+ignoreTags (FQuant q x s l) = FQuant q x s (ignoreTags l)
+ignoreTags (FTag x _) = FTag x ()
+ignoreTags (FLetter x l) = FLetter x l
+ignoreTags (FTestPos t x y) = FTestPos t x y
+ignoreTags (FRealPos x) = FRealPos x
 
 removeTags :: Formula t -> Either String (Formula ())
 removeTags (FConst b) = Right $ FConst b
