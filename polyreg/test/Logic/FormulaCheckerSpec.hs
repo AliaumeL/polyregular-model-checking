@@ -43,19 +43,23 @@ checkFile file = do
     Left err -> error $ show err
     Right formula -> return $ checkFormulaTypes formula
 
+wrongExamples :: [Formula ()]
+wrongExamples = [invalidFormula1, invalidFormula2, invalidFormula3, invalidFormula4, invalidFormula5]
 
 spec :: Spec
 spec = do 
-    it "Correctly detects anomalies" $ do
-        forM_ [invalidFormula1, invalidFormula2, invalidFormula3, invalidFormula4, invalidFormula5] $ \formula -> do
-            checkFormulaTypes formula `shouldSatisfy` isLeft
-    it "typechecks formulas from assets/Formulas" $ do
-      files <- listDirectory "assets/Formulas"
+    files <- runIO $ listDirectory "assets/Formulas"
+    describe "Incorrect Examples" $ do 
+        forM_ (zip [1..] wrongExamples) $ \(i, formula) -> do
+            it ("Correctly detects anomalies in example " ++ show i)  $ do
+                checkFormulaTypes formula `shouldSatisfy` isLeft
+    describe "typechecks formulas from assets/Formulas" $ do
       let formulaFiles = filter (\f -> takeExtension f == ".fo") files
       -- check that everyone returns a Right
       -- and that the resulting map is empty!
       forM_ formulaFiles $ \file -> do
-        result <- checkFile file
-        result `shouldSatisfy` isRight
-        let Right m = result
-        m `shouldBe` M.empty
+        it ("Should typecheck " ++ file) $ do
+            result <- checkFile file
+            result `shouldSatisfy` isRight
+            let Right m = result
+            m `shouldBe` M.empty
