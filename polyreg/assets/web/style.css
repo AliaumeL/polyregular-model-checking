@@ -273,6 +273,14 @@ form#user-input input#submit:active {
   background-color: #004286;
 }
 
+/* when submit is disabled */
+form#user-input input#submit:disabled {
+  /* gray background */
+  background-color: #ccc;
+  /* white text */
+  color: #fff;
+}
+
 form label {
   display: block;
   margin-bottom: 5px;
