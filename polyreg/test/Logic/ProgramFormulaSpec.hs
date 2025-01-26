@@ -331,16 +331,29 @@ spec = do
             let programFormula' = simplifyProgramFormula $ injectTagsProgramFormula programFormula
             let initialState = M.fromList [("a", False), ("b", False)]
             let finialState w = M.fromList [("a", 'a' `elem` w), ("b", 'b' `elem` w)]
-            runIO $ putStrLn $ prettyPrintForStmt 0 stmt 
-            runIO $ putStrLn $ replicate 80 '-'
-            runIO $ putStrLn $ printProgramFormulaGeneric programFormula'
+            -- runIO $ putStrLn $ prettyPrintForStmt 0 stmt 
+            -- runIO $ putStrLn $ replicate 80 '-'
+            -- runIO $ putStrLn $ printProgramFormulaGeneric programFormula'
             forM_ ["zbxa", "ab", "b", "ba", "z", "", "bbbaaa"] $ \w -> do
                 describe ("The program `contains a and b' should work for word " ++ w) $ do
                     let i = initialState
                     let o = finialState w
                     checkFormulaFunctionWord i o M.empty w programFormula'
-
-
+        describe "The program 'set true' should be correctly transformed into a program formula" $ do 
+            parsed <- runIO $ parseFromFile "assets/SimpleForPrograms/set_true_than_if.spr"
+            let (Right (ForProgram _ stmt)) = parsed
+            let programFormula  =  (sfpStmtToProgramFormula stmt) :: ProgramFormula ()
+            let programFormula' = simplifyProgramFormula $ injectTagsProgramFormula programFormula
+            let initialState = M.fromList [("a", False)]
+            let finialState w = M.fromList [("a", True)]
+            runIO $ putStrLn $ prettyPrintForStmt 0 stmt 
+            runIO $ putStrLn $ replicate 80 '-'
+            runIO $ putStrLn $ printProgramFormulaGeneric programFormula'
+            forM_ ["", "ab"] $ \w -> do
+                describe ("The program `set true' should work for word " ++ w) $ do
+                    let i = initialState
+                    let o = finialState w
+                    checkFormulaFunctionWord i o M.empty w programFormula'
             
         -- describe "Transforming program3 to formula should not call `error`" $ do 
         --     let f3 = sfpStmtToProgramFormula forIForwards3

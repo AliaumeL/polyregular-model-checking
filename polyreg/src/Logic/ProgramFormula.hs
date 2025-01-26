@@ -147,16 +147,19 @@ instance Semigroup (ProgramFormula tag ) where
             erasedVars :: Map String Sort
             erasedVars = (oψ `M.intersection` oφ) `M.difference` iψ
 
+            consumedButNotReproduced :: Map String Sort
+            consumedButNotReproduced = (oφ `M.intersection` iψ) `M.difference` oψ        
+
             iθ :: Map String Sort
             iθ = iφ `M.union` (iψ `M.difference` commonVars)
 
             oθ :: Map String Sort
-            oθ = oψ `M.union` (oφ `M.difference` commonVars)
+            oθ = oψ `M.union` (oφ `M.difference` commonVars) `M.union` consumedButNotReproduced
 
             (ProgramFormula φ' _ _) = ignoreOutputVars (M.keys erasedVars)
                                                        (ProgramFormula φ iφ oφ)
 
-            ψ' = ψ
+            ψ' = FBin Conj ψ $ andList [ FBin Equiv (FVar $ Out x) (FVar $ In x) | (x, Boolean) <- M.toList consumedButNotReproduced ]
 
             fφ :: Sort -> String -> Maybe Var
             fφ _ x = case M.lookup x commonVarsQ of

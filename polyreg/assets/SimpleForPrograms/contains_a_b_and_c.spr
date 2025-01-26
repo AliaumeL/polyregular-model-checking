@@ -11,9 +11,9 @@ for i in input do
     endif
 done
 
-#if a and b and c then 
-#    print 'Y' 
-#else 
-#    print 'N'
-#endif
+if a and b and c then 
+    print 'Y' 
+else 
+    print 'N'
+endif
 
