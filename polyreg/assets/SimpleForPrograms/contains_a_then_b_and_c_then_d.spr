@@ -1,0 +1,22 @@
+let a, b, c, d := false in 
+
+for i in input do
+    if label(i) == 'a' then 
+        a := true 
+    endif 
+    if a and label(i) == 'b' then 
+        b := true 
+    endif
+    if label(i) == 'c' then 
+        c := true 
+    endif 
+    if c and label(i) == 'd' then 
+        d := true 
+    endif 
+done 
+
+if b and d then 
+    print 'Y'
+else 
+    print 'N'
+endif

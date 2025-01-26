@@ -264,6 +264,11 @@ injectTagsProgramFormula x = x { formula = injectTags (formula x) }
 simplifyProgramFormula :: (Eq a) => ProgramFormula a -> ProgramFormula a
 simplifyProgramFormula x = x { formula = simplifyFormula (formula x) }
 
+subseq :: Eq a => [a] -> [a] -> Bool
+subseq [] _ = True
+subseq _ [] = False
+subseq (x:xs) (y:ys) = if x == y then subseq xs ys else subseq (x:xs) ys
+
 
 spec :: Spec
 spec = do
@@ -346,14 +351,45 @@ spec = do
             let programFormula' = simplifyProgramFormula $ injectTagsProgramFormula programFormula
             let initialState = M.fromList [("a", False)]
             let finialState w = M.fromList [("a", True)]
-            runIO $ putStrLn $ prettyPrintForStmt 0 stmt 
-            runIO $ putStrLn $ replicate 80 '-'
-            runIO $ putStrLn $ printProgramFormulaGeneric programFormula'
+            --runIO $ putStrLn $ prettyPrintForStmt 0 stmt 
+            -- runIO $ putStrLn $ replicate 80 '-'
+            -- runIO $ putStrLn $ printProgramFormulaGeneric programFormula'
             forM_ ["", "ab"] $ \w -> do
                 describe ("The program `set true' should work for word " ++ w) $ do
                     let i = initialState
                     let o = finialState w
                     checkFormulaFunctionWord i o M.empty w programFormula'
+        describe "The program 'contains a then b then c' should work" $ do 
+            parsed <- runIO $ parseFromFile "assets/SimpleForPrograms/contains_a_then_b_then_c.spr"
+            let (Right (ForProgram _ stmt)) = parsed
+            let programFormula  =  (sfpStmtToProgramFormula stmt) :: ProgramFormula ()
+            let programFormula' = simplifyProgramFormula $ injectTagsProgramFormula programFormula
+            let initialState = M.fromList [("a", False), ("b", False), ("c", False)]
+            let finialState w = M.fromList [("a", "a" `subseq` w), ("b", "ab" `subseq` w), ("c", "abc" `subseq` w)]
+            -- runIO $ putStrLn $ prettyPrintForStmt 0 stmt 
+            -- runIO $ putStrLn $ replicate 80 '-'
+            -- runIO $ putStrLn $ printProgramFormulaGeneric programFormula'
+            forM_ ["", "ab", "abc", "bac", "bca", "aabxc", "cba"] $ \w -> do
+                describe ("The program `contains a then b then c' should work for word " ++ w) $ do
+                    let i = initialState
+                    let o = finialState w
+                    checkFormulaFunctionWord i o M.empty w programFormula'
+        describe "The program 'contains a then b and c then d` should work" $ do 
+            parsed <- runIO $ parseFromFile "assets/SimpleForPrograms/contains_a_then_b_and_c_then_d.spr"
+            let (Right (ForProgram _ stmt)) = parsed
+            let programFormula  =  (sfpStmtToProgramFormula stmt) :: ProgramFormula ()
+            let programFormula' = simplifyProgramFormula $ injectTagsProgramFormula programFormula
+            let initialState = M.fromList [("a", False), ("b", False), ("c", False), ("d", False)]
+            let finialState w = M.fromList [("a", "a" `subseq` w), ("b", "ab" `subseq` w), ("c", "c" `subseq` w), ("d", "cd" `subseq` w)]
+            -- runIO $ putStrLn $ prettyPrintForStmt 0 stmt
+            -- runIO $ putStrLn $ replicate 80 '-'
+            -- runIO $ putStrLn $ printProgramFormulaGeneric programFormula'
+            forM_ ["", "ab", "acdb", "acb", "acbd", "axbxcd", "aabxc", "cba"] $ \w -> do
+                describe ("The program `contains a then b and c then d' should work for word " ++ w) $ do
+                    let i = initialState
+                    let o = finialState w
+                    checkFormulaFunctionWord i o M.empty w programFormula'
+
             
         -- describe "Transforming program3 to formula should not call `error`" $ do 
         --     let f3 = sfpStmtToProgramFormula forIForwards3
