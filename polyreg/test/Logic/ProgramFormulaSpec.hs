@@ -261,6 +261,9 @@ pathToPrint3 = [MoveFor (PName "i") LeftToRight [BName "b"],
 injectTagsProgramFormula :: ProgramFormula () -> ProgramFormula String
 injectTagsProgramFormula x = x { formula = injectTags (formula x) }
 
+simplifyProgramFormula :: (Eq a) => ProgramFormula a -> ProgramFormula a
+simplifyProgramFormula x = x { formula = simplifyFormula (formula x) }
+
 
 spec :: Spec
 spec = do
@@ -325,9 +328,12 @@ spec = do
             parsed <- runIO $ parseFromFile "assets/SimpleForPrograms/contains_a_and_b.spr"
             let (Right (ForProgram _ stmt)) = parsed
             let programFormula  =  (sfpStmtToProgramFormula stmt) :: ProgramFormula ()
-            let programFormula' = injectTagsProgramFormula programFormula
+            let programFormula' = simplifyProgramFormula $ injectTagsProgramFormula programFormula
             let initialState = M.fromList [("a", False), ("b", False)]
             let finialState w = M.fromList [("a", 'a' `elem` w), ("b", 'b' `elem` w)]
+            runIO $ putStrLn $ prettyPrintForStmt 0 stmt 
+            runIO $ putStrLn $ replicate 80 '-'
+            runIO $ putStrLn $ printProgramFormulaGeneric programFormula'
             forM_ ["zbxa", "ab", "b", "ba", "z", "", "bbbaaa"] $ \w -> do
                 describe ("The program `contains a and b' should work for word " ++ w) $ do
                     let i = initialState
