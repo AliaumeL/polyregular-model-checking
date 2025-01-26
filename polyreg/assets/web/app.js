@@ -11,6 +11,7 @@ window.onload = () => {
     const postInput     = document.getElementById('post');
     const output        = document.getElementById('output-view');
     const outputWarn    = document.getElementById('output-warn');
+    const submitButton  = document.getElementById('submit');
 
 
     const codeAssetList = {};
@@ -63,9 +64,11 @@ window.onload = () => {
                 outputWarn.textContent = '👍 All inputs are valid and ready for verification!';
                 outputWarn.classList.remove('error');
                 outputWarn.classList.add('success');
+                submitButton.disabled = false;
             } else {
                 outputWarn.classList.remove('success');
                 outputWarn.classList.add('error');
+                submitButton.disabled = true;
             }
 
         })
