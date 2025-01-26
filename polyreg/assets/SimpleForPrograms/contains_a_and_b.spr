@@ -1,0 +1,16 @@
+let a,b := false in 
+for i in input do 
+    if label(i) == 'a' then 
+        a := true 
+    endif
+    if label(i) == 'b' then 
+        b := true 
+    endif
+done
+
+if a and b then 
+    print 'Y' 
+else 
+    print 'N'
+endif
+

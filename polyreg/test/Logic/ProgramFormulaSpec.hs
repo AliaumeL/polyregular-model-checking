@@ -12,6 +12,8 @@ import Logic.ProgramFormula
 import Logic.Formulas
 import Logic.QuantifierFree
 
+import Parser.ParseSimple
+
 import Test.Hspec 
 
 import Control.Monad (forM_)
@@ -105,11 +107,11 @@ checkFormulaFunction i o f = do
 
 checkFormulaFunctionWord :: M.Map String Bool -> M.Map String Bool -> M.Map String Int -> String -> ProgramFormula String -> Spec
 checkFormulaFunctionWord i o ps w f = do 
-    it "Should accept the correct output" $ do 
+    it ("Should accept the correct output :" ++ show o)  $ do 
         checkFormulaWord i o ps w f `shouldBe` True
-    it "Should not accept any of the incorrect outputs" $ do 
-        let incorrectOutput = [M.insert x (not b) o | (x, b) <- M.toList o]
-        forM_ incorrectOutput $ \io -> do 
+    let incorrectOutput = [M.insert x (not b) o | (x, b) <- M.toList o]
+    forM_ incorrectOutput $ \io -> do 
+        it ("Should not accept the incorrect output: " ++ show io) $ 
             checkFormulaWord i io ps w f `shouldBe` False
 
 
@@ -250,10 +252,14 @@ program3 = ForProgram [BName "b"] forIForwards3
 
 pathToPrint3 :: [Movement]
 pathToPrint3 = [MoveFor (PName "i") LeftToRight [BName "b"],
-                MoveFor (PName "j") LeftToRight [],MoveIfL (BTest Lt (PName "i") (PName "j")),
+                MoveFor (PName "j") LeftToRight [],
+                MoveIfL (BTest Lt (PName "i") (PName "j")),
                 MoveIfR (BVar (BName "b")),
                 MoveSeq 0,
                 MoveFor (PName "k") LeftToRight []]
+
+injectTagsProgramFormula :: ProgramFormula () -> ProgramFormula String
+injectTagsProgramFormula x = x { formula = injectTags (formula x) }
 
 
 spec :: Spec
@@ -302,11 +308,40 @@ spec = do
             let i2 = M.fromList [("x", True)]
             let o2 = M.fromList [("x", True)]
             checkFormulaFunctionWord i2 o2 M.empty w f4iter
+        describe "The program `contains a b and c' is transformed correctly into a program formula" $ do 
+            parsed <- runIO $ parseFromFile "assets/SimpleForPrograms/contains_a_b_and_c.spr"
+            let (Right (ForProgram _ stmt)) = parsed
+            let programFormula  =  (sfpStmtToProgramFormula stmt) :: ProgramFormula ()
+            let programFormula' = injectTagsProgramFormula programFormula
+            let initialState = M.fromList [("a", False), ("b", False), ("c", False)]
+            let finialState w = M.fromList [("a", 'a' `elem` w), ("b", 'b' `elem` w), ("c", 'c' `elem` w)]
+            --runIO $ putStrLn $ printProgramFormulaGeneric programFormula
+            forM_ [ "bbxcc", "cba", "ab", "bxccbx", "xyz", "cvb"] $ \w -> do
+                describe ("The program `contains a b and c' should work for word " ++ w) $ do
+                    let i = initialState
+                    let o = finialState w
+                    checkFormulaFunctionWord i o M.empty w programFormula'
+        describe "The program 'contains a and b' should be correctly transformed into a program formula" $ do 
+            parsed <- runIO $ parseFromFile "assets/SimpleForPrograms/contains_a_and_b.spr"
+            let (Right (ForProgram _ stmt)) = parsed
+            let programFormula  =  (sfpStmtToProgramFormula stmt) :: ProgramFormula ()
+            let programFormula' = injectTagsProgramFormula programFormula
+            let initialState = M.fromList [("a", False), ("b", False)]
+            let finialState w = M.fromList [("a", 'a' `elem` w), ("b", 'b' `elem` w)]
+            forM_ ["zbxa", "ab", "b", "ba", "z", "", "bbbaaa"] $ \w -> do
+                describe ("The program `contains a and b' should work for word " ++ w) $ do
+                    let i = initialState
+                    let o = finialState w
+                    checkFormulaFunctionWord i o M.empty w programFormula'
+
+
+            
         -- describe "Transforming program3 to formula should not call `error`" $ do 
         --     let f3 = sfpStmtToProgramFormula forIForwards3
         --     -- force evaluation
         --     --runIO $ putStrLn $ show $ listPrintStatements program3
         --     -- _ <- runIO $ putStrLn $ show $ length $ show f3
+        --     _ <- runIO $ putStrLn $ show $ typeCheckOrFailId $ computeUntil  [MoveFor (PName "k") LeftToRight []] (For (PName "k") LeftToRight [] (PrintPos (PName "k")))
         --     _ <- runIO $ putStrLn $ show $ typeCheckOrFailId $ computeUntil (drop 5 pathToPrint3) forKPrintK
         --     -- _ <- runIO $ putStrLn $ show $ typeCheckOrFailId $ computeUntil (drop 4 pathToPrint3) forKPrintKAndSetBTrue
         --     --_ <- runIO $ putStrLn $ show $ typeCheckOrFailId $ computeUntil (drop 3 pathToPrint3) ifBThenSkipElseForKPrintK
