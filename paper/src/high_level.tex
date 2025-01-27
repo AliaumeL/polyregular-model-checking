@@ -98,7 +98,20 @@ expressions, and always syntactically group indices with their origin list
 (both in the for construction and in the input arguments of functions); we
 distinguish between boolean variable introductions (which are always mutable),
 and list variable introductions (which are always immutable). 
+To reason about this, let us first introduce a typing system, which is 
+quite short: 
+\begin{align*}
+    \tau,\sigma &::= \TBool \mid \TPos \mid \TOut \\
+    \TOut &::= \TList{\TOut} \mid \TChar \\
+    \TPos &::= \Nat \times \oexpr
+\end{align*}
 
+Let us immediately provide a semantics for these types, by stating that
+$\semT{\TBool} = \Bools$, $\semT{\TPos} = \Nat$ and $\semT{\TOut} = \bigcup_{n
+\in \Nat} {{{(\Sigma)}^*}^{\dots}}^{*}$. Indeed, the extra type information in
+the positions, namely an origin list expression, is discarded at runtime.
+
+\textbf{TODO: this is a convincing subset of python}
 
 Most of the restrictions listed above are straightforward to check, except for
 the origin restriction on the integer variables, which we now will refer to as
@@ -119,13 +132,13 @@ the same element.
 \begin{figure}[h]
     \centering
     \begin{align*}
-        \bBinOp := &~ \land ~|~ \lor ~|~ \Rightarrow ~|~ \Leftrightarrow \\
-        \pCmpOp := &~ = ~|~ \neq ~|~ < ~|~ \leq ~|~ > ~|~ \geq \\
-        \bexpr :=&~ \btrue ~|~ \bfalse ~|~ \bnot{\bexpr} \\
+        \intro*\bBinOp := &~ \land ~|~ \lor ~|~ \Rightarrow ~|~ \Leftrightarrow \\
+        \intro*\pCmpOp := &~ = ~|~ \neq ~|~ < ~|~ \leq ~|~ > ~|~ \geq \\
+        \intro*\bexpr :=&~ \intro*\btrue ~|~ \intro*\bfalse ~|~ \bnot{\bexpr} \\
                |&~ \bbin{\bexpr}{\bBinOp}{\bexpr}   \\
                |&~ \bcomp{i}{\pCmpOp}{j} & i,j \in \PVars \\
                |&~ \bapp{f}{\bexpr} & f \in \FunVars \\
-               |&~ \bliteq{\cexpr}{o} & \oexpr
+               |&~ \bliteq{\cexpr}{\oexpr}
     \end{align*}
     \caption{Boolean expressions.}
     \label{fig:bool-expr}
@@ -135,7 +148,7 @@ the same element.
 \begin{figure}[h]
     \centering
     \begin{align*}
-        \cexpr :=&~ \mathsf{char} \; c & c \in \Sigma \\
+        \intro*\cexpr :=&~ \mathsf{char} \; c & c \in \Sigma \\
                |&~ \mathsf{list}(\cexpr_1, \ldots, \cexpr_n)
     \end{align*}
     \caption{Constant expressions.}
@@ -145,7 +158,7 @@ the same element.
 \begin{figure}[h]
     \centering
     \begin{align*}
-        \oexpr :=&~ x & x \in \OVars \\
+        \intro*\oexpr :=&~ x & x \in \OVars \\
                |&~ \cexpr \\
                |&~ \olist{\oexpr_1, \dots,  \oexpr_n}  \\
                |&~ f(\aexpr_1, \dots, \aexpr_n) & f \in \FunVars \\
@@ -156,16 +169,18 @@ the same element.
 
 \begin{figure}[h]
     \centering
+    \AP
     \begin{align*}
-        \hlstmt :=&~ \hlif{\bexpr}{\hlstmt}{\hlstmt} \\
-               |&~ \hlyield{\oexpr} \\
-               |&~ \hlreturn{\oexpr} \\
-               |&~ \hlletoutput{x}{\oexpr}{\hlstmt} & x \in \OVars \\
-               |&~ \hlletboolean{x}{\hlstmt} & x \in \BVars \\
-               |&~ \hlsettrue{x} & x \in \BVars \\
-               |&~ \hlfor{(i,x)}{\oexpr}{\hlstmt} & (i,x) \in \PVars \times \OVars \\
-               |&~ \hlforRev{(i,x)}{\oexpr}{\hlstmt} & (i,x) \in \PVars \times \OVars \\
-               |&~ \hlseq{\hlstmt}{\hlstmt}
+        \intro*\hlstmt :=&~ 
+                   \intro*\hlif{\bexpr}{\hlstmt}{\hlstmt} \\
+               |&~ \intro*\hlyield{\oexpr} \\
+               |&~ \intro*\hlreturn{\oexpr} \\
+               |&~ \intro*\hlletoutput{x}{\oexpr}{\hlstmt} & x \in \OVars \\
+               |&~ \intro*\hlletboolean{x}{\hlstmt} & x \in \BVars \\
+               |&~ \intro*\hlsettrue{x} & x \in \BVars \\
+               |&~ \intro*\hlfor{(i,x)}{\oexpr}{\hlstmt} & (i,x) \in \PVars \times \OVars \\
+               |&~ \intro*\hlforRev{(i,x)}{\oexpr}{\hlstmt} & (i,x) \in \PVars \times \OVars \\
+               |&~ \intro*\hlseq{\hlstmt}{\hlstmt}
     \end{align*}
     \caption{Control statements.}
     \label{fig:high-level-stmt}
@@ -185,12 +200,6 @@ the same element.
 
 \subsection{Semantics}
 
-\NewDocumentCommand{\semB}{ m m }{ \llbracket #1 \rrbracket_{#2} }
-\NewDocumentCommand{\semS}{ m m }{ \llbracket #1 \rrbracket_{#2} }
-\NewDocumentCommand{\semO}{ m m }{ \llbracket #1 \rrbracket_{#2} }
-\NewDocumentCommand{\semC}{ m }{ \llbracket #1 \rrbracket }
-\NewDocumentCommand{\semF}{ m m }{ \llbracket #1 \rrbracket_{#2} }
-
 \begin{figure}[h]
     \centering
     \begin{align*}
@@ -202,8 +211,7 @@ the same element.
         \semB{\bbin{b_1}{op}{b_2}}{\rho}  =&~ \semB{b_1}{\rho} \mathbin{op} \semB{b_2}{\rho} \\
         \semB{\bcomp{i}{op}{j}}{\rho}     =&~ \rho(i) \mathbin{op} \rho(j) \\
         \semB{\bapp{f}{b}}{\rho}          =&~ \semF{f}{\rho}(\semB{b}{\rho}) \\
-        \semB{\bliteq{c}{o}}{\rho}        =&~ \semC{c}{\rho} = \semO{o}{\rho} \\
-        \semB{\bgen{s}}{\rho}             =&~ \semS{s}{\rho}
+        \semB{\bliteq{c}{o}}{\rho}        =&~ \semC{c}{\rho} = \semO{o}{\rho}
     \end{align*}
     \caption{Semantics of boolean expressions}.
 \end{figure}
@@ -225,8 +233,29 @@ the same element.
         \semO{x}{\rho}                  =&~ \rho(x) & x \in \OVars \\
         \semO{\cexpr}{\rho}             =&~ \semC{\cexpr} \\
         \semO{\olist{o_1, \ldots, o_n}}{\rho} =&~ [\semO{o_1}{\rho}, \ldots, \semO{o_n}{\rho}] \\
-        \semO{f(\aexpr_1, \dots, \aexpr_n)}{\rho} =&~ \semF{f}{\rho}(\semO{\aexpr_1}{\rho}, \dots, \semO{\aexpr_n}{\rho}) \\
-        \semO{\ogen{s}}{\rho}           =&~ \semS{s}{\rho}
+        \semO{f(\aexpr_1, \dots, \aexpr_n)}{\rho} =&~ \semF{f}{\rho}(\semO{\aexpr_1}{\rho}, \dots, \semO{\aexpr_n}{\rho})
     \end{align*}
     \caption{Semantics of output expressions.}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{align*}
+        \semC{\cdot}{\rho} \colon&~ \hlstmt \to \rho \to \rho \\
+    \end{align*}
+    \caption{Semantics of control statements.}
+    \label{fig:semantics-control}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{align*}
+        \semF{\cdot}{\rho} \colon&~ \hlfun \to \rho \to \rho \\
+        \semF{\hlfundef{f}{\aexpr_1, \dots, \aexpr_n}{\hlstmt}}{\rho} =&~ \lambda x_1, \dots, x_n. \semC{\hlstmt}{\rho[x_1 \mapsto \semO{\aexpr_1}{\rho}, \dots, x_n \mapsto \semO{\aexpr_n}{\rho}]}
+    \end{align*}
+    \caption{Semantics of functions.}
+    \label{fig:semantics-functions}
+\end{figure}
+
+\begin{figure}
 \end{figure}

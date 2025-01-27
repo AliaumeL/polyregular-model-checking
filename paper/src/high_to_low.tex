@@ -13,23 +13,53 @@
 %                     deriving (Eq,Show,Read,Ord,Enum)
 
 In this section, we provide a compilation from
-high level to low level For programs.
+high level to low level For programs. This process
+is done in a sequence of steps, most of which are 
+simple enough to be simply mentioned here.
+\begin{enumerate}
+    \item \label{item:lit_eq_elim} Elimination of Literal Equalities,
+        i.e., of 
+        expressions $\bliteq{c}{o}$ where $c \in \cexpr$
+        and $o \in \oexpr$.
+    \item \label{item:fun_elim} Elimination of Function Calls.
+        A function call will be replaced by a custom \kl{generator expression}
+        which is essentially a closure.
+    \item \label{item:lit_elim} Elimination of Literals Production,
+        i.e., of constant expressions in the construction of $\oexpr$
+        except for single characters.
+    \item \label{item:bool_elim} Elimination of Boolean Generators.
+    \item \label{item:let_output_elim} Elimination of Let Output Statements
+    \item \label{item:return_elim} Elimination of Return Statements
+    \item \label{item:for_loop_exp} Expansion of For Loops
+    \item \label{item:let_bools_top} Defining booleans at the beginning of for loops
+\end{enumerate}
 
-\subsection{Elimination of Literal Equalities}
+\begin{theorem}
+    These rewriting step terminates, preserve the semantics of the program,
+    and 
+    a program of type $\TList{\Sigma} \to \TList{\Sigma}$
+    fully normalized possesses the following properties:
+    \begin{itemize}
+        \item It only iterates over its input or the reverse of its input
+        \item All introduced variables are boolean and introduced at the top level
+            or at the beginning of a for loop.
+        \item There are no return statements, and the only
+            yield are of type character and contain either a constant
+            or a variable.
+    \end{itemize}
+\end{theorem}
 
-\subsection{Elimination of Function Calls}
+Now, it is clear that this sub-language of for-programs corresponds
+to the simple-for-programs described in the previous section, hence
+we have effectively obtained the following corollary:
 
-\subsection{Elimination of Literals Production}
+\begin{corollary}
+    Every \kl{high level program} of type $\TList{\Sigma} \to \TList{\Sigma}$
+    is (effectively) computable by a \kl{simple for-program}.
+\end{corollary}
 
-\subsection{Elimination of Boolean Functions and Generators}
-
-\subsection{Elimination of Let Output Statements}
-
-\subsection{Elimination of Return Statements}
-
-
-\subsection{Expansion of For Loops}
-
-\subsection{Defining booleans at the beginning of for loops}
-
-
+\begin{corollary}
+    Every \kl{high level program} has \kl{polynomial growth},
+    and the \kl{model checking problem} is decidable for 
+    \kl{high level programs}.
+\end{corollary}
