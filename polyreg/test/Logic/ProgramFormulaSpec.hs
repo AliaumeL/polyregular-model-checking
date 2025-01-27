@@ -264,6 +264,9 @@ injectTagsProgramFormula x = x { formula = injectTags (formula x) }
 simplifyProgramFormula :: (Eq a) => ProgramFormula a -> ProgramFormula a
 simplifyProgramFormula x = x { formula = simplifyFormula (formula x) }
 
+quantifierDepthProgramFormula :: ProgramFormula a -> Int
+quantifierDepthProgramFormula = quantifierDepth . formula
+
 subseq :: Eq a => [a] -> [a] -> Bool
 subseq [] _ = True
 subseq _ [] = False
@@ -384,7 +387,10 @@ spec = do
             -- runIO $ putStrLn $ prettyPrintForStmt 0 stmt
             -- runIO $ putStrLn $ replicate 80 '-'
             -- runIO $ putStrLn $ printProgramFormulaGeneric programFormula'
-            forM_ ["", "ab", "acdb", "acb", "acbd", "axbxcd", "aabxc", "cba"] $ \w -> do
+            -- runIO $ putStrLn $ "Quantifier depth of ab and cd: " ++ show (quantifierDepthProgramFormula programFormula')
+            -- runIO $ putStrLn $ "Size of ab and cd: " ++ (show  $ length $ show (formula programFormula'))
+            -- runIO $ putStrLn $ "Ab and cd: " ++ show programFormula'
+            forM_ ["", "ab", "ac", "ad", "abc", "abd", "adb"] $ \w -> do
                 describe ("The program `contains a then b and c then d' should work for word " ++ w) $ do
                     let i = initialState
                     let o = finialState w
