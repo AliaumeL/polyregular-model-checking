@@ -1,3 +1,28 @@
+% LTeX: language=EN
 \section{Introduction}
 \label{sec:intro}
 
+\paragraph{Motivation.} Verification is important. And it is hard. People have
+tried to make it easier. We are focusing on programs that do not use the full
+power of Turing machine and this is not absurd:
+\begin{itemize}
+    \item Configuration management
+    \item Simple string rewriting programs
+    \item "Extract transform load" pipelines
+\end{itemize}
+
+\paragraph{Contributions.} 
+
+\begin{itemize}
+    \item Introduced a high level language that is close to Python and 
+        suitable for model checking.
+    \item Our language is modular and contains functions, enabling for a clear
+        and concise implementation.
+    \item Effectively proved equivalence of the high-level language with an existing
+        model (polyregular functions), building a conversion algorithm.
+    \item Implemented a model checking algorithm for polyregular functions,
+        by reducing it to the satisfiability of a first-order formula on finite words.
+    \item We tested our program on examples using different backends to solve
+        the resulting formulas (CVC4, Z3, Alt-Ergo and Mona), showing
+        their complementarity.
+\end{itemize}

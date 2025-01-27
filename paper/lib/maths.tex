@@ -1,0 +1,48 @@
+
+% High Level For Programs Syntax and semantics
+\NewDocumentCommand{\PVars}{}{\mathbb{V}_{\text{pos}}}
+\NewDocumentCommand{\FunVars}{}{\mathbb{V}_{\text{fun}}}
+\NewDocumentCommand{\BVars}{}{\mathbb{V}_{\text{bool}}}
+\NewDocumentCommand{\OVars}{}{\mathbb{V}_{\text{out}}}
+
+\NewDocumentCommand{\Bools}{}{\mathbb{B}}
+\NewDocumentCommand{\OutputType}{O{\Sigma}}{\mathcal{C}_{#1}}
+
+\NewDocumentCommand{\hlprogram}{}{\mathsf{Program}}
+\NewDocumentCommand{\hlfun}{}{\mathsf{Fun}}
+\NewDocumentCommand{\hlstmt}{}{\mathsf{Stmt}}
+\NewDocumentCommand{\bexpr}{}{\mathsf{BExpr}}
+\NewDocumentCommand{\oexpr}{}{\mathsf{OExpr}}
+\NewDocumentCommand{\cexpr}{}{\mathsf{CExpr}}
+\NewDocumentCommand{\aexpr}{}{\mathsf{AExpr}}
+
+\NewDocumentCommand{\bBinOp}{}{\mathsf{BBin}}
+\NewDocumentCommand{\pCmpOp}{}{\mathsf{PComp}}
+
+\NewDocumentCommand{\hlif}{m m m}{\mathsf{if} \; #1 \; \mathsf{then} \; #2 \; \mathsf{else} \; #3}
+\NewDocumentCommand{\hlyield}{m}{\mathsf{yield} \; #1}
+\NewDocumentCommand{\hlreturn}{m}{\mathsf{return} \; #1}
+\NewDocumentCommand{\hlletoutput}{m m m}{\mathsf{let} \; #1 = #2 \; \mathsf{in} \; #3}
+\NewDocumentCommand{\hlletboolean}{m m}{\mathsf{let~mut} \; #1 = \bfalse \; \mathsf{in} \; #2}
+\NewDocumentCommand{\hlsettrue}{m}{\; #1 \; \leftarrow \; \mathsf{true}}
+\NewDocumentCommand{\hlfor}{m m m}{\mathsf{for}^{\rightarrow} \; #1 \; \mathsf{in} \; #2 \; \mathsf{do} \; #3}
+\NewDocumentCommand{\hlforRev}{m m m}{\mathsf{for}^{\leftarrow} \; #1 \; \mathsf{in} \; #2 \; \mathsf{do} \; #3}
+\NewDocumentCommand{\hlseq}{m m }{ #1 \; ; \; #2}
+
+
+\NewDocumentCommand{\btrue}{}{\mathsf{true}}
+\NewDocumentCommand{\bfalse}{}{\mathsf{false}}
+\NewDocumentCommand{\bnot}{m}{\neg #1}
+\NewDocumentCommand{\bbin}{ m m m }{#1 \; #2 \; #3}
+\NewDocumentCommand{\bcomp}{m m m}{#1 \; #2 \; #3}
+\NewDocumentCommand{\bapp}{m m}{\mathop{#1}(#2)}
+\NewDocumentCommand{\bliteq}{m m}{#1 \; = \; #2}
+\NewDocumentCommand{\bgen}{m}{\langle #1 \rangle}
+
+
+\NewDocumentCommand{\ogen}{m}{\langle #1 \rangle}
+\NewDocumentCommand{\cchar}{m}{\mathsf{char}(#1)}
+\NewDocumentCommand{\clist}{m}{\mathsf{list}(#1)}
+\NewDocumentCommand{\olist}{m}{\mathsf{list}(#1)}
+
+\NewDocumentCommand{\hlfundef}{m m m}{\mathsf{def} \; #1(#2) \; \{ #3 \}}

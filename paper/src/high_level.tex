@@ -1,79 +1,119 @@
+% LTeX: language=EN
 \section{High Level For Programs}
 \label{sec:high_level}
 
-\begin{itemize}
-    \item Explain that we want to consider list-manipulating functions
-          that only exhibit polynomial growth.
-    \item Introduce the syntax
-    \item Give an example of a high level for program
-    \item Give an operational / denotational semantics
-    \item Explain the typing system
-    \item Illustrate the type system with an example + counter-example for polynomial growth
-\end{itemize}
+\AP In this section, we describe a \intro{high-level language} describing
+list-manipulating functions that can be seen as a subset of \texttt{Python}.
+The language has been designed by discarding recursion, while loops, and only
+allowing the use of generators for constructing lists. The only allowed looping
+construction is then the \texttt{for} loop, which guarantees in particular the
+termination of such programs. An example of such program is listed in
+\cref{fig:python-example}: it takes as input a list of words containing a
+stopword \texttt{stop} exactly once, and outputs a list of pairs $(w_1, w_2)$,
+where $w_1$ belongs to the words before the stopword, and $w_2$ belongs to the
+words after the stopword. For instance, \texttt{f(["slim", "shy", "stop",
+"dog", "cat"])} outputs \texttt{[['slim', 'dog'], ['slim', 'cat'], ['shy',
+'dog'], ['shy', 'cat']]}.
 
-\section{High Level For Programs}
-\label{sec:high_level}
+\begin{figure}[h]
+\begin{verbatim}
+def f( words : list[str] ) -> generator[list[str]]:
+    seen_stop_w1 = False
+    for (i, w1) in enumerate(words):
+        seen_stop_w2 = False
+        if w1 == "stop":
+            seen_stop_w1 = True
+        if not seen_stop_w1:
+            for (j, w2) in reversed(enumerate(words)):
+                if w2 == "stop":
+                    seen_stop_w2 = True
+                if not seen_stop_w2:
+                    yield [w1, w2]
+\end{verbatim}
+\caption{An example of python program.}
+\label{fig:python-example}
+\end{figure}
 
-\begin{itemize}
-    \item Explain that we want to consider list-manipulating functions
-          that only exhibit polynomial growth.
-    \item Introduce the syntax
-    \item Give an example of a high level for program
-    \item Give an operational / denotational semantics
-    \item Explain the typing system
-    \item Illustrate the type system with an example + counter-example for polynomial growth
-\end{itemize}
+The types allowed in the programs are either Booleans, integers, or what we
+call list expressions , that are obtained by nesting strings and homogeneous
+lists -- observe that this includes the elements of the alphabet itself --.
 
+\AP We are interested in the following \intro{model checking problem}: given a
+function $f \colon X \to \Bools$, decide whether there exists $x \in X$ such
+that $f(x) = \btrue$.
+
+In order to derive a \kl{model checking algorithm} for these programs, we furthermore restricted the 
+language in the following ways:
+\begin{enumerate}
+    \item \label{item:comp-oexpr}
+        We only allow equality between lists when one of them is constant.
+    \item \label{item:int-cmp} 
+        We severely restrict the way integers can be compared, as
+        in \cref{fig:python-example}, where the integers are indices originating
+        from the same input list.
+    \item \label{item:no-shadowing} 
+        We disallow shadowing of variable names.
+    \item \label{item:func-no-bool}
+        We disallow taking boolean arguments as input 
+        to functions.
+    \item \label{item:immut-vars} 
+        Variables are immutable, except for boolean variables.
+    \item \label{item:set-true}
+        Boolean variables are initialized to \texttt{false} and can only
+        be toggled to \texttt{true}. Which is the case
+        in \cref{fig:python-example}.
+\end{enumerate}
+\begin{description}
+    \item[For \cref{item:comp-oexpr}.]
+        We could encode the post correspondence problem.
+        \todo{write it explicitly}
+    \item[For \cref{item:int-cmp}.] If we allow arbitrary comparisons between
+        integers, then one could test equality of two input strings, from
+        which results the undecidability of \kl{model checking} is undecidable.
+    \item[For \cref{item:no-shadowing}.]  Shadowing could allow one to 
+        fake origins of integers, hence leading to undecidable \kl{model checking}.
+    \item[For functions taking no booleans]
+        we could implement shadowing.
+    \item[For \cref{item:immut-vars}.]
+        Allowing the mutability of integer variables, then one could 
+        use them as counters, from which results the undecidablity of the
+        model checking.
+        Allowing  the mutability of list variables 
+        enables exponential output to be produced, for which the techniques 
+        we build upon cannot be used.
+        \todo{add an example with exponential growth}
+    \item[For \cref{item:set-true}.]
+        We are going to reduce the \kl{model checking problem} to 
+        the satisfiability of a first order formula on finite words. This
+        will enable the use of automata based tools and classical SMT solvers.
+        Allowing unrestricted use of boolean variables would result in the 
+        function \texttt{isOdd} to be definable, which is not expressible in 
+        first order logic on words.
+\end{description}
+
+In order to formally reason about the subset of Python that we want to  model,
+we introduce a syntax dedicated to our needs. Let us now discuss its main
+ingredients: we explicitly distinguish between boolean, index and list
+expressions, and always syntactically group indices with their origin list
+(both in the for construction and in the input arguments of functions); we
+distinguish between boolean variable introductions (which are always mutable),
+and list variable introductions (which are always immutable). 
+
+
+Most of the restrictions listed above are straightforward to check, except for
+the origin restriction on the integer variables, which we now will refer to as
+indices (since they are always indexing a position of a list). To ensure that
+comparisons are well-behaved, we developed a type system that is described 
+in figure \todo{write the type system}.
+The key idea is that every index variable is created in a for loop statement,
+and can therefore be associated to an expression of a list type. Beware that 
+we allow comparisons between indices obtained when iterating forward and backward 
+the same element.
+
+
+\textbf{todo write examples of bad programs}
 
 \subsection{Syntax}
-
-\NewDocumentCommand{\PVars}{}{\mathbb{V}_{\text{pos}}}
-\NewDocumentCommand{\FunVars}{}{\mathbb{V}_{\text{fun}}}
-\NewDocumentCommand{\BVars}{}{\mathbb{V}_{\text{bool}}}
-\NewDocumentCommand{\OVars}{}{\mathbb{V}_{\text{out}}}
-
-\NewDocumentCommand{\Bools}{}{\mathbb{B}}
-\NewDocumentCommand{\OutputType}{O{\Sigma}}{\mathcal{C}_{#1}}
-
-\NewDocumentCommand{\hlprogram}{}{\mathsf{Program}}
-\NewDocumentCommand{\hlfun}{}{\mathsf{Fun}}
-\NewDocumentCommand{\hlstmt}{}{\mathsf{Stmt}}
-\NewDocumentCommand{\bexpr}{}{\mathsf{BExpr}}
-\NewDocumentCommand{\oexpr}{}{\mathsf{OExpr}}
-\NewDocumentCommand{\cexpr}{}{\mathsf{CExpr}}
-\NewDocumentCommand{\aexpr}{}{\mathsf{AExpr}}
-
-\NewDocumentCommand{\bBinOp}{}{\mathsf{BBin}}
-\NewDocumentCommand{\pCmpOp}{}{\mathsf{PComp}}
-
-\NewDocumentCommand{\hlif}{m m m}{\mathsf{if} \; #1 \; \mathsf{then} \; #2 \; \mathsf{else} \; #3}
-\NewDocumentCommand{\hlyield}{m}{\mathsf{yield} \; #1}
-\NewDocumentCommand{\hlreturn}{m}{\mathsf{return} \; #1}
-\NewDocumentCommand{\hlletoutput}{m m m}{\mathsf{let} \; #1 = #2 \; \mathsf{in} \; #3}
-\NewDocumentCommand{\hlletboolean}{m m}{\mathsf{let~mut} \; #1 = \bfalse \; \mathsf{in} \; #2}
-\NewDocumentCommand{\hlsettrue}{m}{\; #1 \; \leftarrow \; \mathsf{true}}
-\NewDocumentCommand{\hlfor}{m m m}{\mathsf{for}^{\rightarrow} \; #1 \; \mathsf{in} \; #2 \; \mathsf{do} \; #3}
-\NewDocumentCommand{\hlforRev}{m m m}{\mathsf{for}^{\leftarrow} \; #1 \; \mathsf{in} \; #2 \; \mathsf{do} \; #3}
-\NewDocumentCommand{\hlseq}{m m }{ #1 \; ; \; #2}
-
-
-\NewDocumentCommand{\btrue}{}{\mathsf{true}}
-\NewDocumentCommand{\bfalse}{}{\mathsf{false}}
-\NewDocumentCommand{\bnot}{m}{\neg #1}
-\NewDocumentCommand{\bbin}{ m m m }{#1 \; #2 \; #3}
-\NewDocumentCommand{\bcomp}{m m m}{#1 \; #2 \; #3}
-\NewDocumentCommand{\bapp}{m m}{\mathop{#1}(#2)}
-\NewDocumentCommand{\bliteq}{m m}{#1 \; = \; #2}
-\NewDocumentCommand{\bgen}{m}{\langle #1 \rangle}
-
-
-\NewDocumentCommand{\ogen}{m}{\langle #1 \rangle}
-\NewDocumentCommand{\cchar}{m}{\mathsf{char}(#1)}
-\NewDocumentCommand{\clist}{m}{\mathsf{list}(#1)}
-\NewDocumentCommand{\olist}{m}{\mathsf{list}(#1)}
-
-\NewDocumentCommand{\hlfundef}{m m m}{\mathsf{def} \; #1(#2) \; \{ #3 \}}
-
 
 
 \begin{figure}[h]
@@ -85,10 +125,10 @@
                |&~ \bbin{\bexpr}{\bBinOp}{\bexpr}   \\
                |&~ \bcomp{i}{\pCmpOp}{j} & i,j \in \PVars \\
                |&~ \bapp{f}{\bexpr} & f \in \FunVars \\
-               |&~ \bliteq{\cexpr}{o} & o \in \OVars \\
-               |&~ \bgen{\hlstmt} 
+               |&~ \bliteq{\cexpr}{o} & \oexpr
     \end{align*}
     \caption{Boolean expressions.}
+    \label{fig:bool-expr}
 \end{figure}
 
 
@@ -99,6 +139,7 @@
                |&~ \mathsf{list}(\cexpr_1, \ldots, \cexpr_n)
     \end{align*}
     \caption{Constant expressions.}
+    \label{fig:const-expr}
 \end{figure}
 
 \begin{figure}[h]
@@ -106,11 +147,11 @@
     \begin{align*}
         \oexpr :=&~ x & x \in \OVars \\
                |&~ \cexpr \\
-               |&~ \olist{o_1, \ldots, o_n} & \forall 1 \leq i \leq n, o_i \in \OVars \\
+               |&~ \olist{\oexpr_1, \dots,  \oexpr_n}  \\
                |&~ f(\aexpr_1, \dots, \aexpr_n) & f \in \FunVars \\
-               |&~ \ogen{\hlstmt}
     \end{align*}
     \caption{Output expressions.}
+    \label{fig:out-expr}
 \end{figure}
 
 \begin{figure}[h]
@@ -127,6 +168,7 @@
                |&~ \hlseq{\hlstmt}{\hlstmt}
     \end{align*}
     \caption{Control statements.}
+    \label{fig:high-level-stmt}
 \end{figure}
 
 \begin{figure}[h]
@@ -137,6 +179,7 @@
         \hlprogram :=&~ ([\hlfun_1, \dots, \hlfun_n], f) & f \in \FunVars \\
     \end{align*}
     \caption{High Level For Programs.}
+    \label{fig:high-level-program}
 \end{figure}
 
 
