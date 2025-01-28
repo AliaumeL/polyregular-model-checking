@@ -2,131 +2,135 @@
 \section{High Level For Programs}
 \label{sec:high_level}
 
-\AP In this section, we describe our \intro{high-level language} for describing
-list-manipulating functions which can be seen as a subset of \texttt{Python}.
-Our goal is to reason algorithmically about the programs written in this language,
-so it needs to be highly restricted. In particular, we disallow recursion and
-while loops, leaving the \texttt{for} loop as the only allowed looping
-%and the only allowed way of constructing lists is through generators.
-construction, which guarantees the termination of such programs.
-An example of such program is listed in \cref{fig:python-example}: 
-Before we delve into the details of the language, let us present 
-an example in listing \ref{fig:python-example}. The program inputs
-a list of words containing the word \texttt{stop} exactly once,
-and outputs a list of pairs $(w_1, w_2)$, where $w_1$ and $w_2$ are words
-appearing respectively before and after the word \texttt{stop}. For example:
-\[
-\begin{tabular}{c}
-    \texttt{pairs(["slim", "shy", "stop", "dog", "cat"])} \\
-    \texttt{=} \\
-    \texttt{[['slim', 'cat'], ['slim', 'dog'], ['shy', 'cat'], ['shy', 'dog']]}
-\end{tabular}
-\] 
+\AP In this section, we introduce our \intro{high-level language} for
+describing list-manipulating functions which can be seen as a subset of
+\texttt{Python}. Our goal is to reason algorithmically about the programs
+written in this language, so it needs to be highly restricted. To illustrate
+those restrictions, let us present a comprehensive example written in a subset
+of \texttt{Python}. 
+
 \begin{figure}[h]
-\begin{verbatim}
-def pairs( words ):
-    seen_stop_w1 = False
-    for (i, w1) in enumerate(words):
-        seen_stop_w2 = False
-        if w1 == "stop":
-            seen_stop_w1 = True
-        if not seen_stop_w1:
-            for (j, w2) in reversed(enumerate(words)):
-                if w2 == "stop":
-                    seen_stop_w2 = True
-                if not seen_stop_w2:
-                    yield [w1, w2]
-\end{verbatim}
-\caption{An example of python program.}
-\label{fig:python-example}
+    \centering
+    \input{figs/python-nested.tex}
+    \caption{A small Python program that
+        outputs all subwords of a given word containing \texttt{ab}
+        as a scattered subword}.
+    \label{fig:python-example-nested}
 \end{figure}
 
-% The types allowed in the programs are either Booleans, integers, or what we
-% call list expressions , that are obtained by nesting strings and homogeneous
-% lists -- observe that this includes the elements of the alphabet itself --.
-
-\AP The crucial property of \kl{high-level language} it hat it has decidable 
-\intro{model checking problem}: given a function $f \colon X \to \Bools$,
-we can decide whether there exists $x \in X$ such that $f(x) = \btrue$.
-In order to achieve this property, we restrict the language in the followg ways:
+For the sake of readability, we implicitly coerce generators (created using the
+\texttt{yield} keyword) to lists. Our programs will only deal with three kinds
+of values: \intro{(nested) words} --- i.e. characters, words, lists of words,
+lists of lists of words, etc. ---, integers, and booleans. In order to ensure
+decidable \kl{model checking}, we also will enforce the following conditions,
+which are satisfied in our example:
 \begin{description}
-    \item [No while loops and recursion.] As mentioned above, we only allow
-        the \texttt{for} as the looping construction. This guaranteed the 
-        termination of our program.
-    \item [Restricted type system.] The only allowed types are booleans, integers, 
-        and \intro{nested words types}, which consists of \mathtt{Char}, 
-        \mathtt{List[Char]}, \mathtt{List[List[Char]]}, and so on. 
-        % Point to a grammar entry? Describe more formally?
-    \item [Restricted equality checks for nested words.] We disallow equality
-        checks between two nested words, unless one of them is a constant expression.
-        As the following example shows, this restriction is necessary to ensure
-        decidable model checking:
-        \begin{example}
-            For every instance of the Post Correspondence Problem (PCP), we can 
-            construct a function \texttt{f(x : list[list[Char]]) : Bool}
-            in the \kl{high-level language} with unrestricted equality checks, such 
-            that $f(x) = \btrue$ if and only if $x$ encodes a solution to the PCP instance.
-            For example the PCP instance $\{ (ab, a), (b, aa), (ba, b) \}$ can be encoded 
-            as the following function:
-            \begin{verbatim}
-                \input{programs/pcp_instance.py}
-            \end{verbatim}
-        \end{example}
-        Note that this restriction also includes \texttt{Char}. The reason for this 
-        more technical and explained in \ref{sec:pullback}. 
-    \item [Restricted integer comparisons.] The only allowed operations or integers
-          is the equality check ($\mathtt{=}, {!=}$) and comparisons (such as $\mathtt{<}$ or $\mathtt{>=}$).
-          However, we allow comparisons between integers that are indices of the same list (observe
-          that the only way to create an integer is through the \texttt{for} loop). Without this restriction, 
-          we would be able to encode the equality of two string over the alphabet $\{a, b\}$ which would 
-          enable us to encode the Post Correspondence Problem.
-          \begin{verbatim}
-            \input{programs/eq_from_idxc.py}
-          \end{verbatim}
-    \item [Immutable variables.] The only mutable variables are booleans.
-          The values of integer variables are introduced by the \texttt{for} loop,
-          and their values are fixed during each iteration. Mutable integer variables
-          could sever as unrestricted counters, resulting in undecidable model checking.
-          Similarly, we prohibit mutable list variables, as their lengths could be used 
-          as counters. %TODO: talk about exponential growth without destructors.
-    \item [No variable shadowing] We disallow shadowing of variable names, as it could
+    \item[Loop Constructions.]
+        We only allow \texttt{for} loops iterating forward
+        or backward over a list, as in 
+        \circleref{6}{code-enumerate} and \circleref{7}{code-enumerate-rev}.
+        In particular, \texttt{while} loops and recursive functions 
+        are forbidden, which guarantees termination of our programs.
+
+    \item [Mutable Variables.] The only mutable variables are booleans. The
+        values of integer variables are introduced by the \texttt{for} loop
+        as in \circleref{6}{code-enumerate},
+        and their values are fixed during each iteration. Mutable integer
+        variables could serve as unrestricted counters, resulting in
+        undecidable \kl{model checking}. Similarly, we prohibit mutable list
+        variables, as their lengths could be used as counters.
+        However, we still allow the use of immutable
+        list variables, as in \circleref{8}{code-immutable-variable}.
+
+    \item [Restricted equality checks for nested words.] 
+        We disallow equality
+        checks between two \kl{nested words}, 
+        unless one of them is a constant expression.
+        This is what happens in point \circleref{4}{code-string-comp}
+        of our \cref{fig:python-example-nested}.
+        Without this restriction, \kl{model checking} would be undecidable
+        (\cref{lem:umc-equality-nested-words}).
+        
+    \item [Integer Comparisons.] 
+        The only allowed operations on integers
+        are usual comparisons operators (equality, inequalities).
+        However, we only
+        allow comparisons between integers that are indices of the
+        same list.
+        Every integer is associated to a list expression.
+        For instance, in points \circleref{6}{code-enumerate} and
+        \circleref{7}{code-enumerate-rev} of our example, the variables
+        $i$ and $j$ are associated to the same list variable \texttt{word}.
+        Similarly, in for the comparison 
+        of point \circleref{1}{code-comparisons} to be valid,
+        the variables $k$,$i$, and $j$ should all be associated to the same 
+        list variable $l$.
+
+        To ensure this compatibility, we designed the following type system,
+        containing Booleans, \kl{nested words} of a given depth
+        (characters are of depth $0$), and integers associated to a list
+        expression (the set of which is denoted by $\oexpr$, and will
+        be defined later on):
+        \begin{align*}
+            \tau ::=~ \TBool
+            ~\mid~ \TPos[o] 
+            ~\mid~ \TOut[n] 
+            \quad 
+            n \in \Nat, \,
+            o \in \oexpr
+            \quad .
+        \end{align*}
+        These types can be inferred from the context,
+        except in the case of function arguments, in which case
+        we explicitly specify to which list argument integer variables
+        are associated.
+
+        Without this restriction, the equality predicate can be 
+        defined between two lists, leading to an undecidable
+        \kl{model checking problem}.
+
+
+    \item [Variable Shadowing.] 
+        We disallow shadowing of variable names, as it could
           be used to forge the origin of integers, leading to unrestricted comparisons.
           \begin{verbatim}
             \input{programs/eq_from_idxc_shadowing.py}
           \end{verbatim} 
-    \item [Functions do not take booleans as arguments.] Since booleans are mutable
-          this allow the iterated list to change during the iteration. Depending on the
-          semantics of such situation, this could lead to undesirable behavior. For example, 
-          it could be used to forge the origin of integers:
-          \begin{verbatim}
-            \input{programs/eq_from_idxc_shadowing.py}
-          \end{verbatim} 
-    \item [One way booleans.] Boolean variables are initialized to \texttt{false}, and 
-           once they are set to \texttt{true}, they cannot be to \texttt{false}.
-           However, during each iteration, all variables declared in the loop are reinitialized to \texttt{false}.
-           This restriction allows us to reduce the \kl{model checking problem} to the the satisfiability
-           of a \emph{first order} formula on finite words. This problem is not only decidable
-           but also solvable by well-engineered existing tools, such as automata-based solvers (e.g., MONA) and classical SMT solvers (e.g., Alt-Ergo, Z3, CVC5).
-           Without this restriction, the problem would require the use the MSO logic on words which is still decidable but
-           not supported by the SMT solvers.
+
+    \item [Boolean Arguments.] 
+        Allowing functions to take boolean arguments
+        would allow to forge the origin of integers,
+        by considering the function \texttt{switch(l1, l2, b)} which
+        returns either \texttt{l1} or \texttt{l2} 
+        depending on the value of \texttt{b}.
+        \begin{verbatim}
+            \input{programs/eq_from_idxc_shadowing.py} 
+        \end{verbatim} 
+
+    \item [Boolean Updates.] 
+        Boolean variables are initialized to \texttt{false}
+        as in \circleref{3}{code-mut-bool}, and
+        once they are set to \texttt{true} as in 
+        \circleref{5}{code-set-true},
+        they cannot be reset to \texttt{false}. 
+        We depart here from the semantics of Python by
+        considering lexical scoping of variables; in
+        particular a variable declared in a loop is not
+        accessible outside this loop.
+
+        This restriction allows us to reduce the \kl{model checking problem} to
+        the satisfiability of a \kl{first order formula} on finite words.
+        This problem is not only decidable but also solvable by well-engineered
+        existing tools, such as automata-based solvers (e.g., MONA) and
+        classical SMT solvers (e.g., Alt-Ergo, Z3, CVC5). Without this
+        restriction, the problem would require the use the MSO logic on words
+        which is still decidable but not supported by the SMT solvers. 
+
 \end{description}
 
-In order to formally reason about the subset of Python that we want to  model,
-we introduce a syntax dedicated to our needs. Let us now discuss its main
-ingredients: we explicitly distinguish between boolean, index and list
-expressions, and always syntactically group indices with their origin list
-(both in the for construction and in the input arguments of functions); we
-distinguish between boolean variable introductions (which are always mutable),
-and list variable introductions (which are always immutable). To reason about
-this, let us first introduce our typing system, which is relatively
-straightforward except for the type of the \kl{indices} that is a dependent
-type: every index type is associated to a \kl{list expression} from which it
-originates. For now, we do not precise the syntax of \kl{list expressions},
-which will be given later on.
+
+\paragraph{Syntax.}
 \begin{align*}
-    \tau,\sigma ::=&~ \TBool\\
-    \mid&~ \TPos[o] & o \in \oexpr \\
-    \mid&~ \TOut[n] & n \in \Nat \\
     \mathsf{arg} ::=&~ (\TOut[n],k) & k \in \Nat \\
     \mathsf{fun} ::=&~ 
            \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TBool \\
@@ -138,41 +142,13 @@ that returns all elements of the list $l$ between the indices $i$ and $j$
 before the first occurrence of the element \texttt{"stop"} has type
 $(\TOut[2],2) \to \TOut[2]$, that is, we are given an input list $l$ together
 with two pointers to indices of this particular list. We provide in
-\cref{fig:python-example}
+\cref{fig:python-example-indices}
 the
 code of this function, that illustrates the allowed constructions in our
 language and highlights the typing constraints that we enforce.
 
-\begin{figure}[h]
-\centering
-\begin{tikzpicture}[remember picture, overlay]
-    % put an arc edge between vari -> varl and varj -> varl to show that they point to "l"
-    % coordinates are used using (pic cs:vari)  (e.g. (pic cs:vari) |- (pic cs:varl))
-    % we want to start the arrows "above" the letters, so we shift the coordinates by 1ex up and 0.5ex left
-    % when drawing
-    \draw[thick, A2, ->] ([yshift=2ex,xshift=-0.5ex]pic cs:vari) to[out=90,in=90] ([yshift=2ex,xshift=-0.5ex]pic cs:varl);
-    \draw[thick, A2, ->] ([yshift=2ex,xshift=-0.5ex]pic cs:varj) to[out=90,in=90] ([yshift=2ex,xshift=-0.5ex]pic cs:varl);
-    \draw[thick, A2, ->] ([yshift=2ex,xshift=-0.5ex]pic cs:vark) to[out=90,in=90] ([yshift=2ex,xshift=-0.5ex]pic cs:varenum);
-\end{tikzpicture}
-\begin{Shaded}
-\begin{Highlighting}[numbers=left]
-\KeywordTok{def}\NormalTok{ getBetweenIndicesBeforeStop(l\tikzmark{varl}, i\tikzmark{vari}, j\tikzmark{varj}): }
-\NormalTok{    seen\_stop }\OperatorTok{=} \VariableTok{False}             \CommentTok{\# initialize a variable to false}
-    \ControlFlowTok{for}\NormalTok{ (k\tikzmark{vark}, x) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(l\tikzmark{varenum}):   }\CommentTok{\# enumerate over a list }
-        \ControlFlowTok{if}\NormalTok{ i }\OperatorTok{\textless{}=}\NormalTok{ k }\KeywordTok{and}\NormalTok{ k }\OperatorTok{\textless{}=}\NormalTok{ j:     }\CommentTok{\# compare compatible indices }
-            \ControlFlowTok{if}\NormalTok{ x }\OperatorTok{==} \StringTok{"stop"}\NormalTok{:       }\CommentTok{\# compare lists to constants}
-\NormalTok{                seen\_stop }\OperatorTok{=} \VariableTok{True}  \CommentTok{\# set booleans to true}
-            \ControlFlowTok{if} \KeywordTok{not}\NormalTok{ seen\_stop:     }\CommentTok{\# boolean expressions}
-                \ControlFlowTok{yield}\NormalTok{ x           }\CommentTok{\# yielding elements}
-\end{Highlighting}
-\end{Shaded}
-    \caption{Computing a function in our subset of Python, dependencies between indices and 
-    list expressions are made explicit by thick red arrows.}
-    \label{fig:python-example}
-\end{figure}
 
-
-\paragraph{Syntax.} Now, we can define the syntax of our high-level language.
+Now, we can define the syntax of our high-level language.
 Let us start with the non-surprising ingredients, namely Boolean expressions
 ($\bexpr$, defined in \cref{fig:bool-expr}),
 constant expressions and list expressions ($\cexpr$ and $\oexpr$, defined in

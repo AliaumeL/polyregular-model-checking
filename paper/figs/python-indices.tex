@@ -1,0 +1,21 @@
+\begin{tikzpicture}[remember picture, overlay]
+    % put an arc edge between vari -> varl and varj -> varl to show that they point to "l"
+    % coordinates are used using (pic cs:vari)  (e.g. (pic cs:vari) |- (pic cs:varl))
+    % we want to start the arrows "above" the letters, so we shift the coordinates by 1ex up and 0.5ex left
+    % when drawing
+    \draw[thick, A2, ->] ([yshift=2ex,xshift=-0.5ex]pic cs:vari) to[out=90,in=90] ([yshift=2ex,xshift=-0.5ex]pic cs:varl);
+    \draw[thick, A2, ->] ([yshift=2ex,xshift=-0.5ex]pic cs:varj) to[out=90,in=90] ([yshift=2ex,xshift=-0.5ex]pic cs:varl);
+    \draw[thick, A2, ->] ([yshift=2ex,xshift=-0.5ex]pic cs:vark) to[out=90,in=90] ([yshift=2ex,xshift=-0.5ex]pic cs:varenum);
+\end{tikzpicture}
+\begin{Shaded}
+\begin{Highlighting}[numbers=left]
+\KeywordTok{def}\NormalTok{ getBetweenIndicesBeforeStop(l\tikzmark{varl}, i\tikzmark{vari}, j\tikzmark{varj}): }
+\NormalTok{    seen\_stop }\OperatorTok{=} \VariableTok{False}             \CommentTok{\# initialize a variable to false}
+    \ControlFlowTok{for}\NormalTok{ (k\tikzmark{vark}, x) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(l\tikzmark{varenum}):   }\CommentTok{\# enumerate over a list }
+        \ControlFlowTok{if}\NormalTok{ i }\OperatorTok{\textless{}=}\NormalTok{ k }\KeywordTok{and}\NormalTok{ k }\OperatorTok{\textless{}=}\NormalTok{ j:     }\CommentTok{\# compare compatible indices }
+            \ControlFlowTok{if}\NormalTok{ x }\OperatorTok{==} \StringTok{"stop"}\NormalTok{:       }\CommentTok{\# compare lists to constants}
+\NormalTok{                seen\_stop }\OperatorTok{=} \VariableTok{True}  \CommentTok{\# set booleans to true}
+            \ControlFlowTok{if} \KeywordTok{not}\NormalTok{ seen\_stop:     }\CommentTok{\# boolean expressions}
+                \ControlFlowTok{yield}\NormalTok{ x           }\CommentTok{\# yielding elements}
+\end{Highlighting}
+\end{Shaded}

@@ -1,1 +1,23 @@
 This is an example appendix
+
+\section{Program Counter Examples}
+
+\begin{lemma}
+    \label{lem:umc-equality-nested-words}
+    Allowing unrestricted equality checks between two \kl{nested words}
+    results in the undecidability of the \kl{model checking problem}.
+\end{lemma}
+\begin{proof}
+        \begin{example}
+            For every instance of the Post Correspondence Problem (PCP), we can 
+            construct a function \texttt{f(x : list[list[Char]]) : Bool}
+            in the \kl{high-level language} with unrestricted equality checks, such 
+            that $f(x) = \btrue$ if and only if $x$ encodes a solution to the PCP instance.
+            For example the PCP instance $\{ (ab, a), (b, aa), (ba, b) \}$ can be encoded 
+            as the following function:
+            \begin{verbatim}
+                \input{programs/pcp_instance.py}
+            \end{verbatim}
+        \end{example}
+\end{proof}
+
