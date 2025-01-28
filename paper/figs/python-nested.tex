@@ -19,7 +19,7 @@
 \KeywordTok{def}\NormalTok{ subwordsWithAB(word):}
     \CommentTok{""" Get subwords that contain "ab" """}
     \ControlFlowTok{for}\NormalTok{ (i,c) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(word):} \circled{6}{code:enumerate}
-        \ControlFlowTok{for}\NormalTok{ (j,d) }\KeywordTok{in}\BuiltInTok{ reversed(}\BuiltInTok{enumerate}\NormalTok{(word)):} \circled{7}{code:enumerate-rev}
+        \ControlFlowTok{for}\NormalTok{ (j,d) }\KeywordTok{in}\BuiltInTok{ reversed(}\BuiltInTok{enumerate}\NormalTok{(word)):} \circled{7}{code:enumerate:rev}
     \NormalTok{            s }\OperatorTok{=}\NormalTok{ getBetween(word, i, j)} \circled{8}{code:immutable:variable}
             \ControlFlowTok{if}\NormalTok{ containsAB(s):}
                 \ControlFlowTok{yield}\NormalTok{ s}

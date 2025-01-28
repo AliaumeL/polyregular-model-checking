@@ -12,10 +12,20 @@
 %                     | LetBoolsToTop
 %                     deriving (Eq,Show,Read,Ord,Enum)
 
-In this section, we provide a compilation from
-high level to low level For programs. This process
-is done in a sequence of steps, most of which are 
-simple enough to be simply mentioned here.
+In this section, we provide a compilation from high level to low level For
+programs. In order to do so, we introduce a new constructon to the language,
+that are \emph{generator expressions}, representing the evaluation of a
+function on a given input. Namely, we add $\ogen{s}$ to the syntax of
+expressions, where $s \in \hlstmt$, and has type $\TOut[n]$ for some $n$.
+Similarly, we add $\bgen{s}$ to the syntax of boolean expressions, where $s \in
+\hlstmt$ and has type $\TBool$. Note that the semantics of these expressions
+should be carefully defined as follows: evaluating $\ogen{s}$ should be
+equivalent to evaluating $s$ in the current context \emph{hiding all boolean
+variables}. Because of the non-shadowing property of the language, and because
+boolean variables are the only ones that can be mutated, this ensures that
+evaluating $\ogen{s}$ multiple times will always yield the same result in a
+given context. 
+
 \begin{enumerate}
     \item \label{item:lit_eq_elim} Elimination of Literal Equalities,
         i.e., of 
@@ -63,3 +73,46 @@ we have effectively obtained the following corollary:
     and the \kl{model checking problem} is decidable for 
     \kl{high level programs}.
 \end{corollary}
+
+\AP
+The elimination of function calls (\cref{item:fun_elim}) is done by replacing
+every function call by a \emph{generator expression}, which is essentially 
+including the body of the function at the call site. This is possible
+because
+\begin{lemma}
+    For every \kl{high level function} $\hlfundef{f}{x_1, \dots, x_n}{s}$,
+    for every arguments $a_1, \dots, a_n \in \aexpr$,
+    for every \kl{evaluation environment} $\rho$,
+    \begin{equation*}
+        \semO{ f (a_1, \dots, a_n) }{\rho}
+        = 
+        \semO{ \ogen{ s[a_1/x_1, \dots, a_n/x_n] } }{\rho}
+        \quad .
+    \end{equation*}
+\end{lemma}
+
+\AP The elimination of literal equalities (\cref{item:lit_eq_elim}) 
+follows from \cref{lem:constequality}.
+
+\begin{lemma}
+    \label{lem:constequality}
+    For every
+    constant expression $c \in \cexpr$ of type $\TOut[n]$, there exists a \kl{high
+    level function} $f_c$ of type $(\TOut[n], 0) \to \TBool$ such that
+    $\semB{f_c(o)}{\rho} = \semB{\bliteq{c}{o}}{\rho}$ for every $o \in \oexpr$ and
+    \kl{evaluation environment} $\rho$. Such functions are defined by induction on
+    $c$, using a simple pattern matching.
+\end{lemma}
+
+\AP
+The eliminations of the $\hlletoutput{x}{e}{s}$ statements (\cref{item:let_output_elim})
+follows from the fact that 
+$\semS{\hlletoutput{x}{e}{s}}{\rho} = \semS{s}{\rho[x \mapsto \semO{e}{\rho}]}
+= \semS{s[x \mapsto e]}{\rho}$ for every \kl{evaluation environment}.
+
+\AP The elimination of return statements (\cref{item:return_elim})
+is done by replacing every return
+statement by a yield statement, and introducing a boolean variable
+\texttt{has\_returned} that is used to prevent further outputs after the first
+return statement is reached.
+

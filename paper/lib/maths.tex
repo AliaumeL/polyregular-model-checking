@@ -1,5 +1,13 @@
 % Classical sets
 
+% LOGIC
+
+\NewDocumentCommand{\FO}{ o }{\IfNoValueTF{#1}{\kl[\FO]{\mathsf{FO}}}{\kl[\FO]{\mathsf{FO}[{#1}]}}}
+\knowledge{\FO}{notion}
+
+% Semantic 
+\NewDocumentCommand{\NestedWords}{O{}}{\kl[\NestedWords]{\mathcal{W}_{#1}}}
+\knowledge{\NestedWords}{notion}
 
 
 % Variables
@@ -141,4 +149,5 @@
 \NewDocumentCommand{\semO}{ m m }{ \llbracket #1 \rrbracket_{#2} }
 \NewDocumentCommand{\semC}{ m }{ \llbracket #1 \rrbracket }
 \NewDocumentCommand{\semF}{ m m }{ \llbracket #1 \rrbracket_{#2} }
-\NewDocumentCommand{\semT}{ m }{ \llbracket #1 \rrbracket }
+\NewDocumentCommand{\semT}{ m }{\withkl{\kl[\semT]}{\mathopen{\cmdkl{\llbracket}} #1 \mathclose{\cmdkl{\rrbracket}}}}
+\knowledge{\semT}{notion}

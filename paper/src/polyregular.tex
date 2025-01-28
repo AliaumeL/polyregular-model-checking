@@ -8,3 +8,37 @@ in terms of:
     \item Simple For Programs
     \item First order interpretations
 \end{itemize}
+
+
+\subsection{First-order transductions}
+
+\AP
+Let $\Sigma,\Gamma$ be finite alphabets. A
+\intro{first order transduction} $\mathcal{T}$ is 
+given by a finite set $T$ of \intro{transduction tags},
+a map $\text{arity} : T \to \Nat$ assigning an arity to each tag,
+and formulas in $\FO[\Sigma]$:
+\begin{itemize}
+    \item $\varphi_{\text{dom}}^t(x_1,\ldots,x_{\text{arity}(t)})$
+        for every $t \in T$,
+    \item $\varphi_{\leq}^{t,t'}((x_1,\ldots,x_{\text{arity}(t)}),(y_1,\ldots,y_{\text{arity}(t')}))$
+        for every $t,t' \in T$,
+    \item $\varphi_{a}^t(x_1,\ldots,x_{\text{arity}(t)})$
+        for every $t \in T$ and $a \in \Gamma$.
+\end{itemize}
+We furthermore assume that the formulas $\varphi_{a}^t$ are mutually exclusive 
+for a fixed $t$, and that the formula $\varphi_{\leq}^{t,t'}$ defines a total
+order on tuples of positions.
+
+Given a \kl{first order transduction} $\mathcal{T}$ and a word $w \in \Sigma^*$,
+one can define the \intro[foi]{evaluation} of $\mathcal{T}$ on $w$ as follows:
+it is the word obtained by the following process: 
+\begin{enumerate}
+    \item Enumerate all tags $t \in T$, and all tuples 
+        of positions $(i_1,\ldots,i_{\text{arity}(t)})$ in $w^{\text{arity}(t)}$.
+    \item Filter the above list based on the formulas $\varphi_{\text{dom}}^t$.
+    \item Sort the above list based on the order defined by the formula
+        $\varphi_{\leq}^{t,t'}$.
+    \item Map every tuple to a letter $a \in \Gamma$
+        whenever it satisfies the formula $\varphi_{a}^t$.
+\end{enumerate}

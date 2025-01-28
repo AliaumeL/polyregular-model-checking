@@ -1,5 +1,302 @@
 This is an example appendix
 
+\section{Syntax and Semantics of High Level Programs}
+
+\subsection{Syntax} 
+
+\begin{figure}[h]
+    \centering
+    \begin{align*}
+        \intro*\bBinOp := &~ \land ~|~ \lor ~|~ \Rightarrow ~|~ \Leftrightarrow \\
+        \intro*\pCmpOp := &~ = ~|~ \neq ~|~ < ~|~ \leq ~|~ > ~|~ \geq \\
+        \intro*\bexpr :=&~ \intro*\btrue ~|~ \intro*\bfalse ~|~ \bnot{\bexpr} \\
+               |&~ \bbin{\bexpr}{\bBinOp}{\bexpr}   \\
+               |&~ \bcomp{i}{\pCmpOp}{j} & i,j \in \PVars \\
+               |&~ \bapp{f}{\bexpr} & f \in \FunVars \\
+               |&~ \bliteq{\cexpr}{\oexpr}
+    \end{align*}
+    \caption{Boolean expressions.}
+    \label{fig:bool-expr}
+\end{figure}
+
+
+\begin{figure}[h]
+    \centering
+    \begin{align*}
+        \intro*\cexpr :=&~ \mathsf{char} \; c & c \in \Sigma \\
+               |&~ \mathsf{list}(\cexpr_1, \ldots, \cexpr_n)
+    \end{align*}
+    \caption{Constant expressions.}
+    \label{fig:const-expr}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \begin{align*}
+        \intro*\oexpr :=&~ x & x \in \OVars \\
+               |&~ \cexpr \\
+               |&~ \olist{\oexpr_1, \dots,  \oexpr_n}  \\
+               |&~ f(\aexpr_1, \dots, \aexpr_n) & f \in \FunVars \\
+    \end{align*}
+    \caption{Output expressions.}
+    \label{fig:out-expr}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \AP
+    \begin{align*}
+        \intro*\hlstmt :=&~ 
+                   \intro*\hlif{\bexpr}{\hlstmt}{\hlstmt} \\
+               |&~ \intro*\hlyield{\oexpr} \\
+               |&~ \intro*\hlreturn{\oexpr} \\
+               |&~ \intro*\hlletoutput{x}{\oexpr}{\hlstmt} & x \in \OVars \\
+               |&~ \intro*\hlletboolean{x}{\hlstmt} & x \in \BVars \\
+               |&~ \intro*\hlsettrue{x} & x \in \BVars \\
+               |&~ \intro*\hlfor{(i,x)}{\oexpr}{\hlstmt} & (i,x) \in \PVars \times \OVars \\
+               |&~ \intro*\hlforRev{(i,x)}{\oexpr}{\hlstmt} & (i,x) \in \PVars \times \OVars \\
+               |&~ \intro*\hlseq{\hlstmt}{\hlstmt}
+    \end{align*}
+    \caption{Control statements.}
+    \label{fig:high-level-stmt}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \begin{align*}
+        \aexpr :=&~ (\oexpr, p_1, \dots, p_n) & \forall 1 \leq i \leq n, p_i \in \PVars \\
+        \hlfun :=&~ \hlfundef{f}{\aexpr_1, \dots, \aexpr_n}{\hlstmt} & f \in \FunVars \\
+        \hlprogram :=&~ ([\hlfun_1, \dots, \hlfun_n], f) & f \in \FunVars \\
+    \end{align*}
+    \caption{High Level For Programs.}
+    \label{fig:high-level-program}
+\end{figure}
+
+
+\subsection{Semantics}
+
+\begin{figure}[h]
+    \centering
+    \begin{align*}
+        \semB{ \cdot }{\rho}               \colon&~ \bexpr \to \Bools \\
+        \semB{\btrue}{\rho}               =&~ \top \\
+        \semB{\bfalse}{\rho}              =&~ \bot \\
+        \semB{b}{\rho}                    =&~ \rho(b) & b \in \BVars \\
+        \semB{\bnot{b}}{\rho}             =&~ \neg \semB{b}{\rho} \\
+        \semB{\bbin{b_1}{op}{b_2}}{\rho}  =&~ \semB{b_1}{\rho} \mathbin{op} \semB{b_2}{\rho} \\
+        \semB{\bcomp{i}{op}{j}}{\rho}     =&~ \rho(i) \mathbin{op} \rho(j) \\
+        \semB{\bapp{f}{b}}{\rho}          =&~ \semF{f}{\rho}(\semB{b}{\rho}) \\
+        \semB{\bliteq{c}{o}}{\rho}        =&~ \semC{c}{\rho} = \semO{o}{\rho}
+    \end{align*}
+    \caption{Semantics of boolean expressions}.
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{align*}
+        \semC{ \cdot }                  \colon&~ \cexpr \to \OutputType \\
+        \semC{\cchar{c}}                =&~ c \\
+        \semC{\clist{c_1, \ldots, c_n}} =&~ [c_1, \ldots, c_n]
+    \end{align*}
+    \caption{Semantics of constant expressions.}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{align*}
+        \semO{ \cdot }{\rho}       \colon&~ \oexpr \to \OutputType \\
+        \semO{x}{\rho}                  =&~ \rho(x) & x \in \OVars \\
+        \semO{\cexpr}{\rho}             =&~ \semC{\cexpr} \\
+        \semO{\olist{o_1, \ldots, o_n}}{\rho} =&~ [\semO{o_1}{\rho}, \ldots, \semO{o_n}{\rho}] \\
+        \semO{f(\aexpr_1, \dots, \aexpr_n)}{\rho} =&~ \semF{f}{\rho}(\semO{\aexpr_1}{\rho}, \dots, \semO{\aexpr_n}{\rho})
+    \end{align*}
+    \caption{Semantics of output expressions.}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{align*}
+        \semC{\cdot}{\rho} \colon&~ \hlstmt \to \rho \to \rho \\
+    \end{align*}
+    \caption{Semantics of control statements.}
+    \label{fig:semantics-control}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{align*}
+        \semF{\cdot}{\rho} \colon&~ \hlfun \to \rho \to \rho \\
+        \semF{\hlfundef{f}{\aexpr_1, \dots, \aexpr_n}{\hlstmt}}{\rho} =&~ \lambda x_1, \dots, x_n. \semC{\hlstmt}{\rho[x_1 \mapsto \semO{\aexpr_1}{\rho}, \dots, x_n \mapsto \semO{\aexpr_n}{\rho}]}
+    \end{align*}
+    \caption{Semantics of functions.}
+    \label{fig:semantics-functions}
+\end{figure}
+
+\begin{figure}
+\end{figure}
+
+
+% Basic typing judgments
+\begin{figure}[h]
+    \begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(T-True)}
+    \UnaryInfC{$\Gamma \vdash \btrue : \TBool$}
+    \end{prooftree}
+
+    \begin{prooftree}
+    \AxiomC{}
+    \RightLabel{(T-False)}
+    \UnaryInfC{$\Gamma \vdash \bfalse : \TBool$}
+    \end{prooftree}
+
+    % Boolean expressions
+    \begin{prooftree}
+    \AxiomC{$\Gamma \vdash e : \TBool$}
+    \RightLabel{(T-Not)}
+    \UnaryInfC{$\Gamma \vdash \bnot{e} : \TBool$}
+    \end{prooftree}
+
+    \begin{prooftree}
+    \AxiomC{$\Gamma \vdash e_1 : \TBool$}
+    \AxiomC{$\Gamma \vdash e_2 : \TBool$}
+    \RightLabel{(T-BBin)}
+    \BinaryInfC{$\Gamma \vdash \bbin{e_1}{\odot}{e_2} : \TBool$}
+    \end{prooftree}
+
+    % Position comparisons
+    \begin{prooftree}
+    \AxiomC{$\Gamma(i) = \TPos[o_i]$}
+    \AxiomC{$\Gamma(j) = \TPos[o_j]$}
+    \AxiomC{$o_i = o_j$}
+    \RightLabel{(T-PComp)}
+    \TrinaryInfC{$\Gamma \vdash \bcomp{i}{\odot}{j} : \TBool$}
+    \end{prooftree}
+
+    % Function application in boolean expressions
+    \begin{prooftree}
+    \AxiomC{$\Delta(f) = (\tau_1,\ldots,\tau_n) \to \TBool$}
+    \AxiomC{$\Gamma \vdash e : \tau_1$}
+    \RightLabel{(T-BApp)}
+    \BinaryInfC{$\Gamma \vdash \bapp{f}{e} : \TBool$}
+    \end{prooftree}
+    \caption{Typing rules for boolean expressions.}
+    \label{fig:typing-bool}
+\end{figure}
+
+\begin{figure}[h]
+    % Output expressions
+    \begin{prooftree}
+    \AxiomC{$\Gamma(x) = \TOut[n]$}
+    \RightLabel{(T-OVar)}
+    \UnaryInfC{$\Gamma \vdash x : \TOut[n]$}
+    \end{prooftree}
+
+    \begin{prooftree}
+        \AxiomC{$\Gamma \vdash e_i : \TOut[n]$ for all $i$}
+    \RightLabel{(T-OList)}
+    \UnaryInfC{$\Gamma \vdash \olist{e_1,\ldots,e_n} : \TOut[n+1]$}
+    \end{prooftree}
+    \caption{Typing rules for \kl{list expressions} and \kl{constant expressions}.}
+    \label{fig:typing-output}
+\end{figure}
+
+\begin{figure}
+% Statements
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash e : \TBool$}
+\AxiomC{$\Gamma \vdash s_1 : \tau$}
+\AxiomC{$\Gamma \vdash s_2 : \tau$}
+\RightLabel{(T-If)}
+\TrinaryInfC{$\Gamma \vdash \hlif{e}{s_1}{s_2} : \tau$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash e : \TOut[n]$}
+\RightLabel{(T-Yield)}
+\UnaryInfC{$\Gamma \vdash \hlyield{e} : \TOut[n+1]$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash e : \TOut[n]$}
+\RightLabel{(T-Return)}
+\UnaryInfC{$\Gamma \vdash \hlreturn{e} : \TOut[n]$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash e : \TBool$}
+\RightLabel{(T-Return)}
+\UnaryInfC{$\Gamma \vdash \hlreturn{e} : \TBool$}
+\end{prooftree}
+
+% Let bindings
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash e : \TOut[n]$}
+\AxiomC{$\Gamma, x:\TOut[n] \vdash s : \tau$}
+\RightLabel{(T-LetOut)}
+\BinaryInfC{$\Gamma \vdash \hlletoutput{x}{e}{s} : \tau$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\Gamma, x:\TBool \vdash s : \tau$}
+\RightLabel{(T-LetBool)}
+\UnaryInfC{$\Gamma \vdash \hlletboolean{x}{s} : \tau$}
+\end{prooftree}
+
+% For loops
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash o : \TOut[n]$}
+\AxiomC{$\Gamma, i:\TPos[o], x:\TOut[n] \vdash s : \tau$}
+\AxiomC{$n > 0$}
+\RightLabel{(T-For)}
+\TrinaryInfC{$\Gamma \vdash \hlfor{(i,x)}{o}{s} : \tau$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash o : \TOut[n]$}
+\AxiomC{$\Gamma, i:\TPos[o], x:\TOut \vdash s : \tau$}
+\AxiomC{$n > 0$}
+\RightLabel{(T-ForRev)}
+\TrinaryInfC{$\Gamma \vdash \hlforRev{(i,x)}{o}{s} : \tau$}
+\end{prooftree}
+
+\begin{prooftree}
+\AxiomC{}
+\RightLabel{(T-SetTrue)}
+\UnaryInfC{$\Gamma \vdash \hlsettrue{x} : \tau$}
+\end{prooftree}
+
+% Sequence
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash s_1 : \tau$}
+\AxiomC{$\Gamma \vdash s_2 : \tau$}
+\RightLabel{(T-Seq)}
+\BinaryInfC{$\Gamma \vdash \hlseq{s_1}{s_2} : \tau$}
+\end{prooftree}
+\caption{Typing rules for control statements.}
+\label{fig:typing-control}
+\end{figure}
+
+\begin{figure}
+% Function definition
+\begin{prooftree}
+\AxiomC{$\Gamma \vdash \aexpr_i : \tau_i$ for all $i$}
+\AxiomC{$\Gamma \vdash s : \tau$}
+\RightLabel{(T-Fun)}
+\BinaryInfC{$\Delta \vdash \hlfundef{f}{(\aexpr_1,\ldots,\aexpr_n)}{s} : (\tau_1,\ldots,\tau_n) \to \tau$}
+\end{prooftree}
+
+% Program
+\begin{prooftree}
+\AxiomC{$\Delta \vdash \hlfun_i : \tau_i$ for all $i$}
+\AxiomC{$f \in \FunVars$}
+\RightLabel{(T-Prog)}
+\BinaryInfC{$\vdash ([\hlfun_1,\ldots,\hlfun_n], f) : \tau_f$}
+\end{prooftree}
+\caption{Typing rules for high-level programs.}
+\label{fig:typing-high-level}
+\end{figure}
+
 \section{Program Counter Examples}
 
 \begin{lemma}

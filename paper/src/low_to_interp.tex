@@ -3,3 +3,32 @@
 
 In this section we compile low level For programs to first order interpretations,
 allowing the verification of Hoare triples over low level For Programs.
+
+\begin{itemize}
+    \item Recall that this was already known, but without any bounds on the 
+        complexity of the process.
+    \item The key idea is that every print of the program is going to be a 
+        \kl{transduction tag}.
+    \item The main issue is understanding how boolean variables are modified
+        by the program during execution.
+\end{itemize}
+
+\subsection{Program Formulas}
+
+\AP In order to compile a low level For program to a first order
+interpretation, our main issue is compositionality. To that end, let us
+introduce an intermediate \emph{compositional} language talking about the state
+of the program. A \intro{program formula} is a tuple $(I, \varphi, O)$ where $I
+\subseteq \BVars \cup \PVars \cup \OVars$, and $O \subseteq \BVars$.
+
+\begin{itemize}
+    \item A program formula models a \emph{relation} between the input variables
+        and output variables. We only care about \emph{functions}.
+    \item There is a nice diagrammatic representation of such 
+        \kl{program formulas}, where input variables are on the left,
+        output variables are on the right.
+\end{itemize}
+
+\AP There are two main constructions needed for programs formulas: the
+composition (sequential) and the iteration (loop).
+
