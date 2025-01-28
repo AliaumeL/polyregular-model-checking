@@ -111,57 +111,6 @@ In order to achieve this property, we restrict the language in the followg ways:
            not supported by the SMT solvers.
 \end{description}
 
-
-
-In order to derive a \kl{model checking algorithm} for these programs, we furthermore restricted the 
-language in the following ways:
-\begin{enumerate}
-    \item \label{item:comp-oexpr}
-        We only allow equality between lists when one of them is constant.
-    \item \label{item:int-cmp} 
-        We severely restrict the way integers can be compared, as
-        in \cref{fig:python-example}, where the integers are indices originating
-        from the same input list.
-    \item \label{item:no-shadowing} 
-        We disallow shadowing of variable names.
-    \item \label{item:func-no-bool}
-        We disallow taking boolean arguments as input 
-        to functions.
-    \item \label{item:immut-vars} 
-        Variables are immutable, except for boolean variables.
-    \item \label{item:set-true}
-        Boolean variables are initialized to \texttt{false} and can only
-        be toggled to \texttt{true}. Which is the case
-        in \cref{fig:python-example}.
-\end{enumerate}
-\begin{description}
-    \item[For \cref{item:comp-oexpr}.]
-        We could encode the post correspondence problem.
-        \todo{write it explicitly}
-    \item[For \cref{item:int-cmp}.] If we allow arbitrary comparisons between
-        integers, then one could test equality of two input strings, from
-        which results the undecidability of \kl{model checking} is undecidable.
-    \item[For \cref{item:no-shadowing}.]  Shadowing could allow one to 
-        fake origins of integers, hence leading to undecidable \kl{model checking}.
-    \item[For functions taking no booleans]
-        we could implement shadowing.
-    \item[For \cref{item:immut-vars}.]
-        Allowing the mutability of integer variables, then one could 
-        use them as counters, from which results the undecidablity of the
-        model checking.
-        Allowing  the mutability of list variables 
-        enables exponential output to be produced, for which the techniques 
-        we build upon cannot be used.
-        \todo{add an example with exponential growth}
-    \item[For \cref{item:set-true}.]
-        We are going to reduce the \kl{model checking problem} to 
-        the satisfiability of a first order formula on finite words. This
-        will enable the use of automata based tools and classical SMT solvers.
-        Allowing unrestricted use of boolean variables would result in the 
-        function \texttt{isOdd} to be definable, which is not expressible in 
-        first order logic on words.
-\end{description}
-
 In order to formally reason about the subset of Python that we want to  model,
 we introduce a syntax dedicated to our needs. Let us now discuss its main
 ingredients: we explicitly distinguish between boolean, index and list
