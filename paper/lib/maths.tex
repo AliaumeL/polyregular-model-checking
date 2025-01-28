@@ -86,7 +86,7 @@
 \NewDocumentCommand{\bfalse}{}{\kl[\bfalse]{\mathsf{false}}}
 \knowledge{\bfalse}{notion}
 
-\NewDocumentCommand{\bnot}{m}{\withkl{\kl[\bnot]}{\neg #1}}
+\NewDocumentCommand{\bnot}{m}{\withkl{\kl[\bnot]}{\cmdkl{\neg} #1}}
 \knowledge{\bnot}{notion}
 
 \NewDocumentCommand{\bbin}{ m m m }{\withkl{\kl[\bbin]}{#1 \; #2 \; #3}}
@@ -98,10 +98,10 @@
 \NewDocumentCommand{\bapp}{m m}{\withkl{\kl[\bapp]}{\mathop{#1}(#2)}}
 \knowledge{\bapp}{notion}
 
-\NewDocumentCommand{\bliteq}{m m}{\withkl{\kl[\bliteq]}{#1 \; = \; #2}}
+\NewDocumentCommand{\bliteq}{m m}{\withkl{\kl[\bliteq]}{#1 \; \cmdkl{=_{\text{lit}}} \; #2}}
 \knowledge{\bliteq}{notion}
 
-\NewDocumentCommand{\bgen}{m}{\withkl{\kl[\bgen]}{\langle #1 \rangle}}
+\NewDocumentCommand{\bgen}{m}{\withkl{\kl[\bgen]}{\mathopen{\cmdkl{\langle}} #1 \mathclose{\cmdkl{\rangle}}}}
 \knowledge{\bgen}{notion}
 
 % Output operations
@@ -121,13 +121,7 @@
 \knowledge{\hlfundef}{notion}
 
 % Types
-\NewDocumentCommand{\TList}{m}{\withkl{\kl[\TList]}{\cmdkl{[}{#1}\cmdkl{]}}}
-\knowledge{\TList}{notion}
-
-\NewDocumentCommand{\TChar}{}{\kl[\TChar]{\Sigma}}
-\knowledge{\TChar}{notion}
-
-\NewDocumentCommand{\TPos}{}{\kl[\TPos]{\mathsf{Pos}}}
+\NewDocumentCommand{\TPos}{O{} }{\kl[\TPos]{\mathsf{Pos}_{#1}}}
 \knowledge{\TPos}{notion}
 
 \NewDocumentCommand{\TBool}{}{\kl[\TBool]{\mathsf{Bool}}}
@@ -136,7 +130,7 @@
 \NewDocumentCommand{\TUnit}{}{\kl[\TUnit]{\mathsf{Any}}}
 \knowledge{\TUnit}{notion}
 
-\NewDocumentCommand{\TOut}{}{\kl[\TOut]{\mathsf{List}}}
+\NewDocumentCommand{\TOut}{O{}}{\kl[\TOut]{\mathsf{List}_{#1}}}
 \knowledge{\TOut}{notion}
 
 

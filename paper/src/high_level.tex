@@ -24,7 +24,7 @@ appearing respectively before and after the word \texttt{stop}. For example:
 \] 
 \begin{figure}[h]
 \begin{verbatim}
-def pairs( words : list[str] ) -> generator[list[str]]:
+def pairs( words ):
     seen_stop_w1 = False
     for (i, w1) in enumerate(words):
         seen_stop_w2 = False
@@ -117,16 +117,52 @@ ingredients: we explicitly distinguish between boolean, index and list
 expressions, and always syntactically group indices with their origin list
 (both in the for construction and in the input arguments of functions); we
 distinguish between boolean variable introductions (which are always mutable),
-and list variable introductions (which are always immutable). 
-To reason about this, let us first introduce a typing system, which is 
-quite short: 
+and list variable introductions (which are always immutable). To reason about
+this, let us first introduce our typing system, which is relatively
+straightforward except for the type of the \kl{indices} that is a dependent
+type: every index type is associated to a \kl{list expression} from which it
+originates. For now, we do not precise the syntax of \kl{list expressions},
+which will be given later on.
 \begin{align*}
-    \tau,\sigma &::= \TBool\\
+    \tau,\sigma ::=&~ \TBool\\
     \mid&~ \TPos[o] & o \in \oexpr \\
     \mid&~ \TOut[n] & n \in \Nat \\
-    \mid&~ \tau_1 \times \dots \times \tau_k \to \TBool \\
-    \mid&~ \tau_1 \times \dots \times \tau_k \to \TOut[n] 
+    \mathsf{arg} ::=&~ (\TOut[n],k) & k \in \Nat \\
+    \mathsf{fun} ::=&~ 
+           \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TBool \\
+    \mid&~ \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TOut[n] 
 \end{align*}
+
+\AP For instance, the function \texttt{getBetweenIndicesBeforeStop(l, i, j)}
+that returns all elements of the list $l$ between the indices $i$ and $j$
+before the first occurrence of the element \texttt{"stop"} has type
+$(\TOut[2],2) \to \TOut[2]$.
+
+\begin{tikzpicture}[remember picture, overlay]
+    % put an arc edge between vari -> varl and varj -> varl to show that they point to "l"
+    % coordinates are used using (pic cs:vari)  (e.g. (pic cs:vari) |- (pic cs:varl))
+    % we want to start the arrows "above" the letters, so we shift the coordinates by 1ex up and 0.5ex left
+    % when drawing
+    \draw[thick, A2, ->] ([yshift=2ex,xshift=-0.5ex]pic cs:vari) to[out=90,in=90] ([yshift=2ex,xshift=-0.5ex]pic cs:varl);
+    \draw[thick, A2, ->] ([yshift=2ex,xshift=-0.5ex]pic cs:varj) to[out=90,in=90] ([yshift=2ex,xshift=-0.5ex]pic cs:varl);
+    \draw[thick, A2, ->] ([yshift=2ex,xshift=-0.5ex]pic cs:vark) to[out=90,in=90] ([yshift=2ex,xshift=-0.5ex]pic cs:varenum);
+\end{tikzpicture}
+\begin{Shaded}
+\begin{Highlighting}[numbers=left]
+\KeywordTok{def}\NormalTok{ getBetweenIndicesBeforeStop(l\tikzmark{varl}, i\tikzmark{vari}, j\tikzmark{varj}): }
+\NormalTok{    seen\_stop }\OperatorTok{=} \VariableTok{False}             \CommentTok{\# initialize a variable to false}
+    \ControlFlowTok{for}\NormalTok{ (k\tikzmark{vark}, x) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(l\tikzmark{varenum}):   }\CommentTok{\# enumerate over a list }
+        \ControlFlowTok{if}\NormalTok{ i }\OperatorTok{\textless{}=}\NormalTok{ k }\KeywordTok{and}\NormalTok{ k }\OperatorTok{\textless{}=}\NormalTok{ j:     }\CommentTok{\# compare compatible indices }
+            \ControlFlowTok{if}\NormalTok{ x }\OperatorTok{==} \StringTok{"stop"}\NormalTok{:       }\CommentTok{\# compare lists to constants}
+\NormalTok{                seen\_stop }\OperatorTok{=} \VariableTok{True}  \CommentTok{\# set booleans to true}
+            \ControlFlowTok{if} \KeywordTok{not}\NormalTok{ seen\_stop:     }\CommentTok{\# boolean expressions}
+                \ControlFlowTok{yield}\NormalTok{ x           }\CommentTok{\# yielding elements}
+\end{Highlighting}
+\end{Shaded}
+
+
+In this example, variables $k$, $i$, and $j$ have type $\TPos[l]$, and $l$ has
+type $\TOut[n]$ for some $n > 0$.
 
 Let us immediately provide a semantics for these types, by stating that
 $\semT{\TBool} = \Bools$, $\semT{\TPos} = \Nat$ and $\semT{\TOut} = \bigcup_{n

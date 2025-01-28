@@ -37,7 +37,7 @@ simple enough to be simply mentioned here.
 \begin{theorem}
     These rewriting step terminates, preserve the semantics of the program,
     and 
-    a program of type $\TList{\Sigma} \to \TList{\Sigma}$
+    a program of type $\TOut[1] \to \TOut[1]$ that is
     fully normalized possesses the following properties:
     \begin{itemize}
         \item It only iterates over its input or the reverse of its input
@@ -54,7 +54,7 @@ to the simple-for-programs described in the previous section, hence
 we have effectively obtained the following corollary:
 
 \begin{corollary}
-    Every \kl{high level program} of type $\TList{\Sigma} \to \TList{\Sigma}$
+    Every \kl{high level program} of type $\TOut[1] \to \TOut[1]$
     is (effectively) computable by a \kl{simple for-program}.
 \end{corollary}
 
