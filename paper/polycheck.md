@@ -3,6 +3,7 @@ bibliography: papers.bib
 draft: true
 final: false
 libraries:
+    - lib/pandoc
     - lib/aliaume
     - lib/maths
     - knowledges.kl
