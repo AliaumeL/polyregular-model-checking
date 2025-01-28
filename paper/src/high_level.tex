@@ -2,22 +2,29 @@
 \section{High Level For Programs}
 \label{sec:high_level}
 
-\AP In this section, we describe a \intro{high-level language} describing
-list-manipulating functions that can be seen as a subset of \texttt{Python}.
-The language has been designed by discarding recursion, while loops, and only
-allowing the use of generators for constructing lists. The only allowed looping
-construction is then the \texttt{for} loop, which guarantees in particular the
-termination of such programs. An example of such program is listed in
-\cref{fig:python-example}: it takes as input a list of words containing a
-stopword \texttt{stop} exactly once, and outputs a list of pairs $(w_1, w_2)$,
-where $w_1$ belongs to the words before the stopword, and $w_2$ belongs to the
-words after the stopword. For instance, \texttt{f(["slim", "shy", "stop",
-"dog", "cat"])} outputs \texttt{[['slim', 'dog'], ['slim', 'cat'], ['shy',
-'dog'], ['shy', 'cat']]}.
-
+\AP In this section, we describe our \intro{high-level language} for describing
+list-manipulating functions which can be seen as a subset of \texttt{Python}.
+Our goal is to reason algorithmically about the programs written in this language,
+so it needs to be highly restricted. In particular, we disallow recursion and
+while loops, leaving the \texttt{for} loop as the only allowed looping
+%and the only allowed way of constructing lists is through generators.
+construction, which guarantees the termination of such programs.
+An example of such program is listed in \cref{fig:python-example}: 
+Before we delve into the details of the language, let us present 
+an example in listing \ref{fig:python-example}. The program inputs
+a list of words containing the word \texttt{stop} exactly once,
+and outputs a list of pairs $(w_1, w_2)$, where $w_1$ and $w_2$ are words
+appearing respectively before and after the word \texttt{stop}. For example:
+\[
+\begin{tabular}{c}
+    \texttt{pairs(["slim", "shy", "stop", "dog", "cat"])} \\
+    \texttt{=} \\
+    \texttt{[['slim', 'cat'], ['slim', 'dog'], ['shy', 'cat'], ['shy', 'dog']]}
+\end{tabular}
+\] 
 \begin{figure}[h]
 \begin{verbatim}
-def f( words ):
+def pairs( words ):
     seen_stop_w1 = False
     for (i, w1) in enumerate(words):
         seen_stop_w2 = False
@@ -34,61 +41,74 @@ def f( words ):
 \label{fig:python-example}
 \end{figure}
 
-The types allowed in the programs are either Booleans, integers, or what we
-call list expressions , that are obtained by nesting strings and homogeneous
-lists -- observe that this includes the elements of the alphabet itself --.
+% The types allowed in the programs are either Booleans, integers, or what we
+% call list expressions , that are obtained by nesting strings and homogeneous
+% lists -- observe that this includes the elements of the alphabet itself --.
 
-\AP We are interested in the following \intro{model checking problem}: given a
-function $f \colon X \to \Bools$, decide whether there exists $x \in X$ such
-that $f(x) = \btrue$.
-
-In order to derive a \kl{model checking algorithm} for these programs, we furthermore restricted the 
-language in the following ways:
-\begin{enumerate}
-    \item \label{item:comp-oexpr}
-        We only allow equality between lists when one of them is constant.
-    \item \label{item:int-cmp} 
-        We severely restrict the way integers can be compared, as
-        in \cref{fig:python-example}, where the integers are indices originating
-        from the same input list.
-    \item \label{item:no-shadowing} 
-        We disallow shadowing of variable names.
-    \item \label{item:func-no-bool}
-        We disallow taking boolean arguments as input 
-        to functions.
-    \item \label{item:immut-vars} 
-        Variables are immutable, except for boolean variables.
-    \item \label{item:set-true}
-        Boolean variables are initialized to \texttt{false} and can only
-        be toggled to \texttt{true}. Which is the case
-        in \cref{fig:python-example}.
-\end{enumerate}
+\AP The crucial property of \kl{high-level language} it hat it has decidable 
+\intro{model checking problem}: given a function $f \colon X \to \Bools$,
+we can decide whether there exists $x \in X$ such that $f(x) = \btrue$.
+In order to achieve this property, we restrict the language in the followg ways:
 \begin{description}
-    \item[For \cref{item:comp-oexpr}.]
-        We could encode the post correspondence problem.
-        \todo{write it explicitly}
-    \item[For \cref{item:int-cmp}.] If we allow arbitrary comparisons between
-        integers, then one could test equality of two input strings, from
-        which results the undecidability of \kl{model checking} is undecidable.
-    \item[For \cref{item:no-shadowing}.]  Shadowing could allow one to 
-        fake origins of integers, hence leading to undecidable \kl{model checking}.
-    \item[For functions taking no booleans]
-        we could implement shadowing.
-    \item[For \cref{item:immut-vars}.]
-        Allowing the mutability of integer variables, then one could 
-        use them as counters, from which results the undecidablity of the
-        model checking.
-        Allowing  the mutability of list variables 
-        enables exponential output to be produced, for which the techniques 
-        we build upon cannot be used.
-        \todo{add an example with exponential growth}
-    \item[For \cref{item:set-true}.]
-        We are going to reduce the \kl{model checking problem} to 
-        the satisfiability of a first order formula on finite words. This
-        will enable the use of automata based tools and classical SMT solvers.
-        Allowing unrestricted use of boolean variables would result in the 
-        function \texttt{isOdd} to be definable, which is not expressible in 
-        first order logic on words.
+    \item [No while loops and recursion.] As mentioned above, we only allow
+        the \texttt{for} as the looping construction. This guaranteed the 
+        termination of our program.
+    \item [Restricted type system.] The only allowed types are booleans, integers, 
+        and \intro{nested words types}, which consists of \mathtt{Char}, 
+        \mathtt{List[Char]}, \mathtt{List[List[Char]]}, and so on. 
+        % Point to a grammar entry? Describe more formally?
+    \item [Restricted equality checks for nested words.] We disallow equality
+        checks between two nested words, unless one of them is a constant expression.
+        As the following example shows, this restriction is necessary to ensure
+        decidable model checking:
+        \begin{example}
+            For every instance of the Post Correspondence Problem (PCP), we can 
+            construct a function \texttt{f(x : list[list[Char]]) : Bool}
+            in the \kl{high-level language} with unrestricted equality checks, such 
+            that $f(x) = \btrue$ if and only if $x$ encodes a solution to the PCP instance.
+            For example the PCP instance $\{ (ab, a), (b, aa), (ba, b) \}$ can be encoded 
+            as the following function:
+            \begin{verbatim}
+                \input{programs/pcp_instance.py}
+            \end{verbatim}
+        \end{example}
+        Note that this restriction also includes \texttt{Char}. The reason for this 
+        more technical and explained in \ref{sec:pullback}. 
+    \item [Restricted integer comparisons.] The only allowed operations or integers
+          is the equality check ($\mathtt{=}, {!=}$) and comparisons (such as $\mathtt{<}$ or $\mathtt{>=}$).
+          However, we allow comparisons between integers that are indices of the same list (observe
+          that the only way to create an integer is through the \texttt{for} loop). Without this restriction, 
+          we would be able to encode the equality of two string over the alphabet $\{a, b\}$ which would 
+          enable us to encode the Post Correspondence Problem.
+          \begin{verbatim}
+            \input{programs/eq_from_idxc.py}
+          \end{verbatim}
+    \item [Immutable variables.] The only mutable variables are booleans.
+          The values of integer variables are introduced by the \texttt{for} loop,
+          and their values are fixed during each iteration. Mutable integer variables
+          could sever as unrestricted counters, resulting in undecidable model checking.
+          Similarly, we prohibit mutable list variables, as their lengths could be used 
+          as counters. %TODO: talk about exponential growth without destructors.
+    \item [No variable shadowing] We disallow shadowing of variable names, as it could
+          be used to forge the origin of integers, leading to unrestricted comparisons.
+          \begin{verbatim}
+            \input{programs/eq_from_idxc_shadowing.py}
+          \end{verbatim} 
+    \item [Functions do not take booleans as arguments.] Since booleans are mutable
+          this allow the iterated list to change during the iteration. Depending on the
+          semantics of such situation, this could lead to undesirable behavior. For example, 
+          it could be used to forge the origin of integers:
+          \begin{verbatim}
+            \input{programs/eq_from_idxc_shadowing.py}
+          \end{verbatim} 
+    \item [One way booleans.] Boolean variables are initialized to \texttt{false}, and 
+           once they are set to \texttt{true}, they cannot be to \texttt{false}.
+           However, during each iteration, all variables declared in the loop are reinitialized to \texttt{false}.
+           This restriction allows us to reduce the \kl{model checking problem} to the the satisfiability
+           of a \emph{first order} formula on finite words. This problem is not only decidable
+           but also solvable by well-engineered existing tools, such as automata-based solvers (e.g., MONA) and classical SMT solvers (e.g., Alt-Ergo, Z3, CVC5).
+           Without this restriction, the problem would require the use the MSO logic on words which is still decidable but
+           not supported by the SMT solvers.
 \end{description}
 
 In order to formally reason about the subset of Python that we want to  model,
