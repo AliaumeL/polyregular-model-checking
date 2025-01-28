@@ -17,7 +17,7 @@ words after the stopword. For instance, \texttt{f(["slim", "shy", "stop",
 
 \begin{figure}[h]
 \begin{verbatim}
-def f( words : list[str] ) -> generator[list[str]]:
+def f( words ):
     seen_stop_w1 = False
     for (i, w1) in enumerate(words):
         seen_stop_w2 = False
@@ -97,16 +97,38 @@ ingredients: we explicitly distinguish between boolean, index and list
 expressions, and always syntactically group indices with their origin list
 (both in the for construction and in the input arguments of functions); we
 distinguish between boolean variable introductions (which are always mutable),
-and list variable introductions (which are always immutable). 
-To reason about this, let us first introduce a typing system, which is 
-quite short: 
+and list variable introductions (which are always immutable). To reason about
+this, let us first introduce our typing system, which is relatively
+straightforward except for the type of the \kl{indices} that is a dependent
+type: every index type is associated to a \kl{list expression} from which it
+originates. For now, we do not precise the syntax of \kl{list expressions},
+which will be given later on.
 \begin{align*}
-    \tau,\sigma &::= \TBool\\
+    \tau,\sigma ::=&~ \TBool\\
     \mid&~ \TPos[o] & o \in \oexpr \\
     \mid&~ \TOut[n] & n \in \Nat \\
-    \mid&~ \tau_1 \times \dots \times \tau_k \to \TBool \\
-    \mid&~ \tau_1 \times \dots \times \tau_k \to \TOut[n] 
+    \mathsf{arg} ::=&~ (\TOut[n],k) & k \in \Nat \\
+    \mathsf{fun} ::=&~ 
+           \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TBool \\
+    \mid&~ \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TOut[n] 
 \end{align*}
+
+\AP For instance, the function \texttt{getIndex(l, i)} that returns the $i$-th
+element of the list $l$ has type $(\TOut[n+1],1) \to \TOut[n]$, where $n$ is
+the nesting depth of the list $l$.
+
+\begin{verbatim}
+def getBetweenIndicesBeforeStop(l, i, j): 
+    seen_stop = False             # initialize a variable to false
+    for (k, x) in enumerate(l):   # enumerate over a list 
+        if i <= k and k <= j:     # compare indices 
+            if x == "stop":       # compare lists to constants
+                seen_stop = True  # set booleans to true
+            if not seen_stop:     # boolean expressions
+                yield x           # yielding elements
+\end{verbatim}
+In this example, variables $k$, $i$, and $j$ have type $\TPos[l]$, and $l$ has
+type $\TOut[n]$ for some $n > 0$.
 
 Let us immediately provide a semantics for these types, by stating that
 $\semT{\TBool} = \Bools$, $\semT{\TPos} = \Nat$ and $\semT{\TOut} = \bigcup_{n
