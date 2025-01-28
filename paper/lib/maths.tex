@@ -67,7 +67,7 @@
 \NewDocumentCommand{\hlletboolean}{m m}{\withkl{\kl[\hlletboolean]}{\cmdkl{\mathsf{let~mut}} \; #1\cmdkl{~=~\bfalse \; \mathsf{in}} \; #2}}
 \knowledge{\hlletboolean}{notion}
 
-\NewDocumentCommand{\hlsettrue}{m}{\withkl{\kl[\hlsettrue]}{\; #1 \; \leftarrow \; \mathsf{true}}}
+\NewDocumentCommand{\hlsettrue}{m}{\withkl{\kl[\hlsettrue]}{\; #1 \; \cmdkl{\leftarrow} \; \cmdkl{\mathsf{true}}}}
 \knowledge{\hlsettrue}{notion}
 
 \NewDocumentCommand{\hlfor}{m m m}{\withkl{\kl[\hlfor]}{\cmdkl{\mathsf{for}^{\rightarrow}} \; #1 \; \cmdkl{\mathsf{in}} \; #2 \; \cmdkl{\mathsf{do}} \; #3}}

@@ -116,8 +116,15 @@ which will be given later on.
 \AP For instance, the function \texttt{getBetweenIndicesBeforeStop(l, i, j)}
 that returns all elements of the list $l$ between the indices $i$ and $j$
 before the first occurrence of the element \texttt{"stop"} has type
-$(\TOut[2],2) \to \TOut[2]$.
+$(\TOut[2],2) \to \TOut[2]$, that is, we are given an input list $l$ together
+with two pointers to indices of this particular list. We provide in
+\cref{fig:python-example}
+the
+code of this function, that illustrates the allowed constructions in our
+language and highlights the typing constraints that we enforce.
 
+\begin{figure}[h]
+\centering
 \begin{tikzpicture}[remember picture, overlay]
     % put an arc edge between vari -> varl and varj -> varl to show that they point to "l"
     % coordinates are used using (pic cs:vari)  (e.g. (pic cs:vari) |- (pic cs:varl))
@@ -139,17 +146,40 @@ $(\TOut[2],2) \to \TOut[2]$.
                 \ControlFlowTok{yield}\NormalTok{ x           }\CommentTok{\# yielding elements}
 \end{Highlighting}
 \end{Shaded}
+    \caption{Computing a function in our subset of Python, dependencies between indices and 
+    list expressions are made explicit by thick red arrows.}
+    \label{fig:python-example}
+\end{figure}
 
 
-In this example, variables $k$, $i$, and $j$ have type $\TPos[l]$, and $l$ has
-type $\TOut[n]$ for some $n > 0$.
+\paragraph{Syntax.} Now, we can define the syntax of our high-level language.
+Let us start with the non-surprising ingredients, namely Boolean expressions
+($\bexpr$, defined in \cref{fig:bool-expr}),
+constant expressions and list expressions ($\cexpr$ and $\oexpr$, defined in
+\cref{fig:const-expr} and \cref{fig:out-expr}
+respectively). Now, for the control flow
+constructs, let us highlight that we distinguish two types of for loops: one
+that iterates forward over a list and one that iterates backward. Beware that
+for the backward iteration, the intended semantics is the one of the Python
+fragment \texttt{for (i,x) in reversed(enumerate(l))}, and \textbf{not} the
+Python fragment \texttt{for (i,x) in enumerate(reversed(l))}, as the latter
+would allow to define the equality predicate between two lists, leading to an
+undecidable \kl{model checking problem}. The syntax of control statements is
+described in \cref{fig:high-level-stmt}, and the
+syntax of \kl{high-level programs} is described in
+\cref{fig:high-level-program}.
 
-Let us immediately provide a semantics for these types, by stating that
-$\semT{\TBool} = \Bools$, $\semT{\TPos} = \Nat$ and $\semT{\TOut} = \bigcup_{n
-\in \Nat} {{{(\Sigma)}^*}^{\dots}}^{*}$. Indeed, the extra type information in
-the positions, namely an origin list expression, is discarded at runtime.
 
-\textbf{TODO: this is a convincing subset of python}
+\paragraph{Semantics.} If the semantics of the boolean expressions and list
+expressions are classical, let us talk about statements. As already explained,
+the semantics of a backward loop iteration over a list $l$ is to iterate over
+the reverse of the enumeration of $l$. Furthermore, we took the decision to
+allow combining statements $\hlyield{x}$ and $\hlreturn{y}$ in the same function,
+with the semantics of combining their output. For instance, the program
+$\hlseq{(\hlforRev{(i,x)}{l}{\hlyield{x}})}{\hlreturn{l}}$ outputs the reverse of
+$l$ and then $l$ itself.
+Other than this technical choice, the semantics follows the one of
+our subset of Python.
 
 Most of the restrictions listed above are straightforward to check, except for
 the origin restriction on the integer variables, which we now will refer to as
