@@ -104,11 +104,12 @@
 
 
 \newcommand{\circled}[2]{%
-\hypertarget{#2}{%
+\hypertarget{#2}{}%
 \tikz[baseline=(char.base),color=A2,thick]{%
 \node[shape=circle,draw,inner sep=1pt,font=\tiny] (char) {#1};%
-}}}
+}}
 \newcommand{\circleref}[2]{%
-  \tikz[baseline=(char.base),color=A2,thick]{%
-      \node[shape=circle,draw,inner sep=1pt,font=\tiny] (char) {\hyperlink{#2}{#1}};}%
-}
+\hyperlink{#2}{%
+\tikz[baseline=(char.base),color=A2,thick]{%
+\node[shape=circle,draw,inner sep=1pt,font=\tiny] (char) {#1};}%
+}}

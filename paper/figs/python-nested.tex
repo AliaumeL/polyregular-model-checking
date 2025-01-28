@@ -3,24 +3,24 @@
 \KeywordTok{def}\NormalTok{ getBetween(l, i, j):}
     \CommentTok{""" Get elements between i and j """}
     \ControlFlowTok{for}\NormalTok{ (k, c) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(l):}
-        \ControlFlowTok{if}\NormalTok{ i }\OperatorTok{\textless{}=}\NormalTok{ k }\KeywordTok{and}\NormalTok{ k }\OperatorTok{\textless{}=}\NormalTok{ j:} \circled{1}{code-comparisons}
-            \ControlFlowTok{yield}\NormalTok{ c} \circled{2}{code-yield}
+        \ControlFlowTok{if}\NormalTok{ i }\OperatorTok{\textless{}=}\NormalTok{ k }\KeywordTok{and}\NormalTok{ k }\OperatorTok{\textless{}=}\NormalTok{ j:} \circled{1}{code:comparisons}
+            \ControlFlowTok{yield}\NormalTok{ c} \circled{2}{code:yield}
 
 \KeywordTok{def}\NormalTok{ containsAB(w):}
     \CommentTok{""" Contains "ab" as a subsequence """}
-\NormalTok{    seen\_a }\OperatorTok{=} \VariableTok{False} \circled{3}{code-mut-bool}
+\NormalTok{    seen\_a }\OperatorTok{=} \VariableTok{False} \circled{3}{code:mutbool}
     \ControlFlowTok{for}\NormalTok{ (x, c) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(w):}
-        \ControlFlowTok{if}\NormalTok{ c }\OperatorTok{==} \StringTok{"a"}\NormalTok{:} \circled{4}{code-string-comp}
-    \NormalTok{            seen\_a }\OperatorTok{=} \VariableTok{True} \circled{5}{code-set-true}
+        \ControlFlowTok{if}\NormalTok{ c }\OperatorTok{==} \StringTok{"a"}\NormalTok{:} \circled{4}{code:string:comp}
+    \NormalTok{            seen\_a }\OperatorTok{=} \VariableTok{True} \circled{5}{code:settrue} 
         \ControlFlowTok{elif}\NormalTok{ seen\_a }\KeywordTok{and}\NormalTok{ c }\OperatorTok{==} \StringTok{"b"}\NormalTok{:}
             \ControlFlowTok{return} \VariableTok{True}
     \ControlFlowTok{return} \VariableTok{False}
 
 \KeywordTok{def}\NormalTok{ subwordsWithAB(word):}
     \CommentTok{""" Get subwords that contain "ab" """}
-    \ControlFlowTok{for}\NormalTok{ (i,c) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(word):} \circled{6}{code-enumerate}
-        \ControlFlowTok{for}\NormalTok{ (j,d) }\KeywordTok{in}\BuiltInTok{ reversed(}\BuiltInTok{enumerate}\NormalTok{(word)):} \circled{7}{code-enumerate-rev}
-    \NormalTok{            s }\OperatorTok{=}\NormalTok{ getBetween(word, i, j)} \circled{8}{code-immutable-variable}
+    \ControlFlowTok{for}\NormalTok{ (i,c) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(word):} \circled{6}{code:enumerate}
+        \ControlFlowTok{for}\NormalTok{ (j,d) }\KeywordTok{in}\BuiltInTok{ reversed(}\BuiltInTok{enumerate}\NormalTok{(word)):} \circled{7}{code:enumerate-rev}
+    \NormalTok{            s }\OperatorTok{=}\NormalTok{ getBetween(word, i, j)} \circled{8}{code:immutable:variable}
             \ControlFlowTok{if}\NormalTok{ containsAB(s):}
                 \ControlFlowTok{yield}\NormalTok{ s}
 \end{Highlighting}

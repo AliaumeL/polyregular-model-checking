@@ -28,25 +28,25 @@ which are satisfied in our example:
     \item[Loop Constructions.]
         We only allow \texttt{for} loops iterating forward
         or backward over a list, as in 
-        \circleref{6}{code-enumerate} and \circleref{7}{code-enumerate-rev}.
+        \circleref{6}{code:enumerate} and \circleref{7}{code:enumerate-rev}.
         In particular, \texttt{while} loops and recursive functions 
         are forbidden, which guarantees termination of our programs.
 
     \item [Mutable Variables.] The only mutable variables are booleans. The
         values of integer variables are introduced by the \texttt{for} loop
-        as in \circleref{6}{code-enumerate},
+        as in \circleref{6}{code:enumerate},
         and their values are fixed during each iteration. Mutable integer
         variables could serve as unrestricted counters, resulting in
         undecidable \kl{model checking}. Similarly, we prohibit mutable list
         variables, as their lengths could be used as counters.
         However, we still allow the use of immutable
-        list variables, as in \circleref{8}{code-immutable-variable}.
+        list variables, as in \circleref{8}{code:immutable:variable}.
 
     \item [Restricted equality checks for nested words.] 
         We disallow equality
         checks between two \kl{nested words}, 
         unless one of them is a constant expression.
-        This is what happens in point \circleref{4}{code-string-comp}
+        This is what happens in point \circleref{4}{code:string:comp}
         of our \cref{fig:python-example-nested}.
         Without this restriction, \kl{model checking} would be undecidable
         (\cref{lem:umc-equality-nested-words}).
@@ -58,11 +58,11 @@ which are satisfied in our example:
         allow comparisons between integers that are indices of the
         same list.
         Every integer is associated to a list expression.
-        For instance, in points \circleref{6}{code-enumerate} and
-        \circleref{7}{code-enumerate-rev} of our example, the variables
+        For instance, in points \circleref{6}{code:enumerate} and
+        \circleref{7}{code:enumerate-rev} of our example, the variables
         $i$ and $j$ are associated to the same list variable \texttt{word}.
         Similarly, in for the comparison 
-        of point \circleref{1}{code-comparisons} to be valid,
+        of point \circleref{1}{code:comparisons} to be valid,
         the variables $k$,$i$, and $j$ should all be associated to the same 
         list variable $l$.
 
@@ -109,9 +109,9 @@ which are satisfied in our example:
 
     \item [Boolean Updates.] 
         Boolean variables are initialized to \texttt{false}
-        as in \circleref{3}{code-mut-bool}, and
+        as in \circleref{3}{code:mutbool}, and
         once they are set to \texttt{true} as in 
-        \circleref{5}{code-set-true},
+        \circleref{5}{code:settrue},
         they cannot be reset to \texttt{false}. 
         We depart here from the semantics of Python by
         considering lexical scoping of variables; in
