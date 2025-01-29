@@ -10,9 +10,20 @@ power of Turing machine and this is not absurd:
     \item Simple string rewriting programs
     \item "Extract transform load" pipelines
 \end{itemize}
+For these programs one wants to certify their behaviour,
+for instance using \intro{Hoare triples}
+$\hoaretriple{P}{\texttt{code}}{Q}$
+where $P$ and $Q$ are predicates and \texttt{code} is a program,
+meaning that whenever the input satisfies property $P$,
+the output of the program satisfies property $Q$.
+
+\AP When the language is expressive enough, which is our case, this can be
+reduced to the problem of \intro{model checking}. The crucial property of
+\kl{high-level language} it hat it has decidable \intro{model checking
+problem}: given a function $f \colon X \to \Bools$, we can decide whether there
+exists $x \in X$ such that $f(x) = \btrue$.
 
 \paragraph{Contributions.} 
-
 \begin{itemize}
     \item Introduced a high level language that is close to Python and 
         suitable for model checking.
@@ -26,7 +37,3 @@ power of Turing machine and this is not absurd:
         the resulting formulas (CVC4, Z3, Alt-Ergo and Mona), showing
         their complementarity.
 \end{itemize}
-
-\AP The crucial property of \kl{high-level language} it hat it has decidable 
-\intro{model checking problem}: given a function $f \colon X \to \Bools$,
-we can decide whether there exists $x \in X$ such that $f(x) = \btrue$.

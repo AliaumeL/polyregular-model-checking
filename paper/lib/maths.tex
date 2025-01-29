@@ -5,6 +5,12 @@
 \NewDocumentCommand{\FO}{ o }{\IfNoValueTF{#1}{\kl[\FO]{\mathsf{FO}}}{\kl[\FO]{\mathsf{FO}[{#1}]}}}
 \knowledge{\FO}{notion}
 
+\NewDocumentCommand{\MSO}{ o }{\IfNoValueTF{#1}{\kl[\MSO]{\mathsf{MSO}}}{\kl[\MSO]{\mathsf{MSO}[{#1}]}}}
+\knowledge{\MSO}{notion}
+
+\NewDocumentCommand{\hoaretriple}{ m m m }{\withkl{\kl[\hoaretriple]}{\{ #1 \} \; #2 \; \{ #3 \}}}
+\knowledge{\hoaretriple}{notion}
+
 % Semantic 
 \NewDocumentCommand{\NestedWords}{O{}}{\kl[\NestedWords]{\mathcal{W}_{#1}}}
 \knowledge{\NestedWords}{notion}
