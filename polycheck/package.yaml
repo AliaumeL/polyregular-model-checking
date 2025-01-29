@@ -1,4 +1,4 @@
-name: Polycheck
+name: polycheck
 version: 0.1.0.0
 github: "AliaumeL/polyregular-model-checking"
 license: GPL-3.0
@@ -61,7 +61,7 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - polyreg
+      - polycheck
       - optparse-applicative
   benchmarker:
     main: Main.hs
@@ -71,7 +71,7 @@ executables:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - polyreg
+      - polycheck
       - optparse-applicative
 tests:
   polycheck-test:
@@ -82,6 +82,6 @@ tests:
       - -rtsopts
       - -with-rtsopts=-N
     dependencies:
-      - polyreg
+      - polycheck
       - hspec
       - QuickCheck
