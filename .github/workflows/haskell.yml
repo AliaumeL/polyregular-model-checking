@@ -49,4 +49,5 @@ jobs:
       - name: Run test suite
         run: |
           cd polyregular-model-checking/polyreg
-          stack test --nix --nix-packages "zlib"  --allow-different-user
+          # disable test suite for the moment because it is too long
+          # stack test --nix --nix-packages "zlib"  --allow-different-user

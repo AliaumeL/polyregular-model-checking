@@ -60,7 +60,7 @@ jobs:
           mkdir -p artifacts/${{ matrix.os }}
           cp $(stack path --local-install-root)/bin/* artifacts/${{ matrix.os }}/
           cp -R assets/ artifacts/${{ matrix.os }}/assets/
-          tar -czvf artifacts/${{ matrix.os }}/release-${{ matrix.target }}.tar.gz -C artifacts/${{ matrix.os }} .
+          tar -czvf artifacts/${{ matrix.os }}/release-${{ matrix.target }}.tar.gz -C artifacts/${{ matrix.os }}
       - name: Upload Release Assets
         if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: softprops/action-gh-release@v2
