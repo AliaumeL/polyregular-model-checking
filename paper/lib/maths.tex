@@ -71,10 +71,14 @@
 
 % Control flow constructs
 \NewDocumentCommand{\hlif}{m m m}{\withkl{\kl[\hlif]}{\cmdkl{\mathsf{if}} \; #1 \; \cmdkl{\mathsf{then}} \; #2 \; \cmdkl{\mathsf{else}} \; #3}}
+\NewDocumentCommand{\hlifnoelse}{m m}{\withkl{\kl[\hlif]}{\cmdkl{\mathsf{if}} \; #1 \; \cmdkl{\mathsf{then}} \; #2}}
 \knowledge{\hlif}{notion}
+
 
 \NewDocumentCommand{\hlyield}{m}{\withkl{\kl[\hlyield]}{\cmdkl{\mathsf{yield}} \; #1}}
 \knowledge{\hlyield}{notion}
+
+\NewDocumentCommand{\hlskip}{m}{\mathsf{skip}}
 
 \NewDocumentCommand{\hlreturn}{m}{\withkl{\kl[\hlreturn]}{\cmdkl{\mathsf{return}} \; #1}}
 \knowledge{\hlreturn}{notion}

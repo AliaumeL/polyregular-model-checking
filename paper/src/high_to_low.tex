@@ -238,7 +238,46 @@ $\hlforRev{(i,x)}{\ogen{s}}{\hlyield{x}}$, where the statement $s$ is defined
 to print all elements of a list $u$ except the first one, namely:
 $\hlletboolean{b}{\hlfor{(j,y)}{ u }{\hlif{b}{\hlyield{y}}{\hlsettrue{b}}}}$.
 The semantics of $\hlforRev{(i,x)}{\ogen{s}}{\hlyield{x}}$ is to print all
-elements of $u$ in reverse order, skipping the last loop iteration.
-To compute this new statement, 
-we will use the following \emph{trick} that can be traced back to 
-\cite{BOJA18}
+elements of $u$ in reverse order, skipping the last loop iteration. To compute
+this new statement, we will use the following \emph{trick} that can be traced
+back to \cite[Lemma 8.1 and Figure 6, p. 68]{bojanczyk2018polyregular}: we will
+use two versions of the statement $s$, the first one $s_\mathsf{rev}$, will be
+$s$ where all boolean introductions are removed, if statements
+$\hlif{e}{s_1}{s_2}$ are replaced by sequences $\hlseq{s_1}{s_2}$, every loop
+direction is swapped, and every sequence of statements is reversed. Its
+intended semantics is to reach all possible yield statements of $s$ in the
+reversed order. 
+In our case, $s_\mathsf{rev}$ is defined as:
+\begin{equation*}
+    \hlforRev{(j',y')}{ u }{\hlyield{y'}}
+\end{equation*}
+Remark that there are some statements that are reachable in
+$s_\mathsf{rev}$, but do not correspond to a production when iterating over $s$
+in reverse order, because of the boolean variables and conditionals that we
+discarded. To ensure that we only output correct elements,
+we will replace every $\hlyield{\cdot}$ statement in $s_{\mathsf{rev}}$ by a
+copy of $s$, leading to the program $s' = s_{\mathsf{rev}}[ \hlyield{\cdot} \mapsto s ]$.
+In our case, this leads to the following program:
+\begin{align*}
+    \hlforRev{(j',y')}{ u }{ s }
+\end{align*}
+It is now possible to replace every yield statement in this new program
+by a conditional check ensuring that the output would actually be 
+produced by the original program $s$.
+\begin{equation*}
+    s'' = s'[ \hlyield{e} \mapsto \hlifnoelse{\bcomp{i}{=}{j'}}{\hlyield{e}}]
+\end{equation*}
+In our case, the final program is the following one:
+\begin{align*}
+    &\mathsf{for}^{\leftarrow}~(j',y')~\mathsf{in}~ u ~\mathsf{do} \\
+    &\quad \mathsf{for}^{\rightarrow}~(j, y)~\mathsf{in}~ u ~\mathsf{do} \\
+    &\quad \quad \mathsf{let}~\mathsf{mut}~b = \mathsf{false}~\mathsf{in} \\
+    &\quad \quad \mathsf{if} \; b \; \mathsf{then} \\
+    &\quad \quad \quad \mathsf{if} \; j = j' \; \mathsf{then} \\
+    &\quad \quad \quad \quad \mathsf{yield}~y \\
+    &\quad \quad \mathsf{else} \\
+    &\quad \quad \quad b \leftarrow \mathsf{true}
+\end{align*}
+This rewriting can be generalised to any program of the form
+$\hlforRev{(i,x)}{\ogen{s_1}}{s_2}$ combining the construction illustrated here
+with the one taking care of position variables in the case of forward loops.
