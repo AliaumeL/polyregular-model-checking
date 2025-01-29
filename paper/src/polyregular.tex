@@ -2,43 +2,105 @@
 \section{Polyregular Functions}
 \label{sec:polyregular}
 
-In this section, we introduce the concept of aperiodic polyregular functions,
-in terms of:
-\begin{itemize}
-    \item Simple For Programs
-    \item First order interpretations
-\end{itemize}
+Our strategy for showing that the \kl{high level language} has decidable model checking,
+is to show that is expressive power is captured by the class of \intro{first-order polyregular functions}
+introduced in \cite{bojanczyk2018polyregular}. In this section we provide its two equivalent characterizations 
+relevant for this paper:
+their equivalent characterizations
+that are relevant for this paper: \kl{first-order (simple) for programs}\footnote{
+    In \cite{bojanczyk2018polyregular} the authors use the term \kl{first-order for-programs}. 
+    In this paper we use the word `simple' to differentiate it from \kl{high-level for programs}. 
+} \cite[p. 19]{bojanczyk2018polyregular} and \kl{first-order (string-to-string) interpretations}
+\cite[Definition 4]{bojanczyk2019string}.
+
+To make the models suitable for large alphabets (such as the Unicode characters)
+present them in a symbolic framework (related to \cite{d2017power}, but not exactly the same) explained in the next section.
+The non-symbolic versions models are proven in \cite{bojanczyk2018polyregular} to be equivalent.
+In section \ref{sec:low_level} we show that the \kl{simple first-order language}
+can be translated to a \kl{first-order string-to-string transduction}.
+We believe that the other inclusion should also hold (with a similar proof as the one in \cite{bojanczyk2018polyregular}),
+but it is out of this paper's scope.
+
+\subsection{Symbolic transductions}
+Consider the following program, that swaps all \texttt{a}'s to \texttt{b}.
+programs.swapatob.py
+Even though it operates on the entire Unicode alphabet, it only differentiates between three types of characters:
+\texttt{a}, \texttt{b} and the rest. In order to formalize this idea, model the Unicode alphabet as an infinite set $\mathcal{D}$,
+and we say that a transduction $T : \mathcal{D}^* \to \mathcal{D}^*$ is supported by a finite subset $A \subseteq \mathcal{D}$ if
+for every function $f: \mathcal{D} \to \mathcal{D}$ that does not touch elements of $A$ (i.e. for every $a \in A$,  $f^{-1}(a) = {a}$),
+it holds that: 
+\[ \forall_{w} T(f^*(w)) = f^*(T(w))\texttt{,} \]
+
+In the next two subsections we define symbolic versions of \kl{first-order simple for-programs} and \kl{first-order string-to-string transductions} which 
+define (some of the) finitely supported functions of type $\mathcal{D}^* \to \mathcal{D}^*$. 
 
 
-\subsection{First-order transductions}
+\subsection{First-Order Simple For-Programs}
+\intro{First-order simple for-programs} is a simple programming language that can be be seen
+as a simplified\footnote{Actually, its the \kl{high-level language} that is an expanded version of the \kl{first-order simple for-programs}.}
+version of the \kl{high-level language}.
+The main difference is that the \kl{simple for-programs} do not treat the (nested) words as first-class citizens -- there are no variables 
+of type $\text{word}$ and one cannot define functions. In particular, the for-loops can only iterate over the input word (or the reversed input word),
+so keeping track of the origin of the index variables is no longer required. Here is an example (see \cite{bojanczyk2018polyregular}
+for a more detailed description):
+%\emph{programs/reverse_words.spr}
+It is not hard to see that programs written in this language define programs $f : \mathcal{D}^* \to \mathcal{D}^*$ that is supported by the 
+finite set of letters used in the program (in this case $\{ \}$). 
+
+\subsection{First-Order String-To-String Transductions}
 
 \AP
-Let $\Sigma,\Gamma$ be finite alphabets. A
-\intro{first order transduction} $\mathcal{T}$ is 
-given by a finite set $T$ of \intro{transduction tags},
-a map $\text{arity} : T \to \Nat$ assigning an arity to each tag,
-and formulas in $\FO[\Sigma]$:
-\begin{itemize}
-    \item $\varphi_{\text{dom}}^t(x_1,\ldots,x_{\text{arity}(t)})$
-        for every $t \in T$,
-    \item $\varphi_{\leq}^{t,t'}((x_1,\ldots,x_{\text{arity}(t)}),(y_1,\ldots,y_{\text{arity}(t')}))$
-        for every $t,t' \in T$,
-    \item $\varphi_{a}^t(x_1,\ldots,x_{\text{arity}(t)})$
-        for every $t \in T$ and $a \in \Gamma$.
-\end{itemize}
-We furthermore assume that the formulas $\varphi_{a}^t$ are mutually exclusive 
-for a fixed $t$, and that the formula $\varphi_{\leq}^{t,t'}$ defines a total
-order on tuples of positions.
+A \intro{symbolic first-order string to string interpretation} is a logical way of defining transductions. It consists of: 
 
-Given a \kl{first order transduction} $\mathcal{T}$ and a word $w \in \Sigma^*$,
-one can define the \intro[foi]{evaluation} of $\mathcal{T}$ on $w$ as follows:
-it is the word obtained by the following process: 
 \begin{enumerate}
-    \item Enumerate all tags $t \in T$, and all tuples 
-        of positions $(i_1,\ldots,i_{\text{arity}(t)})$ in $w^{\text{arity}(t)}$.
-    \item Filter the above list based on the formulas $\varphi_{\text{dom}}^t$.
-    \item Sort the above list based on the order defined by the formula
-        $\varphi_{\leq}^{t,t'}$.
-    \item Map every tuple to a letter $a \in \Gamma$
-        whenever it satisfies the formula $\varphi_{a}^t$.
+\item A finite set $T$ of tags.
+\item A finite set $A$ of letters from $\mathcal{D}$.
+\item A function $\text{arity} : T \to \Nat$ assigning an arity to each tag.
+\item An output function function $\text{out} : T \to A + \{1, \ldots, \text{arity}(t)\}$. 
+\item A domain formula $\varphi_{\text{dom}}^t(x_1,\ldots,x_{\text{arity}(t)})$ for every tag $t \in T$.
+      The free variables represent positions in the input word, and can be queried by the following predicates: 
+      $x_i = x_j$, $x_i < x_j$, and $x_i =_L `a'$ for $a \in A$.
+\item An order formula $\varphi_{\leq}^{t,t'}((x_1,\ldots,x_{\text{arity}(t)}),(y_1,\ldots,y_{\text{arity}(t')}))$ for every pair of tags $t,t' \in T$. 
+      It can use the same basic predicates as the domain formula, and it has to define a total order on elements of $(t : T) \times \mathbb{N}^{\mathsf{arity}(t)}$.
 \end{enumerate}
+
+Observe that the order formula defines a relation on the set $(t : T) \times \mathbb{N}^{\mathsf{arity}(t)}$ of tags 
+equipped with position tuples of the appropriate arity. We say that a \kl{first-order interpretation} is valid if
+the order formula defines a total order. Every valid interpretation defines a function $f : \mathcal{D}^* \to \mathcal{D}^*$
+that is supported by $A$. The output for a word $w$ is obtained by the following process:
+\begin{enumerate}
+    \item Let $P = \{1, \ldots, |w|\}$ be the set of positions in $w$, and take the set $T(P) = (t : T) \times P^{\text{arity}(t)}$
+           of all tags from $T$ equipped with position tuples of the appropriate arity.
+    \item Filter out the elements that do not satisfy the domain formula.
+    \item Sort the remaining elements according to the order formula.
+    \item Assign a letter to each element according to the output function: 
+          In order to choose the letter for an element $t(p_1, \ldots, p_k)$, we look at the 
+          output of $\text{out}(t)$: if it is a letter $a \in A$ we simply choose it,
+          and if it is $i \in \{1, \ldots, k\}$ we choose the $p_i$-th letter of the input word.
+\end{enumerate}
+
+For example, here is a first-order that interpretation defines the function \texttt{swapAsToBs}. 
+It has two tags \texttt{printB} and \texttt{copy}, both of arity $1$. 
+The element $\mathtt{printB}(x)$ outputs the letter \texttt{'a'} and the tag $\mathtt{copy}(x)$
+outputs the letter of $x$-th position of the input word:
+\[
+\begin{tabular}{ccc}
+    $\text{out}(\mathtt{printB}) = \mathtt{b}$ & \ \ \ & $\text{out}(\mathtt{copy}) = 1$ \\
+\end{tabular}
+\]
+The element $\mathtt{printA}(x)$ is present in the output if $x$ is labelled with the letter \texttt{b}
+in the input, otherwise the element $\mathtt{copy}(x)$ is present:
+\[
+\begin{tabular}{ccc}
+    $\varphi_{\text{dom}}^{\mathtt{printA}}(x) : x =_L \mathtt{b}$ & \ \ \  &$\varphi_{\text{dom}}^{\mathtt{copy}}(x) : x \neq_L \mathtt{b}$ \\
+\end{tabular}
+\]
+Finally the tags are sorted by their positions, with ties resolved in favour of \texttt{printA}:
+\[ 
+\begin{tabular}{c|cc}
+    $\varphi_{\leq}$ & $\mathtt{printA}(x_1)$ & $\mathtt{copy}(x_1)$ \\
+    \hline
+    $\mathtt{printA}(x_2)$ & $x_1 \leq x_2$ & $x_1 < x_2$ \\
+    $\mathtt{copy}(x_2)$ & $x_1 \leq x_2$ & $x_1 \leq x_2$ \\
+\end{tabular}
+\]
