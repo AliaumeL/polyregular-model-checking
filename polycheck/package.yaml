@@ -1,10 +1,10 @@
-name: polyreg
+name: Polycheck
 version: 0.1.0.0
-github: "githubuser/polyreg"
-license: BSD-3-Clause
-author: "Author name here"
-maintainer: "example@example.com"
-copyright: "2024 Author name here"
+github: "AliaumeL/polyregular-model-checking"
+license: GPL-3.0
+author: "Aliaume Lopez and Rafał Stefański"
+maintainer: "ad.lopez@uw.edu.pl"
+copyright: "2025 Aliaume Lopez and Rafał Stefański"
 
 extra-source-files:
   - README.md
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description: Please see the README on GitHub at <https://github.com/githubuser/polyreg#readme>
+description: Please see the README on GitHub at <https://github.com/AliaumeL/polyregular-model-checking>
 
 dependencies:
   - base >= 4.7 && < 5
@@ -53,7 +53,7 @@ library:
   source-dirs: src
 
 executables:
-  polyreg-exe:
+  polycheck:
     main: Main.hs
     source-dirs: app
     ghc-options:
@@ -63,8 +63,18 @@ executables:
     dependencies:
       - polyreg
       - optparse-applicative
+  benchmarker:
+    main: Main.hs
+    source-dirs: benchmark
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - polyreg
+      - optparse-applicative
 tests:
-  polyreg-test:
+  polycheck-test:
     main: Spec.hs
     source-dirs: test
     ghc-options:

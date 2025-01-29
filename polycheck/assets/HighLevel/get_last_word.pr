@@ -1,0 +1,29 @@
+
+def wordAtPos( w : [Char] with (i) ) : [Char] := 
+    let mut seen_next_space := False in 
+    for (j,c) in enumerate (w) do 
+        if i < j and c === ' ' then 
+            seen_next_space := True
+        endif
+        if i < j and not seen_next_space then 
+            yield c
+        endif
+    done
+
+def words( w : [Char] ) : [ [Char] ] := 
+    let mut seen_space := False in 
+    for (i,c) in enumerate(w) do
+        if not seen_space then 
+            yield wordAtPos(w with (i))
+        endif
+        if c === ' ' then 
+            seen_space := True
+            yield wordAtPos(w with (i))
+        endif
+    done
+
+def main ( w : [Char] ) : [Char] := 
+    for (i,u) in reversed(enumerate(words(w))) do
+        return u
+    done
+

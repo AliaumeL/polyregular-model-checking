@@ -62,6 +62,65 @@ data Stmt v t = SIf (BExpr v t) (Stmt v t) (Stmt v t) t
                deriving (Show, Eq, Ord, Functor, Foldable, Traversable)
 
 
+programDepth :: Program v t -> Int
+programDepth (Program [] _) = 0
+programDepth (Program fs _) = maximum (map depthFun fs)
+    where
+        depthFun :: StmtFun v t -> Int
+        depthFun (StmtFun _ args s _) = depthStmt s 0
+
+        depthStmt :: Stmt v t -> Int -> Int
+        depthStmt (SIf _ s1 s2 _) x = max (depthStmt s1 x) (depthStmt s2 x)
+        depthStmt (SYield _ _) x = x
+        depthStmt (SOReturn _ _) x = x
+        depthStmt (SBReturn _ _) x = x
+        depthStmt (SLetOutput _ _ s _) x = depthStmt s x
+        depthStmt (SLetBoolean _ s _) x = depthStmt s x
+        depthStmt (SSetTrue _ _) x = x
+        depthStmt (SFor _ _ _ s _) x = depthStmt s (x + 1)
+        depthStmt (SSeq [] _) x = x
+        depthStmt (SSeq ss _) x = maximum (map (`depthStmt` x) ss)
+
+programSize :: Program v t -> Int
+programSize (Program fs _) = sum (map sizeFun fs)
+    where
+        sizeFun :: StmtFun v t -> Int
+        sizeFun (StmtFun _ args s _) = sizeStmt s
+
+        sizeStmt :: Stmt v t -> Int
+        sizeStmt (SIf b s1 s2 _) = 1 + sizeBExpr b + sizeStmt s1 + sizeStmt s2
+        sizeStmt (SYield _ _) = 1
+        sizeStmt (SOReturn _ _) = 1
+        sizeStmt (SBReturn _ _) = 1
+        sizeStmt (SLetOutput _ o s _) = 1 + sizeStmt s + sizeOExpr o
+        sizeStmt (SLetBoolean _ s _) = 1 + sizeStmt s
+        sizeStmt (SSetTrue _ _) = 1
+        sizeStmt (SSeq ss _) = sum (map sizeStmt ss)
+        sizeStmt (SFor _ _ o s _) = 1 + sizeStmt s + sizeOExpr o
+
+        sizeBExpr :: BExpr v t -> Int
+        sizeBExpr (BConst _ _) = 0
+        sizeBExpr (BNot b _) = sizeBExpr b
+        sizeBExpr (BOp _ b1 b2 _) = sizeBExpr b1 + sizeBExpr b2
+        sizeBExpr (BComp _ p1 p2 _) = 0
+        sizeBExpr (BVar _ _) = 0
+        sizeBExpr (BGen s _) = 1 + sizeStmt s
+        sizeBExpr (BApp _ os _) = sum (map (sizeOExpr . fst) os)
+        sizeBExpr (BLitEq _ c o _) = sizeOExpr o
+
+
+        sizeOExpr :: OExpr v t -> Int
+        sizeOExpr (OVar _ _) = 0
+        sizeOExpr (OConst _ _) = 0
+        sizeOExpr (OList os _) = sum (map sizeOExpr os)
+        sizeOExpr (OApp _ os _) = sum (map (sizeOExpr . fst) os)
+        sizeOExpr (OGen s _) = 1 + sizeStmt s
+
+
+
+
+
+
 oExprType :: OExpr v t -> t
 oExprType (OVar _ t) = t
 oExprType (OConst _ t) = t

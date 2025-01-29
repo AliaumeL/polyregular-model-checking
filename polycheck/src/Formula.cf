@@ -1,0 +1,28 @@
+-- Translate to haskell with `bnfc --haskell -d -p Parser SimpleForProgram.cf`
+-- Remember to remove the Test.hs file, which breaks the build
+-- 
+-- This file describes first order formulas
+-- over words. 
+
+comment "#";
+
+FConj  . Formula ::= Formula "and" Formula ;
+FDisj  . Formula ::= Formula "or" Formula  ;
+FImpl  . Formula ::= Formula "->" Formula  ;
+FEquiv . Formula ::= Formula "<->" Formula ;
+FTrue  . Formula ::= "true" ; 
+FFalse . Formula ::= "false" ;
+FNot   . Formula ::= "not" Formula ;
+FParen . Formula ::= "(" Formula ")" ;
+FChar  . Formula ::= Ident " = " CharRepr ;
+FTest  . Formula ::= Ident BTest Ident ; 
+coercions Formula 2;
+
+CharRepr . CharRepr ::= "'" Char "'"
+
+TLe  . BTest ::= "<=" ; 
+TLt  . BTest ::= "<" ; 
+TGe  . BTest ::= ">=" ; 
+TGt  . BTest ::= ">" ; 
+TEq  . BTest ::= "==" ; 
+TNeq . BTest ::= "!=" ;

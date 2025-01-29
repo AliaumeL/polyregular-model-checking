@@ -58,6 +58,28 @@ data ForStmt  =
 data ForProgram = ForProgram [BName] ForStmt deriving(Eq, Show)
 
 
+programDepth :: ForProgram -> Int
+programDepth (ForProgram _ stmt) = programDepth' stmt
+    where
+        programDepth' (SetTrue _) = 1
+        programDepth' (If _ t f) = max (programDepth' t) (programDepth' f)
+        programDepth' (For _ _ _ stmt) = 1 + programDepth' stmt
+        programDepth' (PrintPos _) = 1
+        programDepth' (PrintLbl _) = 1
+        programDepth' (Seq []) = 1
+        programDepth' (Seq stmts) = maximum $ map programDepth' stmts
+
+programSize :: ForProgram -> Int
+programSize (ForProgram _ stmt) = programSize' stmt
+    where
+        programSize' (SetTrue _) = 1
+        programSize' (If e t f) = 1 + programSize' t + programSize' f
+        programSize' (For _ _ _ stmt) = 1 + programSize' stmt
+        programSize' (PrintPos _) = 1
+        programSize' (PrintLbl _) = 1
+        programSize' (Seq stmts) = sum $ map programSize' stmts
+
+
 data Movement = MoveIfL  BoolExpr
               | MoveIfR  BoolExpr
               | MoveSeq  Int

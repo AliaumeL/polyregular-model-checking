@@ -2,12 +2,11 @@ FROM nixos/nix:latest AS builder
 
 RUN nix-channel --update
 
-COPY ./polyreg.nix /tmp/polyreg.nix
+COPY ./polycheck.nix /tmp/polycheck.nix
 COPY ./mona.nix    /tmp/mona.nix
 
-RUN nix-env -i -f /tmp/polyreg.nix -A polyreg-devenv
+RUN nix-env -i -f /tmp/polycheck.nix -A polycheck-devenv
 RUN nix-collect-garbage -d
-RUN rm -rf /tmp/polyreg-src/
 
 WORKDIR /
 

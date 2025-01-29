@@ -34,6 +34,23 @@ exists $x \in X$ such that $f(x) = \btrue$.
     \item Implemented a model checking algorithm for polyregular functions,
         by reducing it to the satisfiability of a first-order formula on finite words.
     \item We tested our program on examples using different backends to solve
-        the resulting formulas (CVC4, Z3, Alt-Ergo and Mona), showing
+        the resulting formulas (CVC5, Z3, Alt-Ergo and Mona), showing
         their complementarity.
 \end{itemize}
+\cite{z3} \cite{cvc5}
+\cite{HOARE69}
+\cite{MONA01}
+
+\paragraph{Related work.} The correspondence between subsets of string to
+string functions and first order logic dates back to the origins of automata
+theory and the seminal results of \cite{PEPI86,SCHU65,MNPA71}, establishing the
+equivalence between \emph{star-free languages}, \emph{first order definable
+languages}, and \emph{counter free automata}. Extensions of this correspondence
+to functions has been an active area of research (\cite{CADA15,MUSC19}), which
+we leverage in this work via the theory of \emph{polyregular functions}, a
+model that can be traced back to the work of \cite{ENMA02}, and whose theory
+has been developed and polished by \cite{bojanczyk2018polyregular}.
+
+
+\paragraph{Outline.}
+

@@ -2,6 +2,7 @@
 module Logic.Formulas (Sort(..), Quant(..), Var(..), Formula(..), Value(..),
     shiftVar,
     quantifierDepth,
+    formulaSize,
     simplifyFormula,
     addRealPositions,
     andList, orList, quantifyList, mapInVars, mapOutVars, mapVars,
@@ -129,6 +130,18 @@ quantifierDepth (FTag _ _) = 0
 quantifierDepth (FLetter _ _) = 0
 quantifierDepth (FTestPos _ _ _) = 0
 quantifierDepth (FRealPos _) = 0
+
+formulaSize :: Formula tag -> Int
+formulaSize (FConst _) = 1
+formulaSize (FVar _) = 1
+formulaSize (FBin _ l r) = 1 + formulaSize l + formulaSize r
+formulaSize (FNot l) = 1 + formulaSize l
+formulaSize (FQuant _ _ _ l) = 1 + formulaSize l
+formulaSize (FTag _ _) = 1
+formulaSize (FLetter _ _) = 1
+formulaSize (FTestPos _ _ _) = 1
+formulaSize (FRealPos _) = 1
+
 
 
 showFormulaGeneric :: Formula tag -> String 

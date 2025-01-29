@@ -17,7 +17,7 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
       - name: Build Docker Image
         run: |
-          nix-build ./polyreg.nix -A polycheck-img
+          nix-build ./polycheck.nix -A polycheck-img
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
@@ -25,6 +25,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Push Docker Image
         run: |
+          docker tag $(nix-build ./polycheck.nix -A polycheck-img) ${{ secrets.DOCKER_USERNAME }}/polycheck-small:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/polycheck-small:latest
   github:
     strategy:
@@ -51,23 +52,23 @@ jobs:
           enable-stack: true
       - name: Build release assets
         run: |
-          cd polyreg
+          cd polycheck
           stack setup
           stack build --copy-bins --ghc-options="-O2"
       - name: Package binaries
         run: |
-          cd polyreg
+          cd polycheck
           mkdir -p artifacts/${{ matrix.os }}
           cp $(stack path --local-install-root)/bin/* artifacts/${{ matrix.os }}/
           cp -R assets/ artifacts/${{ matrix.os }}/assets/
-          tar -czvf artifacts/${{ matrix.os }}/release-${{ matrix.target }}.tar.gz -C artifacts/${{ matrix.os }}
+          tar -czvf artifacts/${{ matrix.os }}/release-${{ matrix.target }}.tar.gz -C artifacts/${{ matrix.os }}/*
       - name: Upload Release Assets
         if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: softprops/action-gh-release@v2
         with:
-          files: "polyreg/*.tar.gz"
+          files: "polycheck/*.tar.gz"
       - name: Upload Artifacts
         if: ${{ github.event_name == 'workflow_dispatch' }}
         uses: actions/upload-artifact@v3
         with:
-          path: "polyreg/*.tar.gz"
+          path: "polycheck/*.tar.gz"
