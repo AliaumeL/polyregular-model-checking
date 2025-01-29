@@ -23,6 +23,12 @@ jobs:
         run: |
           cd paper
           make all
+      - name: Upload pdfs as artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: polycheck.pdf
+          path: paper/polycheck.pdf
+
   build:
     runs-on: ubuntu-latest
     container:

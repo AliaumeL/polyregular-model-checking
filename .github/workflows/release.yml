@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v.*.*.*"
+  workflow_dispatch:
+
+jobs:
+  github:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+    name: Polycheck - Release - ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Haskell
+        uses: actions/setup-haskell@v1
+        with:
+          stack-version: "latest"
+      - name: Build release assets
+        run: |
+          cd polyreg
+          stack setup
+          stack build --copy-bins --ghc-options="-O2 -fllvm"
+      - name: Package binaries
+        run: |
+          cd polyreg
+          mkdir -p artifacts/${{ matrix.os }}
+          cp $(stack path --local-install-root)/bin/* artifacts/${{ matrix.os }}/
+          cp -R assets/ artifacts/${{ matrix.os }}/assets/
+          tar -czvf artifacts/${{ matrix.os }}/release-${{ matrix.target }}.tar.gz -C artifacts/${{ matrix.os }} .
+      - name: Upload Release Assets
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "polyreg/*.tar.gz"
+      - name: Upload Artifacts
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/upload-artifact@v3
+        with:
+          path: "polyreg/*.tar.gz"
