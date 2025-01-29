@@ -34,7 +34,7 @@ jobs:
         run: |
           cd polyreg
           stack setup
-          stack build --copy-bins --ghc-options="-O2 -fllvm"
+          stack build --copy-bins --ghc-options="-O2"
       - name: Package binaries
         run: |
           cd polyreg
