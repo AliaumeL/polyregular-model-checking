@@ -42,12 +42,12 @@ jobs:
           git clone https://github.com/AliaumeL/polyregular-model-checking.git
       - name: Build
         run: |
-          cd polyregular-model-checking/polyreg
+          cd polyregular-model-checking/polycheck
           # --nix to use nix dependencies
           # --allow-different-user because github changes the user
           stack build --nix --nix-packages "zlib" --allow-different-user
       - name: Run test suite
         run: |
-          cd polyregular-model-checking/polyreg
+          cd polyregular-model-checking/polycheck
           # disable test suite for the moment because it is too long
           # stack test --nix --nix-packages "zlib"  --allow-different-user

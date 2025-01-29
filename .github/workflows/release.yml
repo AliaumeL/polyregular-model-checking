@@ -25,7 +25,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Push Docker Image
         run: |
-          docker tag $(nix-build ./polycheck.nix -A polycheck-img) ${{ secrets.DOCKER_USERNAME }}/polycheck-small:latest
+          docker load < $(nix-build ./polycheck.nix -A polycheck-img)
           docker push ${{ secrets.DOCKER_USERNAME }}/polycheck-small:latest
   github:
     strategy:
