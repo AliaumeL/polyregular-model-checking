@@ -28,15 +28,18 @@ These lists can be created by \emph{yielding} values in a loop, such
 as in \circleref{2}{code:yield}. 
 In order to ensure decidable \kl{model checking}, we
 also will enforce the following conditions, which are satisfied in our example:
-\begin{description}
-    \item[Loop Constructions.]
+\begin{enumerate}[label=Restriction \roman*:, ref=Rest. \roman*]
+    \item \textbf{Loop Constructions.}
+        \label{item:loop-constructions}
         We only allow \texttt{for} loops iterating forward
         or backward over a list, as in 
         \circleref{6}{code:enumerate} and \circleref{7}{code:enumerate:rev}.
         In particular, \texttt{while} loops and recursive functions 
         are forbidden, which guarantees termination of our programs.
 
-    \item [Mutable Variables.] The only mutable variables are booleans. The
+    \item \textbf{Mutable Variables.} 
+        \label{item:mut-variables}
+        The only mutable variables are booleans. The
         values of integer variables are introduced by the \texttt{for} loop
         as in \circleref{6}{code:enumerate},
         and their values are fixed during each iteration. Mutable integer
@@ -46,7 +49,8 @@ also will enforce the following conditions, which are satisfied in our example:
         However, we still allow the use of immutable
         list variables, as in \circleref{8}{code:immutable:variable}.
 
-    \item [Restricted equality checks for nested words.] 
+    \item \textbf{Equality Checks.}
+        \label{item:equality-checks}
         We disallow equality
         checks between two \kl{nested words}, 
         unless one of them is a constant expression.
@@ -55,7 +59,7 @@ also will enforce the following conditions, which are satisfied in our example:
         Without this restriction, \kl{model checking} would be undecidable
         (\cref{lem:umc-equality-nested-words}).
         
-    \item [Integer Comparisons.] 
+    \item \textbf{Integer Comparisons.} 
         The only allowed operations on integers
         are usual comparisons operators (equality, inequalities).
         However, we only
@@ -94,14 +98,16 @@ also will enforce the following conditions, which are satisfied in our example:
         \kl{model checking problem}.
 
 
-    \item [Variable Shadowing.] 
+    \item \textbf{Variable Shadowing.} 
+        \label{item:variable-shadowing}
         We disallow shadowing of variable names, as it could
           be used to forge the origin of integers, leading to unrestricted comparisons.
           \begin{verbatim}
             \input{programs/eq_from_idxc_shadowing.py}
           \end{verbatim} 
 
-    \item [Boolean Arguments.] 
+    \item \textbf{Boolean Arguments.}
+        \label{item:boolean-arguments}
         Allowing functions to take boolean arguments
         would allow to forge the origin of integers,
         by considering the function \texttt{switch(l1, l2, b)} which
@@ -111,7 +117,7 @@ also will enforce the following conditions, which are satisfied in our example:
             \input{programs/eq_from_idxc_shadowing.py} 
         \end{verbatim} 
 
-    \item [Boolean Updates.] 
+    \item \textbf{Boolean Updates.} 
         Boolean variables are initialized to \texttt{false}
         as in \circleref{3}{code:mutbool}, and
         once they are set to \texttt{true} as in 

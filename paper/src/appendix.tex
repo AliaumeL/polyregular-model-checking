@@ -318,3 +318,19 @@ This is an example appendix
         \end{example}
 \end{proof}
 
+
+\section{High Level to Low Level Translation}
+
+
+\begin{lemma}
+    \label{lem:fungenexpr}
+    For every \kl{high level function} $\hlfundef{f}{x_1, \dots, x_n}{s}$,
+    for every arguments $a_1, \dots, a_n \in \aexpr$,
+    for every \kl{evaluation environment} $\rho$,
+    \begin{equation*}
+        \semO{ f (a_1, \dots, a_n) }{\rho}
+        = 
+        \semO{ \ogen{ s[a_1/x_1, \dots, a_n/x_n] } }{\rho}
+        \quad .
+    \end{equation*}
+\end{lemma}

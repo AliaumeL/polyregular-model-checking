@@ -115,11 +115,11 @@
 \NewDocumentCommand{\bliteq}{m m}{\withkl{\kl[\bliteq]}{#1 \; \cmdkl{=_{\text{lit}}} \; #2}}
 \knowledge{\bliteq}{notion}
 
-\NewDocumentCommand{\bgen}{m}{\withkl{\kl[\bgen]}{\mathopen{\cmdkl{\langle}} #1 \mathclose{\cmdkl{\rangle}}}}
+\NewDocumentCommand{\bgen}{m}{\withkl{\kl[\bgen]}{\mathopen{\cmdkl{\langle}} #1 \mathclose{\cmdkl{\rangle_{\text{b}}}}}}
 \knowledge{\bgen}{notion}
 
 % Output operations
-\NewDocumentCommand{\ogen}{m}{\withkl{\kl[\ogen]}{\langle #1 \rangle}}
+\NewDocumentCommand{\ogen}{m}{\withkl{\kl[\ogen]}{\mathopen{\cmdkl{\langle}} #1 \mathclose{\cmdkl{\rangle_{\text{l}}}}}}
 \knowledge{\ogen}{notion}
 
 \NewDocumentCommand{\cchar}{m}{\withkl{\kl[\cchar]}{\mathsf{char}(#1)}}

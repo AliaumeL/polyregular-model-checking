@@ -2,97 +2,132 @@
 \section{From High Level to Low Level For Programs}
 \label{sec:htl}
 
-% data Transformation = LitEqElimination
-%                     | FunctionElimination
-%                     | LiteralElimination    
-%                     | BooleanElimination
-%                     | LetOutputElimination
-%                     | ReturnElimination
-%                     | ForLoopExpansion
-%                     | LetBoolsToTop
-%                     deriving (Eq,Show,Read,Ord,Enum)
+\AP In this section, we provide a compilation from high level to low level For
+programs. One of the main differences between the two languages is the lack of
+functions in the latter. To smoothen the conversion between the two, we
+introduce a new constructon to the language, that are \intro{generator
+expressions}, representing the evaluation of a function on a given input.
+Namely, we add the constructor $\intro*\ogen{s}$, and $\intro*\bgen{s}$ respectively to the
+syntax of \kl{list expressions} and \kl{boolean expressions}. 
 
-In this section, we provide a compilation from high level to low level For
-programs. In order to do so, we introduce a new constructon to the language,
-that are \emph{generator expressions}, representing the evaluation of a
-function on a given input. Namely, we add $\ogen{s}$ to the syntax of
-expressions, where $s \in \hlstmt$, and has type $\TOut[n]$ for some $n$.
-Similarly, we add $\bgen{s}$ to the syntax of boolean expressions, where $s \in
-\hlstmt$ and has type $\TBool$. Note that the semantics of these expressions
-should be carefully defined as follows: evaluating $\ogen{s}$ should be
-equivalent to evaluating $s$ in the current context \emph{hiding all boolean
-variables}. Because of the non-shadowing property of the language, and because
-boolean variables are the only ones that can be mutated, this ensures that
-evaluating $\ogen{s}$ multiple times will always yield the same result in a
-given context. 
+\paragraph{Generator Expressions.} Let us briefly discuss the new typing rules
+and semantics of these \kl{generator expressions}. The intended meaning of a
+generator expression $\ogen{s}$ is to evaluate the statement $s$ in the current
+context and collect its output. For instance, $\ogen{\hlreturn{x}}$ is
+equivalent to $x$, and $\ogen{\hlseq{\hlyield{x}}{\hlyield{y}}}$ is equivalent
+to $\olist{x,y}$. The semantics are similarly defined for \kl{boolean
+expressions}. It should therefore not be surprising that if a
+\kl[hl]{statement} has type $\TOut[n]$, then the \kl{generator expression}
+$\ogen{s}$ also has type $\TOut[n]$ (and similarly for \kl{boolean
+expressions}). However, there is one key ingredient in the semantics of such
+expressions: when evaluating the statement $s$, we hide all boolean variables
+from the \kl{evaluation context}. In particular,
+$\hlletboolean{b}{\hlreturn{\bgen{ \hlreturn{b} }}}$ is an \emph{invalid
+program}, because the variable $b$ is undefined in the context of the generator
+expression $\bgen{b}$. We refer the reader to the appendix and
+\cref{fig:generators} for the formal definitions of the typing rules and
+semantics of these expressions. The key lemma implied by this design choice is
+that the evaluation order for expressions is irrelevant, which heavily relies
+on the fact that only boolean variables are mutable
+(\ref{item:mut-variables}).
 
-\begin{enumerate}
-    \item \label{item:lit_eq_elim} Elimination of Literal Equalities,
-        i.e., of 
-        expressions $\bliteq{c}{o}$ where $c \in \cexpr$
-        and $o \in \oexpr$.
-    \item \label{item:fun_elim} Elimination of Function Calls.
-        A function call will be replaced by a custom \kl{generator expression}
-        which is essentially a closure.
-    \item \label{item:lit_elim} Elimination of Literals Production,
-        i.e., of constant expressions in the construction of $\oexpr$
-        except for single characters.
-    \item \label{item:bool_elim} Elimination of Boolean Generators.
-    \item \label{item:let_output_elim} Elimination of Let Output Statements
-    \item \label{item:return_elim} Elimination of Return Statements
-    \item \label{item:for_loop_exp} Expansion of For Loops
-    \item \label{item:let_bools_top} Defining booleans at the beginning of for loops
-\end{enumerate}
-
-\begin{theorem}
-    These rewriting step terminates, preserve the semantics of the program,
-    and 
-    a program of type $\TOut[1] \to \TOut[1]$ that is
-    fully normalized possesses the following properties:
-    \begin{itemize}
-        \item It only iterates over its input or the reverse of its input
-        \item All introduced variables are boolean and introduced at the top level
-            or at the beginning of a for loop.
-        \item There are no return statements, and the only
-            yield are of type character and contain either a constant
-            or a variable.
-    \end{itemize}
-\end{theorem}
-
-Now, it is clear that this sub-language of for-programs corresponds
-to the simple-for-programs described in the previous section, hence
-we have effectively obtained the following corollary:
-
-\begin{corollary}
-    Every \kl{high level program} of type $\TOut[1] \to \TOut[1]$
-    is (effectively) computable by a \kl{simple for-program}.
-\end{corollary}
-
-\begin{corollary}
-    Every \kl{high level program} has \kl{polynomial growth},
-    and the \kl{model checking problem} is decidable for 
-    \kl{high level programs}.
-\end{corollary}
-
-\AP
-The elimination of function calls (\cref{item:fun_elim}) is done by replacing
-every function call by a \emph{generator expression}, which is essentially 
-including the body of the function at the call site. This is possible
-because
 \begin{lemma}
-    For every \kl{high level function} $\hlfundef{f}{x_1, \dots, x_n}{s}$,
-    for every arguments $a_1, \dots, a_n \in \aexpr$,
-    for every \kl{evaluation environment} $\rho$,
+    \label{lem:gen-indep-bool}
+    For every \kl{list expression} $e$, \kl{boolean expression} $b$,
+    variable $x_e \in \OVars$, variable $x_b \in \BVars$, \kl{evaluation
+    environment} $\rho$, and statement $s$, the following equality holds:
     \begin{equation*}
-        \semO{ f (a_1, \dots, a_n) }{\rho}
-        = 
-        \semO{ \ogen{ s[a_1/x_1, \dots, a_n/x_n] } }{\rho}
-        \quad .
+        \semS{ s[x_e \mapsto e, x_b \mapsto b] }{\rho}
+        =
+        \semS{ s }{\rho[x_e \mapsto \semO{e}{\rho}, x_b \mapsto \semB{b}{\rho}]}
     \end{equation*}
 \end{lemma}
 
-\AP The elimination of literal equalities (\cref{item:lit_eq_elim}) 
-follows from \cref{lem:constequality}.
+\paragraph{Rewriting Steps.} We will convert \kl{high level programs} to
+\kl{low level programs} by a series of rewriting steps which we 
+list hereafter, briefly explaining how they are performed.
+Note that while most of the steps can be applied to any \kl{high level
+program}, we will focus on programs
+of type $(\TOut[1],0) \to (\TOut[1],0)$, since they ultimately will
+be converted to \kl{simple for-programs}.
+\begin{enumerate}[label=Step \arabic*:, ref=Step \arabic*]
+    \item \label{item:lit_eq_elim} \intro{Elimination of Literal
+        Equalities}, i.e., of expressions $\bliteq{c}{o}$ where $c \in \cexpr$
+        and $o \in \oexpr$. This is done by replacing those tests with a call
+        to a function that checks for equality with the constant $c$ by
+        traversing its input. Such functions are defined in
+        \cref{lem:constequality}.
+        Note that this is only possible because equalities are always
+        between a variable and a constant (\ref{item:equality-checks}).
+
+    \item \label{item:lit_elim} \intro{Elimination of Literal
+        Productions}, i.e., of constant expressions in the construction of
+        $\oexpr$, except single characters. This is done by replacing a
+        constant $c$ by a call to a function that produces the constant $c$.
+        For instance, $\clist{\cchar{a_1}, \cchar{a_2}}$ is replaced by a call
+        to a function with body
+        $\hlseq{\hlyield{\cchar{a_1}}}{\hlyield{\cchar{a_2}}}$.
+
+
+    \item \label{item:fun_elim} \intro{Elimination of Function Calls},
+        by replacing them with \kl{generator expressions}. Given a function $f$
+        with body $s$ and arguments $x_1, \dots, x_n$, we replace a call
+        $f(a_1, \dots, a_n)$ by $\ogen{ s[ a_1/x_1, \dots, a_n/x_n ] }$
+        (respectively, using $\bgen{ \cdots }$, for boolean functions). This is
+        valid because function cannot take booleans as arguments
+        (\ref{item:boolean-arguments}). A formal statement of this
+        fact is available in \cref{lem:fungenexpr}.
+
+
+    \item \label{item:bool_elim} \intro{Elimination of Boolean
+        Generators}, i.e., of expressions $\bgen{s}$. Note that the only
+        occurences of $\bgen{s}$ are in \kl{boolean expressions}, which are
+        only used in the conditional tests. For instance, the conditional test
+        $\hlif{\bgen{s_1}}{s_2}{s_3}$ is replaced by $\hlletboolean{b_1}{
+        (\hlseq{s_1'}{\hlif{b_1}{s_2}{s_3}}) }$, where $s_1'$ is obtained by
+        replacing boolean return statements $(\hlreturn{b)}$ by assignments of
+        the form $(\hlif{b}{\hlsettrue{b_1}}{})$. This is valid because of
+        \cref{lem:gen-indep-bool}.
+
+    \item \label{item:let_output_elim} \intro{Elimination of Let
+        Output Statements}, i.e., of statements of the form
+        $\hlletoutput{x}{e}{s}$. This is done by textually replacing
+        $\hlletoutput{x}{e}{s}$ by $s[x \mapsto e]$, which is valid because of
+        \cref{lem:gen-indep-bool}.
+
+
+    \item \label{item:return_elim} \intro{Elimination of Return
+        Statements} for \kl{list expressions}. The idea is to replace returns
+        by yield statements, and add a boolean variable \texttt{has\_returned}
+        to prevent further outputs after the first return statement is reached.
+        This works for expressions of type $\TOut[n]$ where $n > 0$, because
+        one can replace $\hlreturn{e}$ by
+        $\hlif{\bnot{\texttt{has\_returned}}}{\hlseq{\hlsettrue{\texttt{has\_returned}}}{s'}}$,
+        where $s' = \hlfor{(i,x)}{e}{\hlyield{x}}$. The conversion is slightly
+        more involved for returns of type $\TOut[0]$, and we refer the readers
+        to our implementation for the details of this case. Its completeness
+        relies on the fact that the final program is of type $(\TOut[1],0) \to
+        (\TOut[1],0)$.
+
+
+    \item \label{item:for_loop_exp} \intro{Expansion of For Loops},
+        i.e., ensuring that every for loop iterates over a single \kl{list
+        variable}. The most complex case being
+        $\hlforRev{(i,x)}{\ogen{s_1}}{s_2}$. This rewriting step will be
+        thouroughly explained in the upcoming section.
+
+    \item \label{item:let_bools_top} 
+        \intro{Defining booleans at the beginning of for loops}.
+        Because there is no shadowing of variable
+        names (\ref{item:variable-shadowing}),
+        the following programs are equivalent:
+        $(\hlseq{s_1}{\hlletboolean{b}{s_2}})$
+        and
+        $\hlletboolean{b}{(\hlseq{s_1}{s_2})}$. Similarly, for 
+        the $\hlif{\cdot}{\cdot}{\cdot}$ construct.
+        As a consequence, one can always move boolean definitions to the 
+        first for loop in which they are defined.
+\end{enumerate}
 
 \begin{lemma}
     \label{lem:constequality}
@@ -104,15 +139,48 @@ follows from \cref{lem:constequality}.
     $c$, using a simple pattern matching.
 \end{lemma}
 
-\AP
-The eliminations of the $\hlletoutput{x}{e}{s}$ statements (\cref{item:let_output_elim})
-follows from the fact that 
-$\semS{\hlletoutput{x}{e}{s}}{\rho} = \semS{s}{\rho[x \mapsto \semO{e}{\rho}]}
-= \semS{s[x \mapsto e]}{\rho}$ for every \kl{evaluation environment}.
 
-\AP The elimination of return statements (\cref{item:return_elim})
-is done by replacing every return
-statement by a yield statement, and introducing a boolean variable
-\texttt{has\_returned} that is used to prevent further outputs after the first
-return statement is reached.
+\begin{theorem}
+    \label{thm:rewriting-termination}
+    The rewriting steps (\ref{item:lit_eq_elim}--- \ref{item:let_bools_top})
+    all terminate, and a fully normalized \kl{high level for program}
+    of type $(\TOut[1],0) \to (\TOut[1],0)$
+    satisfies the following properties:
+    \begin{itemize}
+        \item It only iterates over its input or the reverse of its input;
+        \item It contains no \kl{generator expressions};
+        \item All introduced variables are boolean and introduced at the top level
+            or at the beginning of a for loop;
+        \item There are no return statements, and the only
+            yield are of type character and contain either a constant
+            or a variable.
+    \end{itemize}
+\end{theorem}
+
+Now, it is clear that this sub-language of for-programs corresponds
+to the simple-for-programs described in the previous section, hence
+we have effectively obtained the following corollary:
+
+\begin{corollary}
+    Every \kl{high level program} of type $(\TOut[1],0) \to (\TOut[1],0)$
+    is (effectively) computable by a \kl{simple for-program}.
+\end{corollary}
+
+\begin{corollary}
+    Every \kl{high level program} has \kl{polynomial growth},
+    and the \kl{model checking problem} is decidable for 
+    \kl{high level programs}.
+\end{corollary}
+
+
+\paragraph{For Loop Expansion.} We now focus on the \kl{expansion of for
+loops}, that is, \ref{item:for_loop_exp}. The case of forward
+iterations is simpler and will illustrate a first difficulty. A loop of the
+form $\hlfor{(i,x)}{\ogen{s_1}}{s_2}$ is replaced by the statement $s_1$ where
+every statement $\hlyield{e}$ is replaced by $s_2[x \mapsto e]$. This
+formalisation is incomplete because it leaves the variable $i$ undefined in
+$s_2$. The key idea is that we temporarily extend the syntax of our programs
+to assign a 
+
+\end{itemize}
 
