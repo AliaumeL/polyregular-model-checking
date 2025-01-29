@@ -1,3 +1,6 @@
+[![Release](https://github.com/AliaumeL/polyregular-model-checking/actions/workflows/release.yml/badge.svg)](https://github.com/AliaumeL/polyregular-model-checking/actions/workflows/release.yml)
+[![haskell and latex CI](https://github.com/AliaumeL/polyregular-model-checking/actions/workflows/haskell.yml/badge.svg)](https://github.com/AliaumeL/polyregular-model-checking/actions/workflows/haskell.yml)
+
 # Polyregular Functions and Model Checking
 
 > Model checking (star-free) polyregular functions written in a Python-like
