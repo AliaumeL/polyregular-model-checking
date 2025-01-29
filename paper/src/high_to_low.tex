@@ -50,7 +50,7 @@ Note that while most of the steps can be applied to any \kl{high level
 program}, we will focus on programs
 of type $(\TOut[1],0) \to (\TOut[1],0)$, since they ultimately will
 be converted to \kl{simple for-programs}.
-\begin{enumerate}[label=Step \arabic*:, ref=Step \arabic*]
+\begin{enumerate}[label=(\Alph*), ref=Step \Alph*]
     \item \label{item:lit_eq_elim} \intro{Elimination of Literal
         Equalities}, i.e., of expressions $\bliteq{c}{o}$ where $c \in \cexpr$
         and $o \in \oexpr$. This is done by replacing those tests with a call
@@ -143,7 +143,7 @@ be converted to \kl{simple for-programs}.
 \begin{theorem}
     \label{thm:rewriting-termination}
     The rewriting steps (\ref{item:lit_eq_elim}--- \ref{item:let_bools_top})
-    all terminate, and a fully normalized \kl{high level for program}
+    all terminate and preserve typing, and a fully normalized \kl{high level for program}
     of type $(\TOut[1],0) \to (\TOut[1],0)$
     satisfies the following properties:
     \begin{itemize}
@@ -173,12 +173,72 @@ we have effectively obtained the following corollary:
 \end{corollary}
 
 
-\paragraph{For Loop Expansion.} We now focus on the \kl{expansion of for
+\paragraph{Forward For Loop Expansion.} We now focus on the \kl{expansion of for
 loops}, that is, \ref{item:for_loop_exp}. The case of forward
-iterations is simpler and will illustrate a first difficulty. A loop of the
-form $\hlfor{(i,x)}{\ogen{s_1}}{s_2}$ is replaced by the statement $s_1$ where
-every statement $\hlyield{e}$ is replaced by $s_2[x \mapsto e]$. This
-formalisation is incomplete because it leaves the variable $i$ undefined in
-$s_2$. The key idea is that we temporarily extend the syntax of our programs
-to assign a 
+iterations is simpler and will illustrate a first difficulty. We whish to
+replace a loop form $\hlfor{(i,x)}{\ogen{s_1}}{s_2}$ by the statement $s_1$
+where every statement $\hlyield{e}$ is replaced by $s_2[x \mapsto e]$. This
+rewriting is problematic because it leaves the variable $i$ undefined in $s_2$.
+The key observation allowing us to circumvent this issue is that the variable
+$i$ can only be used in \emph{comparisons} of the form $\bcomp{i}{\pCmpOp}{j}$
+inside \kl{boolean expressions}. Because of our restriction on the usage of
+\kl{position variables} (\ref{item:integer-comparisons}), $i$ and $j$
+can only be compared if originate from the same \kl{list expression}. In
+particular, this means that $i$ can only be compared to a variable $j$ that is
+iterating over $\ogen{s_1}$. This means that one only needs to be able to order
+the outputs of $s_1$ to effectively replace the comparisions using the variable
+$i$.
 
+One can recover the ordering between outputs of a statement $s_1$ by storing
+the position of the $\hlyield{e}$ responsible for the output, together with the
+values of all position variables introduced by $s$ at that point. Let us show
+how this can be done in a simple example:
+\begin{equation*}
+    \hlseq{
+    (\hlforRev{(j\tikzmark{yieldIndex},y)}{e}{
+        (\hlseq{\tikzmark{yield1}\hlyield{y}}
+               {\tikzmark{yield2}\hlyield{\cchar{a}}}
+        )})
+    }{\tikzmark{yield3}\hlyield{\cchar{b}}}
+\end{equation*}
+\begin{tikzpicture}[overlay, remember picture]
+    % Y1 below = 0.5cm, left 0.3cm of pic cs:yield1
+    \node (Y1) at ([yshift=-0.5cm, xshift=0.2cm]pic cs:yield1) {$p_1(j)$};
+    \node (Y2) at ([yshift=-0.5cm, xshift=0.2cm]pic cs:yield2) {$p_2(j)$};
+    \node (Y3) at ([yshift=-0.5cm, xshift=0.2cm]pic cs:yield3) {$p_3$};
+    \node (YI) at ([yshift=0cm, xshift=-0.2cm]pic cs:yieldIndex) {};
+
+    \draw[dashed, A2, thick] (Y1) edge[->, bend left] (YI);
+    \draw[dashed, A2, thick] (Y2) edge[->, bend left] (YI);
+\end{tikzpicture}
+\vspace{1em}
+
+In this example, there are three yield statements at
+positions $p_1$, $p_2$ and $p_3$. We can compute
+the happens (strictly) before relation between outputs 
+of the various yield statements:
+\begin{itemize}
+    \item $\mathsf{happensBefore}(p_1(j), p_3) = \btrue$;
+    \item $\mathsf{happensBefore}(p_2(j), p_3) = \btrue$;
+    \item $\mathsf{happensBefore}(p_1(j), p_2(j')) =
+        j \geq j'$.
+\end{itemize}
+In the case of $j = j'$, the 
+output of $p_1(j)$ happens before the output of $p_2(j')$,
+because $p_1$ is the first yield statement in the loop.
+When $j > j'$, the output of $p_1(j)$ happens
+before the output of $p_2(j')$ because the loop
+is iterating in reverse order.
+
+\paragraph{Backward For Loop Expansion.} The case of backward iterations adds a
+new layer of complexity, mainly to perform a non-reversible computation $s$ in
+a reversed order: indeed $s$ can contain the command $\hlsettrue{b}$ which
+cannot be reversed in our language. Let us consider as an example
+$\hlforRev{(i,x)}{\ogen{s}}{\hlyield{x}}$, where the statement $s$ is defined
+to print all elements of a list $u$ except the first one, namely:
+$\hlletboolean{b}{\hlfor{(j,y)}{ u }{\hlif{b}{\hlyield{y}}{\hlsettrue{b}}}}$.
+The semantics of $\hlforRev{(i,x)}{\ogen{s}}{\hlyield{x}}$ is to print all
+elements of $u$ in reverse order, skipping the last loop iteration.
+To compute this new statement, 
+we will use the following \emph{trick} that can be traced back to 
+\cite{BOJA18}

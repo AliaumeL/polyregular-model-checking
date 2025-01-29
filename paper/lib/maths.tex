@@ -65,6 +65,10 @@
 \NewDocumentCommand{\pCmpOp}{}{\kl[\pCmpOp]{\mathsf{PComp}}}
 \knowledge{\pCmpOp}{notion}
 
+
+\NewDocumentCommand{\pyield}{ m m }{\kl[\pyield]{\mathsf{pos}^{#1}_{#2}}}
+\knowledge{\pyield}{notion}
+
 % Control flow constructs
 \NewDocumentCommand{\hlif}{m m m}{\withkl{\kl[\hlif]}{\cmdkl{\mathsf{if}} \; #1 \; \cmdkl{\mathsf{then}} \; #2 \; \cmdkl{\mathsf{else}} \; #3}}
 \knowledge{\hlif}{notion}

@@ -28,7 +28,7 @@ These lists can be created by \emph{yielding} values in a loop, such
 as in \circleref{2}{code:yield}. 
 In order to ensure decidable \kl{model checking}, we
 also will enforce the following conditions, which are satisfied in our example:
-\begin{enumerate}[label=\vspace{1em} Restriction \roman*:, ref=Rest. \roman*]
+\begin{enumerate}[label=(\Roman*), ref=R. \Roman*]
     \item \textbf{Loop Constructions.}
         \label{item:loop-constructions}
         We only allow \texttt{for} loops iterating forward
@@ -60,6 +60,7 @@ also will enforce the following conditions, which are satisfied in our example:
         (\cref{lem:umc-equality-nested-words}).
         
     \item \textbf{Integer Comparisons.} 
+        \label{item:integer-comparisons}
         The only allowed operations on integers
         are usual comparisons operators (equality, inequalities).
         However, we only
