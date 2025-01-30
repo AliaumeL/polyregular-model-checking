@@ -97,6 +97,7 @@ library
       aeson
     , array
     , base >=4.7 && <5
+    , bytestring
     , containers
     , directory
     , extra
@@ -122,6 +123,7 @@ executable benchmarker
       aeson
     , array
     , base >=4.7 && <5
+    , bytestring
     , containers
     , directory
     , extra
@@ -149,6 +151,7 @@ executable polycheck
       aeson
     , array
     , base >=4.7 && <5
+    , bytestring
     , containers
     , directory
     , extra
@@ -192,6 +195,7 @@ test-suite polycheck-test
     , aeson
     , array
     , base >=4.7 && <5
+    , bytestring
     , containers
     , directory
     , extra
