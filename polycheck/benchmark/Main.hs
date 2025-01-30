@@ -160,6 +160,7 @@ benchmarkHighLevelFile :: FilePath -> IO (Maybe (BenchmarkTransform, BenchmarkTr
 benchmarkHighLevelFile file = timeout 1000000 $ do 
     ctn <- readFile file
     let bench = benchHtoS ctn
+    putStrLn . bsCtn . btOutput $ bench
     let bench' = benchStoI (bsCtn . btOutput $ bench)
     return (bench, bench')
 
