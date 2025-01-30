@@ -1,0 +1,206 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           polycheck
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/AliaumeL/polyregular-model-checking>
+homepage:       https://github.com/AliaumeL/polyregular-model-checking#readme
+bug-reports:    https://github.com/AliaumeL/polyregular-model-checking/issues
+author:         Aliaume Lopez and Rafał Stefański
+maintainer:     ad.lopez@uw.edu.pl
+copyright:      2025 Aliaume Lopez and Rafał Stefański
+license:        GPL-3.0
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/AliaumeL/polyregular-model-checking
+
+library
+  exposed-modules:
+      ForPrograms.HighLevel
+      ForPrograms.HighLevel.Interpreter
+      ForPrograms.HighLevel.PrettyPrint
+      ForPrograms.HighLevel.ToSimple
+      ForPrograms.HighLevel.Transformations
+      ForPrograms.HighLevel.Transformations.AddrVarElimination
+      ForPrograms.HighLevel.Transformations.BooleanElimination
+      ForPrograms.HighLevel.Transformations.FinalConditions
+      ForPrograms.HighLevel.Transformations.ForLoopExpansion
+      ForPrograms.HighLevel.Transformations.FunctionElimination
+      ForPrograms.HighLevel.Transformations.LetBoolsToTop
+      ForPrograms.HighLevel.Transformations.LetElimination
+      ForPrograms.HighLevel.Transformations.LiteralElimination
+      ForPrograms.HighLevel.Transformations.ReductionLitEq
+      ForPrograms.HighLevel.Transformations.ReturnElimination
+      ForPrograms.HighLevel.Typing
+      ForPrograms.HighLevel.Typing.Constraints
+      ForPrograms.HighLevel.Typing.Inference
+      ForPrograms.HighLevel.Typing.TypeChecker
+      ForPrograms.Simple
+      ForPrograms.Simple.Optimization
+      Logic.Export
+      Logic.Export.AltErgo
+      Logic.Export.Mona
+      Logic.Export.SMTLib
+      Logic.Export.Utils
+      Logic.FormulaChecker
+      Logic.FormulaExamples
+      Logic.Formulas
+      Logic.HoareTriple
+      Logic.Interpretation
+      Logic.Interpreter
+      Logic.ProgramFormula
+      Logic.PullBack
+      Logic.QuantifierFree
+      Parser.FirstOrderLogic.Abs
+      Parser.FirstOrderLogic.ErrM
+      Parser.FirstOrderLogic.Lex
+      Parser.FirstOrderLogic.Par
+      Parser.FirstOrderLogic.Print
+      Parser.FirstOrderLogic.Skel
+      Parser.HighLevelForProgram.Abs
+      Parser.HighLevelForProgram.ErrM
+      Parser.HighLevelForProgram.Lex
+      Parser.HighLevelForProgram.Par
+      Parser.HighLevelForProgram.Print
+      Parser.HighLevelForProgram.Skel
+      Parser.ParsedToFirstOrderLogic
+      Parser.ParsedToForProgram
+      Parser.ParsedToSimpleForProgram
+      Parser.ParseFirstOrder
+      Parser.ParseHighLevel
+      Parser.ParseSimple
+      Parser.SimpleForProgram.Abs
+      Parser.SimpleForProgram.ErrM
+      Parser.SimpleForProgram.Lex
+      Parser.SimpleForProgram.Par
+      Parser.SimpleForProgram.Print
+      Parser.SimpleForProgram.Skel
+      Web.API
+  other-modules:
+      Paths_polycheck
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      aeson
+    , array
+    , base >=4.7 && <5
+    , containers
+    , directory
+    , extra
+    , filepath
+    , mtl
+    , process
+    , scotty
+    , temporary
+    , text
+  default-language: Haskell2010
+
+executable benchmarker
+  main-is: Main.hs
+  other-modules:
+      Paths_polycheck
+  hs-source-dirs:
+      benchmark
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      aeson
+    , array
+    , base >=4.7 && <5
+    , containers
+    , directory
+    , extra
+    , filepath
+    , mtl
+    , optparse-applicative
+    , polycheck
+    , process
+    , scotty
+    , temporary
+    , text
+  default-language: Haskell2010
+
+executable polycheck
+  main-is: Main.hs
+  other-modules:
+      Paths_polycheck
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      aeson
+    , array
+    , base >=4.7 && <5
+    , containers
+    , directory
+    , extra
+    , filepath
+    , mtl
+    , optparse-applicative
+    , polycheck
+    , process
+    , scotty
+    , temporary
+    , text
+  default-language: Haskell2010
+
+test-suite polycheck-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      BooleanEliminationSpec
+      ForLoopExpansionSpec
+      ForProgramInterpreterSpec
+      ForProgramSpec
+      FunctionEliminationSpec
+      GraphTypeInferenceSpec
+      Logic.FormulaCheckerSpec
+      Logic.InterpreterSpec
+      Logic.ProgramFormulaSpec
+      Parser.ParseFirstOrderSpec
+      Parser.ParseHighLevelSpec
+      Parser.ParseSimpleSpec
+      ReductionLitEqSpec
+      SimpleForProgramsSpec
+      Paths_polycheck
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-name-shadowing -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      QuickCheck
+    , aeson
+    , array
+    , base >=4.7 && <5
+    , containers
+    , directory
+    , extra
+    , filepath
+    , hspec
+    , mtl
+    , polycheck
+    , process
+    , scotty
+    , temporary
+    , text
+  default-language: Haskell2010
