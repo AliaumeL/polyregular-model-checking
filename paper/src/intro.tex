@@ -41,6 +41,36 @@ exists $x \in X$ such that $f(x) = \btrue$.
 \cite{HOARE69}
 \cite{MONA01}
 
+\begin{center}
+    \begin{tikzpicture}[
+        syntaxNode/.style={
+                    rectangle, draw, 
+                    text width=5em, 
+                    text centered, 
+                    rounded corners, 
+                    minimum height=4em}
+    ]
+        %
+        % Write a tikz picture with nodes explaining the different 
+        % steps of the rewriting system 
+        % 
+        % (a) high-level language
+        % (b) simple for-programs
+        % (c) first-order string-to-string interpretations
+        % (c1) precondition
+        % (c2) postcondition
+        % (d) first-order formula
+        \node[syntaxNode] (a) {\kl{For program}};
+        \node[syntaxNode, right=of a] (b)  {\kl{Simple for-program}};
+        \node[syntaxNode, right=of b] (c)  {\kl{$\FO$ interpretation}};
+        \node[syntaxNode, right=of c] (d) {\kl{First-order formula}};
+
+        \draw[->] (a) -- node[above,rotate=90,xshift=2.3em,yshift=-0.3em] {\cref{sec:htl}} (b);
+        \draw[->] (b) -- node[above,rotate=90,xshift=2.3em,yshift=-0.3em] {\cref{sec:low-level}} (c);
+        \draw[->] (c) -- node[above,rotate=90,xshift=2.3em,yshift=-0.3em] {\cref{sec:pullback}} (d);
+    \end{tikzpicture}
+\end{center}
+
 \paragraph{Related work.} The correspondence between subsets of string to
 string functions and first order logic dates back to the origins of automata
 theory and the seminal results of \cite{PEPI86,SCHU65,MNPA71}, establishing the

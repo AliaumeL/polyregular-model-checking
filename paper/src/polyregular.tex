@@ -59,39 +59,59 @@ This is also going to be the case for the \kl{simple for programs}. In
 the size of their support $A$, and not on the number of the Unicode characters.
 
 \subsection{First-Order Simple For-Programs}
-\intro{First-order simple for-programs} is a simple programming language that can be be seen
-as a simplified\footnote{Actually, the \kl{high-level language} was designed as an extended version \kl{first-order simple for-programs}.}
-version of the \kl{high-level language}. The main difference is that the \kl{simple for-programs} only define transductions of type 
-$\TOut[1] \to \TOut[1]$. Moreover, they disallow constructing intermediate word-values: There are no variables of type $\TOut[n]$, 
-and it is not possible to define functions (other than the main function). As a consequence, the for-loops can only iterate over the input.
-Here is an example:\\ 
 
-% \emph{programs/reverse_words.spr}
+\AP \intro{First-order simple for-programs} is a simple programming language
+that can be seen as a simplified\footnote{Actually, the \kl{high-level
+language} was designed as an extended version \kl{first-order simple
+for-programs}.} version of the \kl{high-level language}. The main difference is
+that the \kl{simple for-programs} only define transductions of type $\TOut[1]
+\to \TOut[1]$. 
+Here is an example in a Python syntax:
 
-It is not hard to see that programs written in this language define programs $f : \mathcal{D}^* \to \mathcal{D}^*$ that is supported by the 
-finite set of letters used in the program (in this case this is a singleton containing the space character).
+\input{figs/reverse_words_simple.tex}
+
+We disallow constructing intermediate word-values, there are no variables of
+type $\TOut[n]$ for any $n$, and it is not possible to define functions (other
+than the main function). As a consequence, the
+for-loops can only iterate over the positions of the input word as in
+\circleref{1}{sfp:for1} and \circleref{2}{sfp:for2}.
+The label of a position can be accessed using the keyword $\mathsf{label}$, 
+whether when testing it (\circleref{5}{sfp:labelTest}) or when printing it in
+(\circleref{6}{sfp:labelPrint}).
+As we are considering a restriction of the \kl{high-level language}, we only allow comparing labels
+to constant characters (\ref{item:equality-checks}).
+Finally, we only allow introducing boolean
+variables at the top of the program (\circleref{1}{sfp:boolDeclTop}) or at the
+beginning of a for loop (\circleref{3}{sfp:boolDeclFor}). 
 
 \subsection{First-Order String-To-String Transductions}
 \label{subsec:fo-string-to-string}
 
-\AP
-In this section we describe a logical way of defining word-to-word functions: 
+\AP In this section we describe a logical way of defining word-to-word
+functions: \kl{first-order string-to-string interpretations}. Every
+interpretation defines a \kl{finitely supported} function $f : \mathcal{D}^*
+\to \mathcal{D}^*$.
+
+\todo[inline]{Do a paragraph about $\FO$ 
+explaining how to evaluate it on words
+and that it corresponds to automata, hence validity / satisfiability
+are decidable.}
+The free variables represent positions in the input word, and can be queried using the predicates: 
+$x_i = x_j$, $x_i < x_j$, and $x_i =_L a$ for $a \in A$.
+
 \begin{definition}
 A \intro{first-order string-to-string interpretation} consists of:
 \begin{enumerate}
+\item A finite set of character constants $A \subset_{\textrm{fin}}\mathcal{D}$.
 \item A finite set $T$ of tags.
-\item A finite set $A \subset_{\textrm{fin}}\mathcal{D}$.
-\item An arity function $T \to \Nat$ assigning an arity to each tag.
-\item An output function function $\text{out} : T \to A + \{1, \ldots, \text{arity}(t)\}$. 
-\item A domain formula $\varphi_{\text{dom}}^t(x_1,\ldots,x_{\text{arity}(t)})$ for every tag $t \in T$.
-      The free variables represent positions in the input word, and can be queried using the predicates: 
-      $x_i = x_j$, $x_i < x_j$, and $x_i =_L a$ for $a \in A$.
+\item An arity function $\mathsf{ar} : T \to \Nat$.
+\item An output function $\mathsf{out} : T \to A + \{1, \ldots, \text{arity}(t)\}$. 
+\item A domain formula $\varphi_{\mathsf{dom}}^t(x_1,\ldots,x_{\mathsf{arity}(t)})$ 
+    for every tag $t \in T$.
 \item An order formula $\varphi_{\leq}^{t,t'}((x_1,\ldots,x_{\text{arity}(t)}),(y_1,\ldots,y_{\text{arity}(t')}))$ for every pair of tags $t,t' \in T$. 
-      It can use the same predicates as the domain formula. 
 \end{enumerate}
 \end{definition}
 
-Every interpretation defines a function $f : \mathcal{D}^* \to \mathcal{D}^*$ that is supported by $A$.
 The output for a word $w$ is obtained by the following process:
 \begin{enumerate}
     \item  Take the set $P = \{1, \ldots, |w|\}$ of the positions in $w$, and construct the set 
