@@ -181,3 +181,37 @@ The tags are sorted by their positions, with ties resolved in favour of \texttt{
     $\mathtt{copy}(x_2)$ & $x_1 \leq x_2$ & $x_1 \leq x_2$ \\
 \end{tabular}
 \]
+
+\subsection{Hoare Triple Verification}
+
+An important property of the \kl{first-order string-to-string interpretations} is that they allow a direct 
+reduction of the following \kl{Hoare triple verification} problem to the \kl{emptiness problem} for the \kl{first-order logic on words}. 
+\begin{definition}
+    The \intro{Hoare triple verification problem} for a \kl{first-order string-to-string interpretation} is the following decision problem: 
+    \[
+        \begin{tabular}{ll}
+        \textbf{Input:} & A string-to-string interpretation $F$, and two first-order formulas $\varphi$ and $\psi$.\\
+        \textbf{Output:} & Does $F(w)$ satisfy $\psi$ for every word $w$ that satisfies $\varphi$?
+        \end{tabular}
+    \]
+    The instance of this problem is called \intro{Hoare triple} and it is denoted as $\{ \varphi \}\; F\; \{ \psi \}$. 
+    We say that a \kl{Hoare triple} is \intro{valid} to the decision problem is positive.
+\end{definition}
+Here are two examples:
+\[
+\begin{tabular}{lll}
+$\{ \mathtt{containsAB} \}\ \texttt{swapAsToBs}\ \{ \mathtt{containsBB} \}$ & is & valid\\
+$\{ \mathtt{containsBB} \}\ \mathtt{swapAsToBs}\ \{ \mathtt{containsAB} \}$ & is & not valid
+\end{tabular}
+\]
+The decidability of the \kl{Hoare triple verification problem} for \kl{string-to-string first-order interpretations},
+is already known \cite[Theorem~1.7]{bojanczyk2018polyregular}. However, to the best of our knowledge, 
+no effort has been made so far to make this result practical. In the next section, we show how to construct a formula 
+$\chi(\phi, F, \psi)$ that is \kl{empty} if and only if the triple $\{ \phi \}\; F\; \{ \psi \}$ is valid.
+Moreover, the size and the quantifier depth of $\chi$ can be bound by the following low-degree polynomials:
+\[
+\begin{tabular}{cc}
+    $\qrank(\chi) \leq \max\left(\qrank(\phi), \text{arity}(F) + 1) \cdot \qrank(\psi) + \qrank(F)\right)$ &
+    $|\chi| \leq \max\left(|\phi|, (|F| + \qrank(F)) \cdot |\psi|\right)$
+\end{tabular}
+\]
