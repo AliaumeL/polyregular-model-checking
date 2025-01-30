@@ -2,6 +2,25 @@
  | high-level language
  | high-level program
  | high-level programs  
+ | For program
+
+
+% high level syntactic notions
+\knowledge{notion}
+ | list expression
+ | list expressions
+\knowledge{notion}
+ | boolean expressions
+ | boolean expression
+\knowledge{notion}
+ | generator expression
+ | generator expressions
+
+
+\knowledge{notion}
+ | Simple for-program
+ | simple for-program
+ | simple for-programs
 
 \knowledge{notion}
  | first-order simple for-program
@@ -17,6 +36,60 @@
  | nested words
  | (nested) words
 
+
+
+% logic
 \knowledge{notion}
- | list expression
- | list expressions
+ | First-order formula
+ | first-order formula
+ | first-order formulas
+ | first-order logic 
+ | first-order logic on words
+ 
+% interpretations
+\knowledge{notion}
+ | character constants
+\knowledge{notion}
+ | output function
+\knowledge{notion}
+ | arity function
+ | arity@formula
+\knowledge{notion}
+ | transduction tags
+ | tags@transduction
+\knowledge{notion}
+ | domain formula
+ | domain@formula
+\knowledge{notion}
+ | ordering formula
+ | order formula
+ | order@formula
+
+\knowledge{notion}
+ | first-order string-to-string interpretations
+ | first-order string-to-string interpretation
+ | first-order word-to-word interpretation
+ | first-order interpretation
+
+
+% symbolic
+\knowledge{notion}
+ | supported by
+ | supported
+
+
+% Program formulas
+
+
+\knowledge{notion}
+ | program formulas
+ | program formula
+ | Program formula
+
+
+
+% polyregular functions
+
+\knowledge{notion}
+ | first-order polyregular functions
+ | first-order polyregular function

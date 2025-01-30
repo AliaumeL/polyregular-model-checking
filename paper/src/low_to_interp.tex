@@ -22,7 +22,7 @@ To transform a \kl{simple for-program} into a \kl{first-order interpretation},
 we use as \kl{character constants} the set of all
 characters that appear in the program. Then, we will use as \kl{transduction
 tags} the set of all print statements in the program (remembering their
-location in the source code). The \kl{arity} of a print statement will be the
+location in the source code). The \kl(formula){arity} of a print statement will be the
 number of position variables that are in the scope of the print. It is
 relatively easy to compute the \kl{output function} of a print statement: if
 the print statement outputs a fixed character $c$, then the \kl{output
@@ -60,10 +60,10 @@ us to easily derive the \kl{domain formula}.
 \subsection{Program Formulas}
 \label{sec:program-formulas}
 
-\AP A \intro{program formula} is a \kl{first order formulas} where every
-\kl{free variable} is either: an \kl{input boolean variable}  written
-$\ibvar{b}$,  an \kl{output boolean variable} written $\obvar{b}$, or an
-\kl{input position variable} written $\ipvar{i}$. Given a fixed word $w \in
+\AP A \intro{program formula} is a \kl{first-order formula} where every
+\kl{free variable} is either: an \intro{input boolean variable}  written
+$\ibvar{b}$,  an \intro{output boolean variable} written $\obvar{b}$, or an
+\intro{input position variable} written $\ipvar{i}$. Given a fixed word $w \in
 \mathcal{D}^*$, a \kl{program formula} $\varphi$ defines a relation between the
 input variables $\ibvar{b_1}, \dots, \ibvar{b_n}$, the output variables
 $\obvar{b_1}, \dots, \obvar{m}$, and the positions $\ipvar{1}, \dots,
@@ -124,7 +124,7 @@ sets. For instance, if $\Phi_2$ does not depend on some boolean variable
 $\ibvar{b}$, then one can replace it by $\exists_{b' : \mathbb{B}} \ibvar{b} =
 b' \wedge \Phi_2$. Similarly, if $\Phi_1$ contains a variable $\obvar{b}$ that
 does not appear in $\Phi_2$, then one can add $\ibvar{b} \iff \obvar{b}$ to
-$\Phi_2$. Recall however that the \kl{quantifier depth} of a formula is a
+$\Phi_2$. Recall however that the \kl{quantifier rank} of a formula is a
 parameter we are trying to control to ensure that the generated formulas are
 efficiently solvable.
 

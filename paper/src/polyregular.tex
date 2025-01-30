@@ -28,7 +28,7 @@ but we do not prove it, as it is out of this paper's scope.
 
 \subsection{Symbolic transductions}
 
-\begin{wrapfigure}{r}{0.55\textwidth}
+\begin{wrapfigure}{r}{0.5\textwidth}
     \input{figs/swap_as_bs.tex}
     \caption{The \texttt{swapAsToBs} program.}
     \label{fig:swapAsToBs}
@@ -53,7 +53,7 @@ to every letter.
 It is not hard to see that the functions defined by
 \kl{high-level programs} (of type $\TOut[1] \to \TOut[1]$)
 are supported by the finite set $A$ of letter constants that they use.
-This is also going to be the case for the \kl{simple for programs}. In
+This is also going to be the case for the \kl{simple for-programs}. In
 \cref{subsec:fo-string-to-string}, we will define a version of the
 \kl{first-order string-to-string interpretations} in a way that only depends on
 the size of their support $A$, and not on the number of the Unicode characters.
@@ -114,7 +114,8 @@ the consequence of the finite-alphabet case:
 \begin{proof}
     Take a formula $\varphi$ and observe that is contains only a finite number of constants from $\mathcal{D}$ -- call this set $A$.
     It is not hard to see that the truth value of $\varphi$ is \kl{supported} by $A$: for every function $f : \mathcal{D} \to \mathcal{D}$
-    that does not \kl{touch} elements of $A$, the truth value of $\varphi$ is the same for $w$ and $f^*(w)$. (Remember that 
+    that does not touch 
+    elements of $A$, the truth value of $\varphi$ is the same for $w$ and $f^*(w)$. (Remember that 
     $f^*$ is the pointwise application of $f$). 
     Let $\mathtt{blank} \in \mathcal{D}$ be a letter that does not appear in $A$,
     and observe that the formula $\varphi$ is satisfied for some word in $\mathcal{D}^*$ if and only if it is satisfied by
@@ -129,15 +130,15 @@ We are now ready to define the \kl{first-order string-to-string interpretations}
 \begin{definition}
 A \intro{first-order string-to-string interpretation} consists of:
 \begin{enumerate}
-\item A finite set of character constants $A \subset_{\textrm{fin}}\mathcal{D}$.
-\item A finite set $T$ of tags.
-\item An arity function $\mathsf{ar} : T \to \Nat$.
-\item An output function $\mathsf{out} : T \to A + \{1, \ldots, \mathsf{ar}(t)\}$. 
-\item A domain formula $\varphi_{\mathsf{dom}}^t(x_1,\ldots,x_{\mathsf{ar}(t)})$ 
+\item A finite set of \intro{character constants} $A \subset_{\textrm{fin}}\mathcal{D}$.
+\item A finite set $T$ of \intro(transduction){tags}.
+\item An \intro{arity function} $\mathsf{ar} : T \to \Nat$.
+\item An \intro{output function} $\mathsf{out} : T \to A + \{1, \ldots, \mathsf{ar}(t)\}$. 
+\item A \intro{domain formula} $\varphi_{\mathsf{dom}}^t(x_1,\ldots,x_{\mathsf{ar}(t)})$ 
     for every tag $t \in T$.
-\item An order formula $\varphi_{\leq}^{t,t'}(x_1,\ldots,x_{\mathsf{ar}(t)},y_1,\ldots,y_{\mathsf{ar}(t')})$ for every $t,t' \in T$. 
+\item An \intro{order formula} $\varphi_{\leq}^{t,t'}(x_1,\ldots,x_{\mathsf{ar}(t)},y_1,\ldots,y_{\mathsf{ar}(t')})$ for every $t,t' \in T$. 
 \end{enumerate}
-The order and domain formulas should only use constants from $A$.
+The \kl(formula){order} and \kl(formula){domain} formulas should only use constants from $A$.
 \end{definition}
 \noindent
 The interpretation's output for a word $w \in \mathcal{D}^*$ is obtained by the following process:
