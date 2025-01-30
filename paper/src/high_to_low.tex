@@ -2,13 +2,14 @@
 \section{From High Level to Low Level For Programs}
 \label{sec:htl}
 
-\AP In this section, we provide a compilation from high level to low level For
-programs. One of the main differences between the two languages is the lack of
-functions in the latter. To smoothen the conversion between the two, we
-introduce a new constructon to the language, that are \intro{generator
-expressions}, representing the evaluation of a function on a given input.
-Namely, we add the constructor $\intro*\ogen{s}$, and $\intro*\bgen{s}$ respectively to the
-syntax of \kl{list expressions} and \kl{boolean expressions}. 
+\AP In this section, we provide a compilation from \kl{high level for-programs}
+to \kl{simple for-programs}. One of the main differences between the two
+languages is the lack of functions in the latter. To smoothen the conversion
+between the two, we introduce a new construction to the language, that are
+\intro{generator expressions}, representing the evaluation of a function on a
+given input. Namely, we add the constructor $\intro*\ogen{s}$, and
+$\intro*\bgen{s}$ respectively to the syntax of \kl{list expressions} and
+\kl{boolean expressions}. 
 
 \paragraph{Generator Expressions.} Let us briefly discuss the new typing rules
 and semantics of these \kl{generator expressions}. The intended meaning of a
@@ -17,7 +18,7 @@ context and collect its output. For instance, $\ogen{\hlreturn{x}}$ is
 equivalent to $x$, and $\ogen{\hlseq{\hlyield{x}}{\hlyield{y}}}$ is equivalent
 to $\olist{x,y}$. The semantics are similarly defined for \kl{boolean
 expressions}. It should therefore not be surprising that if a
-\kl[hl]{statement} has type $\TOut[n]$, then the \kl{generator expression}
+statement has type $\TOut[n]$, then the \kl{generator expression}
 $\ogen{s}$ also has type $\TOut[n]$ (and similarly for \kl{boolean
 expressions}). However, there is one key ingredient in the semantics of such
 expressions: when evaluating the statement $s$, we hide all boolean variables
@@ -219,10 +220,13 @@ positions $p_1$, $p_2$ and $p_3$. We can compute
 the happens (strictly) before relation between outputs 
 of the various yield statements:
 \begin{itemize}
-    \item $\mathsf{happensBefore}(p_1(j), p_3) = \btrue$;
-    \item $\mathsf{happensBefore}(p_2(j), p_3) = \btrue$;
-    \item $\mathsf{happensBefore}(p_1(j), p_2(j')) =
-        j \geq j'$.
+    \item $\mathsf{before}(p_3, p_3) = \bfalse$;
+    \item $\mathsf{before}(p_1(j), p_3) = \btrue$;
+    \item $\mathsf{before}(p_2(j), p_3) = \btrue$;
+    \item $\mathsf{before}(p_1(j), p_2(j')) =
+        j \geq j'$;
+    \item $\mathsf{before}(p_1(j), p_1(j')) = j > j'$;
+    \item $\mathsf{before}(p_2(j), p_2(j')) = j > j'$.
 \end{itemize}
 In the case of $j = j'$, the 
 output of $p_1(j)$ happens before the output of $p_2(j')$,
@@ -269,15 +273,35 @@ produced by the original program $s$.
     s'' = s'[ \hlyield{e} \mapsto \hlifnoelse{\bcomp{i}{=}{j'}}{\hlyield{e}}]
 \end{equation*}
 In our case, the final program is the following one:
+\begin{tikzpicture}[overlay, remember picture]
+    \draw[fill=D4hint,draw=none] 
+                     ([yshift=1em, xshift=-0.5em]pic cs:revloopexpstart) 
+                     rectangle 
+                     ([yshift=-1.3em, xshift=4.5em]pic cs:revloopexpend);
+
+    \draw[fill=D3hint,draw=none] 
+                     ([yshift=1em, xshift=-0.5em]pic cs:revloopexpinnerstart) 
+                     rectangle 
+                     ([yshift=-0.3em, xshift=4.5em]pic cs:revloopexpend);
+
+    \draw[fill=D2hint,draw=none] 
+                     ([yshift=1em, xshift=-0.5em]pic cs:revloopifstart)
+                     rectangle 
+                     ([yshift=-0.3em, xshift=4.4em]pic cs:revloopifend);
+
+     \node[anchor=east,D4] at ([xshift=-1em]pic cs:revloopexpstart) {$s_{\mathsf{rev}}$};
+     \node[anchor=west,D3] at ([xshift=11em]pic cs:revloopexpinnerstart) {$s$};
+     \node[anchor=west,D2] at ([xshift=9em]pic cs:revloopifstart) {yield guard};
+\end{tikzpicture}
 \begin{align*}
-    &\mathsf{for}^{\leftarrow}~(j',y')~\mathsf{in}~ u ~\mathsf{do} \\
-    &\quad \mathsf{for}^{\rightarrow}~(j, y)~\mathsf{in}~ u ~\mathsf{do} \\
+    &\tikzmark{revloopexpstart}\mathsf{for}^{\leftarrow}~(j',y')~\mathsf{in}~ u ~\mathsf{do} \\
+    &\quad \tikzmark{revloopexpinnerstart}\mathsf{for}^{\rightarrow}~(j, y)~\mathsf{in}~ u ~\mathsf{do} \\
     &\quad \quad \mathsf{let}~\mathsf{mut}~b = \mathsf{false}~\mathsf{in} \\
     &\quad \quad \mathsf{if} \; b \; \mathsf{then} \\
-    &\quad \quad \quad \mathsf{if} \; j = j' \; \mathsf{then} \\
-    &\quad \quad \quad \quad \mathsf{yield}~y \\
+    &\quad \quad \quad \tikzmark{revloopifstart}\mathsf{if} \; j = j' \; \mathsf{then} \\
+    &\quad \quad \quad \quad \mathsf{yield}~y\tikzmark{revloopifend} \\
     &\quad \quad \mathsf{else} \\
-    &\quad \quad \quad b \leftarrow \mathsf{true}
+    &\quad \quad \quad b \leftarrow \mathsf{true}\tikzmark{revloopexpend} \\
 \end{align*}
 This rewriting can be generalised to any program of the form
 $\hlforRev{(i,x)}{\ogen{s_1}}{s_2}$ combining the construction illustrated here

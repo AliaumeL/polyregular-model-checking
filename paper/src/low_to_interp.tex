@@ -2,20 +2,27 @@
 \section{Simple For Programs and Interpretations}
 \label{sec:low-level}
 
+\todo[inline]{
+    Say that we add quantifications on booleans to the logic.
+}
+
+\todo[inline]{
+    Say that quantifications are bad for the solvers
+}
+
 In this section, we prove that every \kl{simple for-program} can be compiled
 into a \kl{first-order interpretation} in our symbolic setting. Recall that
-this is already known in the non-symbolic case \cite{bojanczyk2018polyregular}.
-However, this previous proof does not provide complexity bounds, and relies on
-computing a normal form of the programs which drastically increase the
-complexity of the generated formulas. As our proof will highlight, nesting
-for-loops and introducing boolean variables are the main source of complexity,
-and the existing normal form drastically increase both parameters.
+this is already known to be theoretically possible in the non-symbolic case
+\cite{bojanczyk2018polyregular}. However, this previous proof does not provide
+complexity bounds, and requires computing a normal form of the programs
+\todo{cite normal form} which drastically increase the complexity of the
+generated formulas.
 
 To transform a \kl{simple for-program} into a \kl{first-order interpretation},
-the main idea will be to use as \kl{character constants} the set of all
+we use as \kl{character constants} the set of all
 characters that appear in the program. Then, we will use as \kl{transduction
 tags} the set of all print statements in the program (remembering their
-location in the source code). The \kl{arity} of a print statement will be the
+location in the source code). The \kl(formula){arity} of a print statement will be the
 number of position variables that are in the scope of the print. It is
 relatively easy to compute the \kl{output function} of a print statement: if
 the print statement outputs a fixed character $c$, then the \kl{output
@@ -33,79 +40,104 @@ The only non-trivial part of the transformation is to compute the \kl{domain
 formula} of a print statement. This difficulty is akin to the one of the
 \kl{for loop expansion} procedure in the case of a reverse loop: given a print
 statement $p(i_1, \dots, i_k)$, where $i_1, \dots, i_k$ are the position
-variables in the scope of the print statement, we need to check that every
-\texttt{if} statement along the path from the root of the program to the print
-statement was correctly taken. This is done by computing the conjunction, over
-all the \texttt{if} statements, of the truth values of the boolean tests that
-were executed. The main difference with the \kl{for loop expansion} case is
-that we need to \emph{abstractly} compute the truth values of the boolean
-variables used in the tests.
+variables in the scope of the print statement, we need to check whether it can
+be reached. In other words, we check that every \texttt{if} statement along the
+path from the root of the program to the print statement was correctly taken.
+This is done by computing the conjunction, over all the \texttt{if} statements,
+of the truth values of the boolean tests that were executed. The main
+difference with the \kl{for loop expansion} case is that we need to
+\emph{abstractly} compute the truth values of the boolean variables used in the
+tests.
 
 To solve this issue, we will introduce the notion of \kl{program formulas},
 which are \kl{first-order formulas} describing a transformation of boolean
 variable's truth values. We will associate to every program statement a
 corresponding \kl{program formula} (the main difficulty), which in turns allows
-to easily derive the \kl{domain formula}.
+us to easily derive the \kl{domain formula}.
+
+
 
 \subsection{Program Formulas}
 \label{sec:program-formulas}
 
-\AP A \intro{program formula} is a \kl{first order formulas} where every
-\kl{free variable} is either: an \kl{input boolean variable}  written
-$\ibvar{b}$,  an \kl{output boolean variable} written $\obvar{b}$, or an
-\kl{input position variable} written $\ipvar{i}$. Given a fixed word $w \in
+\AP A \intro{program formula} is a \kl{first-order formula} where every
+\kl{free variable} is either: an \intro{input boolean variable}  written
+$\ibvar{b}$,  an \intro{output boolean variable} written $\obvar{b}$, or an
+\intro{input position variable} written $\ipvar{i}$. Given a fixed word $w \in
 \mathcal{D}^*$, a \kl{program formula} $\varphi$ defines a relation between the
 input variables $\ibvar{b_1}, \dots, \ibvar{b_n}$, the output variables
 $\obvar{b_1}, \dots, \obvar{m}$, and the positions $\ipvar{1}, \dots,
 \ipvar{k}$. We will only consider \kl{program formulas} that define
-\emph{functions} for every fixed input word $w$: for every assignment of the
-input variables (boolean and positions), there exists a unique assignment of the
-output variables (boolean) that satisfies the formula.
+\emph{functions} for every fixed input word $w$.
 
-As an example, the statement \texttt{b := True} that updates a boolean variable
-$b$ can be represented by the \kl{program formula} $\Phi_{\texttt{setTrue}} :=
-\obvar{b}$. Similarly, given \kl{program formulas} $\Phi_1$ and $\Phi_2$ having 
-the same input and output variables,
+\todo[inline]{Add to the semantics of the program formulas the ability
+to quantify over booleans}
+
+Our goal is to compute inductively a \kl{program formula} for every statement
+of a \kl{simple for-program}. As an example, the statement \texttt{b := True}
+that updates a boolean variable $b$ can be represented by the \kl{program
+formula} $\Phi_{\texttt{setTrue}} := \obvar{b}$. Similarly, a print statement
+can be represented by a \kl{program formula} $\Phi_{\texttt{print}} := \top$
+that is always true (no boolean variables are modified). To perform our
+induction step, we need to consider three constructions: the conditional
+branching, the sequence and the iteration.
+
+
+\paragraph{Conditional Branching.} 
+Given two \kl{program formulas} $\Phi_1$ and $\Phi_2$ having 
+the set of output variables,
 together with a conditional formula $\varphi$, one can 
 simulate the \texttt{if then else} construction 
 as follows:
 \begin{equation*}
-    \Phi_{\texttt{if}} := (\varphi \land \Phi_1) \lor (\neg \varphi \land \Phi_2) \quad .
+    \Phi_{\texttt{if}~\varphi~\texttt{then}~\Phi_1~\texttt{else}~\Phi_2} := (\varphi \land \Phi_1) \lor (\neg \varphi \land \Phi_2) \quad .
 \end{equation*}
-
-\AP In the case where the two \kl{program formulas} $\Phi_1$ and $\Phi_2$ have
-different sets of input or output variables, one can always perform a
-\intro{lifting} operation that: discards the unused \kl{input position
-variables} ($\exists i'. \ipvar{i} = i'$), discards the unused \kl{input boolean
-variables} ($\exists b'. \ibvar{b} = b'$), ignores \kl{output boolean
-variables} that are not used ($\exists b'. \obvar{b} = b'$), and asserts that
-unused \kl{output boolean variables} are equal to their corresponding \kl{input
-boolean variables} ($\ibvar{b} = \obvar{b}$).
-
-Our goal is to compute inductively a \kl{program formula} for every statement
-of a \kl{simple for-program}.
+In the case where the two \kl{program formulas} $\Phi_1$ and $\Phi_2$ have
+different output variables, one can always extend $\Phi_1$ and $\Phi_2$ with
+a conjunction of the
+formulas $\ibvar{b} \iff \obvar{b}$ for every missing output boolean variable $b$,
+that is, extending the domain of their functions by behaving as the identity.
 
 \paragraph{Composition of Program Formulas.} The first (mild) difficulty is to
 perform the sequential composition of two \kl{program formulas} in a relatively
-efficient way. Given two \kl{program formulas} $\Phi_1$ and $\Phi_2$ having the
-same \kl{input position variables}, and such that the \kl{output boolean
-variables} of $\Phi_1$ are in correspondence with the \kl{input boolean
-variables} of $\Phi_2$, the composition $\Phi_1 ; \Phi_2$ is defined as
-follows: we existentially quantify over the names of the input boolean
-variables of $\Phi_2$ (that are exactly the output boolean variables of
-$\Phi_1$) the formula $\Phi_1 \wedge \Phi_2$. Note that this operation
-increases the \kl{quantifier depth} of the \kl{program formula} by the number
-of boolean variables concerned. In particular, it can be inefficient to compute
-the composition of two \kl{program formulas} by first \kl[pf]{lifting} them and
-then perform the composition.
+efficient way. Let us consider two \kl{program formulas} $\Phi_1$ and $\Phi_2$,
+having as \kl{input boolean variables} respectively names in
+$B_1^{\mathsf{in}}$ and $B_2^{\mathsf{in}}$, and as \kl{output boolean
+variables} respectively names in $B_1^{\mathsf{out}}$ and $B_2^{\mathsf{out}}$.
+Let us first work in 
+the simplified case where $B_2^{\mathsf{in}} =
+B_1^{\mathsf{out}} = \set{b_1, \dots, b_n}$.
+Then, the composition is
+defined as follows:
+\begin{equation*}
+    \Phi_1 ; \Phi_2 :=
+    \exists_{b_1 : \mathbb{B}} \cdots \exists_{b_n : \mathbb{B}}
+    \quad
+    \Phi_1[ \obvar{x} \mapsto x ]
+    \wedge 
+    \Phi_2[ \ibvar{x} \mapsto x ]
+\end{equation*}
 
+As for the case of the conditional branching, one can always extend the
+\kl{program formulas} to ensure equality of input and output boolean variable
+sets. For instance, if $\Phi_2$ does not depend on some boolean variable
+$\ibvar{b}$, then one can replace it by $\exists_{b' : \mathbb{B}} \ibvar{b} =
+b' \wedge \Phi_2$. Similarly, if $\Phi_1$ contains a variable $\obvar{b}$ that
+does not appear in $\Phi_2$, then one can add $\ibvar{b} \iff \obvar{b}$ to
+$\Phi_2$. Recall however that the \kl{quantifier rank} of a formula is a
+parameter we are trying to control to ensure that the generated formulas are
+efficiently solvable.
 
-We designed a composition algorithm that only quantifies over 
-boolean variables that are \textbf{TODO is this true}?
+To circumvent this issue, we implemented a composition algorithm that only
+quantifies over the boolean variables that are in the set $B_1^{\mathsf{out}}
+\cap (B_2^{\mathsf{in}} \cup B_2^{\mathsf{out}})$, which is expected
+to be smaller in practice. In particular, we derive the following bound
+on the \kl{quantifier rank} of the composition:
+
 \begin{equation*}
     \qrank(\Phi_1 ; \Phi_2) 
     \leq \max(\qrank(\Phi_1), \qrank(\Phi_2)) 
-    +    \text{number of common boolean variables}
+    +    |B_1^{\mathsf{out}} \cap (B_2^{\mathsf{in}} \cup B_2^{\mathsf{out}})|
     \quad .
 \end{equation*}
 
