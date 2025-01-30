@@ -45,6 +45,7 @@ jobs:
           cd polyregular-model-checking/polycheck
           # --nix to use nix dependencies
           # --allow-different-user because github changes the user
+          stack init --nix --nix-packages "zlib" --allow-different-user
           stack build --nix --nix-packages "zlib" --allow-different-user
       - name: Run test suite
         run: |

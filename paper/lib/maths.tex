@@ -165,3 +165,15 @@
 \NewDocumentCommand{\semF}{ m m }{ \llbracket #1 \rrbracket_{#2} }
 \NewDocumentCommand{\semT}{ m }{\withkl{\kl[\semT]}{\mathopen{\cmdkl{\llbracket}} #1 \mathclose{\cmdkl{\rrbracket}}}}
 \knowledge{\semT}{notion}
+
+
+
+
+\NewDocumentCommand{\ibvar}{ m }{\mathsf{in}_{\mathbb{B}}(#1)}
+\NewDocumentCommand{\obvar}{ m }{\mathsf{out}_{\mathbb{B}}(#1)}
+\NewDocumentCommand{\ipvar}{ m }{\mathsf{in}_{\mathbb{N}}(#1)}
+
+
+
+\NewDocumentCommand{\qrank}{  }{\mathop{\mathsf{qr}}}
+\NewDocumentCommand{\bcount}{  }{\mathop{\#_\mathsf{bool}}}
