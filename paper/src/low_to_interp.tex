@@ -4,13 +4,23 @@
 
 In this section, we prove that every \kl{simple for-program} can be compiled
 into a \kl{first-order interpretation} in our symbolic setting. Recall that
-this is already known in the non-symbolic case \cite{bojanczyk2018polyregular},
-however the process does not 
+this is already known in the non-symbolic case \cite{bojanczyk2018polyregular}.
+However, this previous proof does not provide complexity bounds, and relies on
+computing a normal form of the programs which drastically increase the
+complexity of the generated formulas. As our proof will highlight, nesting
+for-loops and introducing boolean variables are the main source of complexity,
+and the existing normal form drastically increase both parameters.
 
+To transform a \kl{simple for-program} into a \kl{first-order interpretation},
+the main idea will be to use as \kl{character constants} the set of all
+characters that appear in the program. Then, we will use as \kl{transduction
+tags} the set of all print statements in the program (remembering their
+location in the source code). The \kl{arity} of a print statement will be the
+number of position variables that are in the scope of the print.
+It is relatively easy to compute the \kl{output function}
+of a print statement: if the print statement 
 
 \begin{itemize}
-    \item Recall that this was already known, but without any bounds on the 
-        complexity of the process.
     \item The key idea is that every print of the program is going to be a 
         \kl{transduction tag}.
     \item The main issue is understanding how boolean variables are modified
