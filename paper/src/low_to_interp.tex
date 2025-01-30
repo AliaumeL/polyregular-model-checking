@@ -16,33 +16,137 @@ the main idea will be to use as \kl{character constants} the set of all
 characters that appear in the program. Then, we will use as \kl{transduction
 tags} the set of all print statements in the program (remembering their
 location in the source code). The \kl{arity} of a print statement will be the
-number of position variables that are in the scope of the print.
-It is relatively easy to compute the \kl{output function}
-of a print statement: if the print statement 
+number of position variables that are in the scope of the print. It is
+relatively easy to compute the \kl{output function} of a print statement: if
+the print statement outputs a fixed character $c$, then the \kl{output
+function} will be the constant function $c$; if the print statement uses
+$\mathsf{label}(i)$ for some variable $i$ in the context of the print
+statement, then the \kl{output function} will be the number corresponding to
+the position variable $i$ (that is, its De Bruijn index \cite{DEBRUJ72}). To
+compute the \kl{ordering formula} between two print statements, we use the same
+technique as described in the \kl{for loop expansion} procedure: we compare the
+indices of the positions that are in the scope of the print statements, and
+break ties using their ordering in the source code. Note that the \kl{ordering
+formula} does not use any quantifiers.
 
-\begin{itemize}
-    \item The key idea is that every print of the program is going to be a 
-        \kl{transduction tag}.
-    \item The main issue is understanding how boolean variables are modified
-        by the program during execution.
-\end{itemize}
+The only non-trivial part of the transformation is to compute the \kl{domain
+formula} of a print statement. This difficulty is akin to the one of the
+\kl{for loop expansion} procedure in the case of a reverse loop: given a print
+statement $p(i_1, \dots, i_k)$, where $i_1, \dots, i_k$ are the position
+variables in the scope of the print statement, we need to check that every
+\texttt{if} statement along the path from the root of the program to the print
+statement was correctly taken. This is done by computing the conjunction, over
+all the \texttt{if} statements, of the truth values of the boolean tests that
+were executed. The main difference with the \kl{for loop expansion} case is
+that we need to \emph{abstractly} compute the truth values of the boolean
+variables used in the tests.
+
+To solve this issue, we will introduce the notion of \kl{program formulas},
+which are \kl{first-order formulas} describing a transformation of boolean
+variable's truth values. We will associate to every program statement a
+corresponding \kl{program formula} (the main difficulty), which in turns allows
+to easily derive the \kl{domain formula}.
 
 \subsection{Program Formulas}
+\label{sec:program-formulas}
 
-\AP In order to compile a low level For program to a first order
-interpretation, our main issue is compositionality. To that end, let us
-introduce an intermediate \emph{compositional} language talking about the state
-of the program. A \intro{program formula} is a tuple $(I, \varphi, O)$ where $I
-\subseteq \BVars \cup \PVars \cup \OVars$, and $O \subseteq \BVars$.
+\AP A \intro{program formula} is a \kl{first order formulas} where every
+\kl{free variable} is either: an \kl{input boolean variable}  written
+$\ibvar{b}$,  an \kl{output boolean variable} written $\obvar{b}$, or an
+\kl{input position variable} written $\ipvar{i}$. Given a fixed word $w \in
+\mathcal{D}^*$, a \kl{program formula} $\varphi$ defines a relation between the
+input variables $\ibvar{b_1}, \dots, \ibvar{b_n}$, the output variables
+$\obvar{b_1}, \dots, \obvar{m}$, and the positions $\ipvar{1}, \dots,
+\ipvar{k}$. We will only consider \kl{program formulas} that define
+\emph{functions} for every fixed input word $w$: for every assignment of the
+input variables (boolean and positions), there exists a unique assignment of the
+output variables (boolean) that satisfies the formula.
 
+As an example, the statement \texttt{b := True} that updates a boolean variable
+$b$ can be represented by the \kl{program formula} $\Phi_{\texttt{setTrue}} :=
+\obvar{b}$. Similarly, given \kl{program formulas} $\Phi_1$ and $\Phi_2$ having 
+the same input and output variables,
+together with a conditional formula $\varphi$, one can 
+simulate the \texttt{if then else} construction 
+as follows:
+\begin{equation*}
+    \Phi_{\texttt{if}} := (\varphi \land \Phi_1) \lor (\neg \varphi \land \Phi_2) \quad .
+\end{equation*}
+
+\AP In the case where the two \kl{program formulas} $\Phi_1$ and $\Phi_2$ have
+different sets of input or output variables, one can always perform a
+\intro{lifting} operation that: discards the unused \kl{input position
+variables} ($\exists i'. \ipvar{i} = i'$), discards the unused \kl{input boolean
+variables} ($\exists b'. \ibvar{b} = b'$), ignores \kl{output boolean
+variables} that are not used ($\exists b'. \obvar{b} = b'$), and asserts that
+unused \kl{output boolean variables} are equal to their corresponding \kl{input
+boolean variables} ($\ibvar{b} = \obvar{b}$).
+
+Our goal is to compute inductively a \kl{program formula} for every statement
+of a \kl{simple for-program}.
+
+\paragraph{Composition of Program Formulas.} The first (mild) difficulty is to
+perform the sequential composition of two \kl{program formulas} in a relatively
+efficient way. Given two \kl{program formulas} $\Phi_1$ and $\Phi_2$ having the
+same \kl{input position variables}, and such that the \kl{output boolean
+variables} of $\Phi_1$ are in correspondence with the \kl{input boolean
+variables} of $\Phi_2$, the composition $\Phi_1 ; \Phi_2$ is defined as
+follows: we existentially quantify over the names of the input boolean
+variables of $\Phi_2$ (that are exactly the output boolean variables of
+$\Phi_1$) the formula $\Phi_1 \wedge \Phi_2$. Note that this operation
+increases the \kl{quantifier depth} of the \kl{program formula} by the number
+of boolean variables concerned. In particular, it can be inefficient to compute
+the composition of two \kl{program formulas} by first \kl[pf]{lifting} them and
+then perform the composition.
+
+
+We designed a composition algorithm that only quantifies over 
+boolean variables that are \textbf{TODO is this true}?
+\begin{equation*}
+    \qrank(\Phi_1 ; \Phi_2) 
+    \leq \max(\qrank(\Phi_1), \qrank(\Phi_2)) 
+    +    \text{number of common boolean variables}
+    \quad .
+\end{equation*}
+
+
+\paragraph{Iteration of Program Formulas.} The second (and more problematic)
+operation on \kl{program formulas} is the iteration. Assume that we have a
+\kl{program formula} $\Phi$ that contains an \kl{input position variable} $i$
+that we want to iterate over, that is, we want to build a \kl{program formula}
+$\Phi^*$ such that:
+\begin{equation*}
+    \forall_{w \in \mathcal{D}^*}
+    \quad 
+    w \models
+    \Phi^* 
+    \iff 
+    \Phi(i = 0) ; \Phi(i = 1) ; \cdots ; \Phi(i = |w|) \quad .
+\end{equation*}
+The crucial remark is that the \kl{program formula} $\Phi$ has a \emph{finite
+output} (finitely many possibilities for the output boolean variables), and
+that this finite output set is \emph{ordered}: the variables can only be set to
+\texttt{True} (\ref{item:mut-variables}). As a consequence, in a loop
+construction, the output of $\Phi$ differs from the input for at most the
+number of boolean variables of $\Phi$ iteration steps.
+The resulting \kl{program formula} $\Phi^*$ will guess these 
+steps $i_1, \dots, i_k$, the truth value of the boolean variables at 
+these steps and assert the following:
 \begin{itemize}
-    \item A program formula models a \emph{relation} between the input variables
-        and output variables. We only care about \emph{functions}.
-    \item There is a nice diagrammatic representation of such 
-        \kl{program formulas}, where input variables are on the left,
-        output variables are on the right.
+    \item The steps are \emph{correct}  in the sense
+        that the guessed boolean values for the output of step $j$
+        are the result of applying $\Phi$ to the guessed boolean
+        variables for the input of step $j$.
+    \item The steps are \emph{complete} in the sense
+        that between two guessed positions $i_j$ and $i_{j+1}$,
+        the boolean variables are not modified.
 \end{itemize}
+These formulas can be written in \kl{first-order logic},
 
-\AP There are two main constructions needed for programs formulas: the
-composition (sequential) and the iteration (loop).
-
+\begin{equation*}
+    \qrank(\Phi^*) 
+    \leq \qrank(\Phi) 
+    + (\bcount(\Phi))^2
+    + \bcount(\Phi)
+    + 1 \quad ,
+\end{equation*}
