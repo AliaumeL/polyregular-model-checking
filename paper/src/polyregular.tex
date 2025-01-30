@@ -2,85 +2,97 @@
 \section{Polyregular Functions}
 \label{sec:polyregular}
 
-Our strategy for showing that the \kl{high level language} has decidable model checking,
-is to show that is expressive power is captured by the class of \intro{first-order polyregular functions}
-introduced in \cite{bojanczyk2018polyregular}. In this section we provide its two equivalent characterizations 
-relevant for this paper:
-their equivalent characterizations
-that are relevant for this paper: \kl{first-order (simple) for programs}\footnote{
-    In \cite{bojanczyk2018polyregular} the authors use the term \kl{first-order for-programs}. 
-    In this paper we use the word `simple' to differentiate it from \kl{high-level for programs}. 
-} \cite[p. 19]{bojanczyk2018polyregular} and \kl{first-order (string-to-string) interpretations}
-\cite[Definition 4]{bojanczyk2019string}.
+Our strategy for showing that \kl{high-level language} has decidable \kl{model checking},
+is to show that is expressive power is captured by \intro{first-order polyregular functions} -- 
+a class of transductions introduced in \cite{bojanczyk2018polyregular} whose model checking 
+problem is decidable \cite[Theorem~1.7]{bojanczyk2018polyregular}. 
 
-To make the models suitable for large alphabets (such as the Unicode characters)
-present them in a symbolic framework (related to \cite{d2017power}, but not exactly the same) explained in the next section.
-The non-symbolic versions models are proven in \cite{bojanczyk2018polyregular} to be equivalent.
-In section \ref{sec:low_level} we show that the \kl{simple first-order language}
-can be translated to a \kl{first-order string-to-string transduction}.
-We believe that the other inclusion should also hold (with a similar proof as the one in \cite{bojanczyk2018polyregular}),
-but it is out of this paper's scope.
+In this section we provide two equivalent definitions of the \kl{first-order polyregular functions}: 
+one using \kl{first-order simple for-programs} \cite[p. 19]{bojanczyk2018polyregular} and
+one using the logical model of \kl{first-order string-to-string interpretations} \cite[Definition 4]{bojanczyk2019string}.
+To make the models more suitable for large alphabets (such as the Unicode characters), we present them 
+in a symbolic symbolic (which uses a simplified version of the ideas presented in \cite{d2017power} or 
+in \cite[Section~3.1]{bojanczyk2023growth}).
+
+The equivalence of the non-symbolic definitions was proven 
+in \cite{bojanczyk2018polyregular}. A very similar proof of inclusion in the symbolic setting, from 
+\kl{first-order simple for-programs} into \kl{first-order string-to-string interpretations}
+is shown in \cref{sec:low-level}. We believe that the other inclusion should also hold in the symbolic setting,
+but we do not prove it, as it is out of this paper's scope.
 
 \subsection{Symbolic transductions}
-Consider the following program, that swaps all \texttt{a}'s to \texttt{b}.
-programs.swapatob.py
-Even though it operates on the entire Unicode alphabet, it only differentiates between three types of characters:
-\texttt{a}, \texttt{b} and the rest. In order to formalize this idea, model the Unicode alphabet as an infinite set $\mathcal{D}$,
-and we say that a transduction $T : \mathcal{D}^* \to \mathcal{D}^*$ is supported by a finite subset $A \subseteq \mathcal{D}$ if
-for every function $f: \mathcal{D} \to \mathcal{D}$ that does not touch elements of $A$ (i.e. for every $a \in A$,  $f^{-1}(a) = {a}$),
-it holds that: 
-\[ \forall_{w} T(f^*(w)) = f^*(T(w))\texttt{,} \]
+Consider the following program, that swaps all \texttt{a}s to \texttt{b}s:\\
+\begin{figure}[h]
+    \centering
+    \input{figs/python-nested.tex}
+    \caption{A small Python program that
+        outputs all subwords of a given word containing \texttt{ab}
+        as a scattered subword}.
+    \label{fig:python-example-nested}
+\end{figure}
+Even though it operates on the entire Unicode alphabet, it only distinguishes between three types of characters:
+\texttt{a}, \texttt{b} and the rest. In fact, all \kl{simple for programs} will have a similar property. 
+We will use this observation to simplify the definition of
+\kl{first-order string-to-string interpretations}, whose size would normally depend on the size of the alphabet.
 
-In the next two subsections we define symbolic versions of \kl{first-order simple for-programs} and \kl{first-order string-to-string transductions} which 
-define (some of the) finitely supported functions of type $\mathcal{D}^* \to \mathcal{D}^*$. 
-
+Formally, we model the Unicode alphabet as an infinite set $\mathcal{D}$, and we define
+a transduction $T : \mathcal{D}^* \to \mathcal{D}^*$ to be \intro{supported by} a set $A \subseteq \mathcal{D}$, if
+for every function $f: \mathcal{D} \to \mathcal{D}$ that does not touch elements of $A$ (i.e.  $\forall_{a\in A}, f^{-1}(a) = \{a\}$), it holds that: 
+\[ \forall_{w} T(f^*(w)) = f^*(T(w)) \]
+It is not hard to see that the transductions defined by \kl{high-level programs} (of type $\TOut[1] \to \TOut[1]$) describe functions
+that are supported by the finite set $A$ of letter constants that they use. This is also going to be the case for the \kl{simple for programs}.
+In \cref{subsec:fo-string-to-string}, we will define a version of the \kl{first-order string-to-string interpretations}
+in a way that only depends on the size of their support $A$, and not on the number of the Unicode characters.
 
 \subsection{First-Order Simple For-Programs}
 \intro{First-order simple for-programs} is a simple programming language that can be be seen
-as a simplified\footnote{Actually, its the \kl{high-level language} that is an expanded version of the \kl{first-order simple for-programs}.}
-version of the \kl{high-level language}.
-The main difference is that the \kl{simple for-programs} do not treat the (nested) words as first-class citizens -- there are no variables 
-of type $\text{word}$ and one cannot define functions. In particular, the for-loops can only iterate over the input word (or the reversed input word),
-so keeping track of the origin of the index variables is no longer required. Here is an example (see \cite{bojanczyk2018polyregular}
-for a more detailed description):
-%\emph{programs/reverse_words.spr}
+as a simplified\footnote{Actually, the \kl{high-level language} was designed as an extended version \kl{first-order simple for-programs}.}
+version of the \kl{high-level language}. The main difference is that the \kl{simple for-programs} only define transductions of type 
+$\TOut[1] \to \TOut[1]$. Moreover, they disallow constructing intermediate word-values: There are no variables of type $\TOut[n]$, 
+and it is not possible to define functions (other than the main function). As a consequence, the for-loops can only iterate over the input.
+Here is an example:\\ 
+
+% \emph{programs/reverse_words.spr}
+
 It is not hard to see that programs written in this language define programs $f : \mathcal{D}^* \to \mathcal{D}^*$ that is supported by the 
-finite set of letters used in the program (in this case $\{ \}$). 
+finite set of letters used in the program (in this case this is a singleton containing the space character).
 
 \subsection{First-Order String-To-String Transductions}
+\label{subsec:fo-string-to-string}
 
 \AP
-A \intro{symbolic first-order string to string interpretation} is a logical way of defining transductions. It consists of: 
-
+In this section we describe a logical way of defining word-to-word functions: 
+\begin{definition}
+A \intro{first-order string-to-string interpretation} consists of:
 \begin{enumerate}
 \item A finite set $T$ of tags.
-\item A finite set $A$ of letters from $\mathcal{D}$.
-\item A function $\text{arity} : T \to \Nat$ assigning an arity to each tag.
+\item A finite set $A \subset_{\textrm{fin}}\mathcal{D}$.
+\item An arity function $T \to \Nat$ assigning an arity to each tag.
 \item An output function function $\text{out} : T \to A + \{1, \ldots, \text{arity}(t)\}$. 
 \item A domain formula $\varphi_{\text{dom}}^t(x_1,\ldots,x_{\text{arity}(t)})$ for every tag $t \in T$.
-      The free variables represent positions in the input word, and can be queried by the following predicates: 
-      $x_i = x_j$, $x_i < x_j$, and $x_i =_L `a'$ for $a \in A$.
+      The free variables represent positions in the input word, and can be queried using the predicates: 
+      $x_i = x_j$, $x_i < x_j$, and $x_i =_L a$ for $a \in A$.
 \item An order formula $\varphi_{\leq}^{t,t'}((x_1,\ldots,x_{\text{arity}(t)}),(y_1,\ldots,y_{\text{arity}(t')}))$ for every pair of tags $t,t' \in T$. 
-      It can use the same basic predicates as the domain formula, and it has to define a total order on elements of $(t : T) \times \mathbb{N}^{\mathsf{arity}(t)}$.
+      It can use the same predicates as the domain formula, and it has to define a total order on elements of $(t : T) \times \mathbb{N}^{\mathsf{arity}(t)}$.
 \end{enumerate}
+\end{definition}
 
-Observe that the order formula defines a relation on the set $(t : T) \times \mathbb{N}^{\mathsf{arity}(t)}$ of tags 
-equipped with position tuples of the appropriate arity. We say that a \kl{first-order interpretation} is valid if
-the order formula defines a total order. Every valid interpretation defines a function $f : \mathcal{D}^* \to \mathcal{D}^*$
-that is supported by $A$. The output for a word $w$ is obtained by the following process:
+Every interpretation defines a function $f : \mathcal{D}^* \to \mathcal{D}^*$ that is supported by $A$.
+The output for a word $w$ is obtained by the following process:
 \begin{enumerate}
-    \item Let $P = \{1, \ldots, |w|\}$ be the set of positions in $w$, and take the set $T(P) = (t : T) \times P^{\text{arity}(t)}$
+    \item  Take the set $P = \{1, \ldots, |w|\}$ of the positions in $w$, and construct the set 
+           of \emph{elements} as the set $T(P) = (t : T) \times P^{\text{arity}(t)}$
            of all tags from $T$ equipped with position tuples of the appropriate arity.
     \item Filter out the elements that do not satisfy the domain formula.
     \item Sort the remaining elements according to the order formula.
-    \item Assign a letter to each element according to the output function: 
+    \item Assign a letter to each element according to the output function.
           In order to choose the letter for an element $t(p_1, \ldots, p_k)$, we look at the 
           output of $\text{out}(t)$: if it is a letter $a \in A$ we simply choose it,
           and if it is $i \in \{1, \ldots, k\}$ we choose the $p_i$-th letter of the input word.
 \end{enumerate}
 
-For example, here is a first-order that interpretation defines the function \texttt{swapAsToBs}. 
-It has two tags \texttt{printB} and \texttt{copy}, both of arity $1$. 
+For example, let us present a \kl{first-order word-to-word} interpretation that defines the function \texttt{swapAsToBs}. 
+It has two tags \texttt{printB} and \texttt{copy}, both of arity~$1$. 
 The element $\mathtt{printB}(x)$ outputs the letter \texttt{'a'} and the tag $\mathtt{copy}(x)$
 outputs the letter of $x$-th position of the input word:
 \[
@@ -95,7 +107,7 @@ in the input, otherwise the element $\mathtt{copy}(x)$ is present:
     $\varphi_{\text{dom}}^{\mathtt{printA}}(x) : x =_L \mathtt{b}$ & \ \ \  &$\varphi_{\text{dom}}^{\mathtt{copy}}(x) : x \neq_L \mathtt{b}$ \\
 \end{tabular}
 \]
-Finally the tags are sorted by their positions, with ties resolved in favour of \texttt{printA}:
+The tags are sorted by their positions, with ties resolved in favour of \texttt{printA}:
 \[ 
 \begin{tabular}{c|cc}
     $\varphi_{\leq}$ & $\mathtt{printA}(x_1)$ & $\mathtt{copy}(x_1)$ \\
