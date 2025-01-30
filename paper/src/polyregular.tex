@@ -1,3 +1,4 @@
+% LTeX: language=EN
 \newpage
 \section{Polyregular Functions}
 \label{sec:polyregular}
@@ -6,43 +7,56 @@ Our strategy for showing that \kl{high-level language} has decidable \kl{model c
 is to show that is expressive power is captured by \intro{first-order polyregular functions} -- 
 a class of transductions introduced in \cite{bojanczyk2018polyregular} whose model checking 
 problem is decidable \cite[Theorem~1.7]{bojanczyk2018polyregular}. 
+We provide two equivalent definitions of the \kl{first-order
+polyregular functions}: one using \kl{first-order simple for-programs} \cite[p.
+19]{bojanczyk2018polyregular} and one using the logical model of
+\kl{first-order string-to-string interpretations} \cite[Definition
+4]{bojanczyk2019string}, the equivalence of which 
+was proven in
+\cite{bojanczyk2018polyregular}.
 
-In this section we provide two equivalent definitions of the \kl{first-order polyregular functions}: 
-one using \kl{first-order simple for-programs} \cite[p. 19]{bojanczyk2018polyregular} and
-one using the logical model of \kl{first-order string-to-string interpretations} \cite[Definition 4]{bojanczyk2019string}.
-To make the models more suitable for large alphabets (such as the Unicode characters), we present them 
-in a symbolic symbolic (which uses a simplified version of the ideas presented in \cite{d2017power} or 
-in \cite[Section~3.1]{bojanczyk2023growth}).
-
-The equivalence of the non-symbolic definitions was proven 
-in \cite{bojanczyk2018polyregular}. A very similar proof of inclusion in the symbolic setting, from 
-\kl{first-order simple for-programs} into \kl{first-order string-to-string interpretations}
-is shown in \cref{sec:low-level}. We believe that the other inclusion should also hold in the symbolic setting,
+To make the models more suitable for large alphabets (such as the Unicode
+characters), we present them in a symbolic setting (which uses a simplified
+version of the ideas presented in \cite{d2017power} or in
+\cite[Section~3.1]{bojanczyk2023growth}). This will dramatically reduce the
+size of the \kl{first-order string-to-string interpretations}, and in turn, of
+the \kl{first-order formula} that we will feed to the solvers. We will prove in
+\cref{sec:low-level} that every \kl{first-order simple for-programs} can be
+transformed into a \kl{first-order string-to-string interpretation} in the
+symbolic setting. We believe that the other inclusion should also hold,
 but we do not prove it, as it is out of this paper's scope.
 
 \subsection{Symbolic transductions}
-Consider the following program, that swaps all \texttt{a}s to \texttt{b}s:\\
-\begin{figure}[h]
-    \centering
-    \input{figs/python-nested.tex}
-    \caption{A small Python program that
-        outputs all subwords of a given word containing \texttt{ab}
-        as a scattered subword}.
-    \label{fig:python-example-nested}
-\end{figure}
-Even though it operates on the entire Unicode alphabet, it only distinguishes between three types of characters:
-\texttt{a}, \texttt{b} and the rest. In fact, all \kl{simple for programs} will have a similar property. 
-We will use this observation to simplify the definition of
-\kl{first-order string-to-string interpretations}, whose size would normally depend on the size of the alphabet.
 
-Formally, we model the Unicode alphabet as an infinite set $\mathcal{D}$, and we define
-a transduction $T : \mathcal{D}^* \to \mathcal{D}^*$ to be \intro{supported by} a set $A \subseteq \mathcal{D}$, if
-for every function $f: \mathcal{D} \to \mathcal{D}$ that does not touch elements of $A$ (i.e.  $\forall_{a\in A}, f^{-1}(a) = \{a\}$), it holds that: 
-\[ \forall_{w} T(f^*(w)) = f^*(T(w)) \]
-It is not hard to see that the transductions defined by \kl{high-level programs} (of type $\TOut[1] \to \TOut[1]$) describe functions
-that are supported by the finite set $A$ of letter constants that they use. This is also going to be the case for the \kl{simple for programs}.
-In \cref{subsec:fo-string-to-string}, we will define a version of the \kl{first-order string-to-string interpretations}
-in a way that only depends on the size of their support $A$, and not on the number of the Unicode characters.
+\begin{wrapfigure}{r}{0.55\textwidth}
+    \input{figs/swap_as_bs.tex}
+    \caption{The \texttt{swapAsToBs} program.}
+    \label{fig:swapAsToBs}
+\end{wrapfigure}
+
+\AP
+Consider the program in \cref{fig:swapAsToBs}, which swaps all \texttt{a}s to
+\texttt{b}s in a string. Even though it operates on the entire Unicode
+alphabet, it only distinguishes between three types of characters: \texttt{a},
+\texttt{b} and the rest.
+To formalize this observation, we model the Unicode alphabet as an infinite set $\mathcal{D}$, and
+we define a function $T : \mathcal{D}^* \to \mathcal{D}^*$ to be
+\intro{supported by} a set $A \subseteq \mathcal{D}$, if for every function $f:
+\mathcal{D} \to \mathcal{D}$ that does not touch elements of $A$ (i.e.
+$\forall_{a\in A}, f^{-1}(a) = \{a\}$), it holds that:
+\begin{equation*}
+    \forall_{w} \quad T(f^*(w)) = f^*(T(w)) \quad ,
+\end{equation*}
+Where $f^*$ is the extension of $f$ to $\mathcal{D}^*$, defined by applying $f$
+to every letter.
+
+It is not hard to see that the functions defined by
+\kl{high-level programs} (of type $\TOut[1] \to \TOut[1]$)
+are supported by the finite set $A$ of letter constants that they use.
+This is also going to be the case for the \kl{simple for programs}. In
+\cref{subsec:fo-string-to-string}, we will define a version of the
+\kl{first-order string-to-string interpretations} in a way that only depends on
+the size of their support $A$, and not on the number of the Unicode characters.
 
 \subsection{First-Order Simple For-Programs}
 \intro{First-order simple for-programs} is a simple programming language that can be be seen
