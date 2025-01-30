@@ -87,69 +87,97 @@ beginning of a for loop (\circleref{3}{sfp:boolDeclFor}).
 \subsection{First-Order String-To-String Transductions}
 \label{subsec:fo-string-to-string}
 
-\AP In this section we describe a logical way of defining word-to-word
-functions: \kl{first-order string-to-string interpretations}. Every
-interpretation defines a \kl{finitely supported} function $f : \mathcal{D}^*
-\to \mathcal{D}^*$.
+\AP The \kl{first-order string-to-string interpretations} is another model 
+that defines functions $\mathcal{D}^* \to \mathcal{D}^*$. It is based on the \kl{first-order logic on words},
+so before we present its definition, we recall the definition of the logic: The \intro{first-order logic on words}
+consists of formulas described by \cref{fig:fo-syntax}.
+\begin{figure}[h]
+    \centering
+    \begin{align*}
+        \varphi,\ \psi :=&~ \forall_x\; \varphi ~|~ \exists_x\; \varphi ~|~ \varphi \wedge \psi ~|~ \varphi \vee \psi ~|~ \neg \varphi \\
+                |&~ x = y ~|~ x < y ~|~ x =_L \mathtt{a} \textrm{, where } \mathtt{a} \in \mathcal{D} \\
+    \end{align*}
+    \caption{First-order logic on words.}
+    \label{fig:fo-syntax}
+\end{figure}
+To evaluate such a formula $\varphi$ on a word $w \in \mathcal{D}^*$ we perform the quantifications
+over the positions in $w$. The predicates $x = y$ and $x < y$ have the natural 
+meaning, and $x =_L \mathtt{a}$ is checks if the $x$-th letter of $w$ is equal to $\mathtt{a}$.
+An important property of this logic, it that it has decidable \kl{emptiness}, i.e. given a formula
+$\varphi$ one can decide if there is a word $w$ such that $\varphi$ holds for $w$. For finite alphabets,
+this property is well-know \cite{buchi1960weak}, and for the infinite alphabet $\mathcal{D}$ it is 
+the consequence of the finite-alphabet case:
+\begin{lemma}
+    \label{lem:fo-emptiness}
+    The \kl{emptiness} problem for the \kl{first-order logic on words} is decidable for the infinite alphabet $\mathcal{D}$.
+\end{lemma}
+\begin{proof}
+    Take a formula $\varphi$ and observe that is contains only a finite number of constants from $\mathcal{D}$ -- call this set $A$.
+    It is not hard to see that the truth value of $\varphi$ is \kl{supported} by $A$: for every function $f : \mathcal{D} \to \mathcal{D}$
+    that does not \kl{touch} elements of $A$, the truth value of $\varphi$ is the same for $w$ and $f^*(w)$. (Remember that 
+    $f^*$ is the pointwise application of $f$). 
+    Let $\mathtt{blank} \in \mathcal{D}$ be a letter that does not appear in $A$,
+    and observe that the formula $\varphi$ is satisfied for some word in $\mathcal{D}^*$ if and only if it is satisfied by
+    some word in $(A \cup \{\mathtt{blank}\})^*$. Indeed, if we take a function $g: \mathcal{D} \to \mathcal{D}$ that does not touch elements of $A$
+    and maps all other letters to $\mathtt{blank}$, we can use it to map $\mathcal{D}^*$ to $(A \cup \{\mathtt{blank}\})^*$ in a way 
+    that preserves the truth value of $\varphi$.
+    This finishes the proof of the lemma, as we have reduced the general problem to a finite alphabet $A \cup \{\mathtt{blank}\}$.
+\end{proof}
 
-\todo[inline]{Do a paragraph about $\FO$ 
-explaining how to evaluate it on words
-and that it corresponds to automata, hence validity / satisfiability
-are decidable.}
-The free variables represent positions in the input word, and can be queried using the predicates: 
-$x_i = x_j$, $x_i < x_j$, and $x_i =_L a$ for $a \in A$.
-
+\noindent
+We are now ready to define the \kl{first-order string-to-string interpretations}.
 \begin{definition}
 A \intro{first-order string-to-string interpretation} consists of:
 \begin{enumerate}
 \item A finite set of character constants $A \subset_{\textrm{fin}}\mathcal{D}$.
 \item A finite set $T$ of tags.
 \item An arity function $\mathsf{ar} : T \to \Nat$.
-\item An output function $\mathsf{out} : T \to A + \{1, \ldots, \text{arity}(t)\}$. 
-\item A domain formula $\varphi_{\mathsf{dom}}^t(x_1,\ldots,x_{\mathsf{arity}(t)})$ 
+\item An output function $\mathsf{out} : T \to A + \{1, \ldots, \mathsf{ar}(t)\}$. 
+\item A domain formula $\varphi_{\mathsf{dom}}^t(x_1,\ldots,x_{\mathsf{ar}(t)})$ 
     for every tag $t \in T$.
-\item An order formula $\varphi_{\leq}^{t,t'}((x_1,\ldots,x_{\text{arity}(t)}),(y_1,\ldots,y_{\text{arity}(t')}))$ for every pair of tags $t,t' \in T$. 
+\item An order formula $\varphi_{\leq}^{t,t'}(x_1,\ldots,x_{\mathsf{ar}(t)},y_1,\ldots,y_{\mathsf{ar}(t')})$ for every $t,t' \in T$. 
 \end{enumerate}
+The order and domain formulas should only use constants from $A$.
 \end{definition}
-
-The output for a word $w$ is obtained by the following process:
+\noindent
+The interpretation's output for a word $w \in \mathcal{D}^*$ is obtained by the following process:
 \begin{enumerate}
     \item  Take the set $P = \{1, \ldots, |w|\}$ of the positions in $w$, and construct the set 
-           of \emph{elements} as the set $T(P) = (t : T) \times P^{\text{arity}(t)}$
+           of \emph{elements} as the set $T(P) = (t : T) \times P^{\mathsf{ar}(t)}$
            of all tags from $T$ equipped with position tuples of the appropriate arity.
     \item Filter out the elements that do not satisfy the domain formula.
-    \item Sort the remaining elements according to the order formula. Intuitively, we 
-          want the order formula to define a total order on the elements of $T(P)$ that 
-          were not filtered out by the domain formula -- if this is not the case,
-          the interpretation return an empty word.
-    \item Assign a letter to each element according to the output function.
-          In order to choose the letter for an element $t(p_1, \ldots, p_k)$, we look at the 
-          output of $\text{out}(t)$: if it is a letter $a \in A$ we simply choose it,
-          and if it is $i \in \{1, \ldots, k\}$ we choose the $p_i$-th letter of the input word.
+    \item Sort the remaining elements according to the order formula. Typically, we 
+          want the order formula to define a total order on the remaining elements of $T(P)$ -- 
+          if this is not the case, the interpretation return an empty word.
+    \item Assign a letter to each element according to the output function: For an 
+          element $t(p_1, \ldots, p_k)$, we look at of $\text{out}(t)$: If it returns $a \in A$
+          the output letter is $a$. If it returns $i \in \{1, \ldots, k\}$, we copy the output letter from the
+          $p_i$-th position of the input.
+          
 \end{enumerate}
 
-For example, let us present a \kl{first-order word-to-word} interpretation that defines the function \texttt{swapAsToBs}. 
+For example, let us present a \kl{first-order word-to-word interpretation} for the function \texttt{swapAsToBs}. 
 It has two tags \texttt{printB} and \texttt{copy}, both of arity~$1$. 
-The element $\mathtt{printB}(x)$ outputs the letter \texttt{'a'} and the tag $\mathtt{copy}(x)$
+The element $\mathtt{printB}(x)$ outputs the letter \texttt{b} and the tag $\mathtt{copy}(x)$
 outputs the letter of $x$-th position of the input word:
 \[
 \begin{tabular}{ccc}
     $\text{out}(\mathtt{printB}) = \mathtt{b}$ & \ \ \ & $\text{out}(\mathtt{copy}) = 1$ \\
 \end{tabular}
 \]
-The element $\mathtt{printA}(x)$ is present in the output if $x$ is labelled with the letter \texttt{b}
+The element $\mathtt{printB}(x)$ is present in the output if $x$ is labelled with the letter \texttt{b}
 in the input, otherwise the element $\mathtt{copy}(x)$ is present:
 \[
 \begin{tabular}{ccc}
-    $\varphi_{\text{dom}}^{\mathtt{printA}}(x) : x =_L \mathtt{b}$ & \ \ \  &$\varphi_{\text{dom}}^{\mathtt{copy}}(x) : x \neq_L \mathtt{b}$ \\
+    $\varphi_{\text{dom}}^{\mathtt{printB}}(x) : x =_L \mathtt{b}$ & \ \ \  &$\varphi_{\text{dom}}^{\mathtt{copy}}(x) : x \neq_L \mathtt{b}$ \\
 \end{tabular}
 \]
-The tags are sorted by their positions, with ties resolved in favour of \texttt{printA}:
+The tags are sorted by their positions, with ties resolved in favour of \texttt{printB}:
 \[ 
 \begin{tabular}{c|cc}
-    $\varphi_{\leq}$ & $\mathtt{printA}(x_1)$ & $\mathtt{copy}(x_1)$ \\
+    $\varphi_{\leq}$ & $\mathtt{printB}(x_1)$ & $\mathtt{copy}(x_1)$ \\
     \hline
-    $\mathtt{printA}(x_2)$ & $x_1 \leq x_2$ & $x_1 < x_2$ \\
+    $\mathtt{printB}(x_2)$ & $x_1 \leq x_2$ & $x_1 < x_2$ \\
     $\mathtt{copy}(x_2)$ & $x_1 \leq x_2$ & $x_1 \leq x_2$ \\
 \end{tabular}
 \]
