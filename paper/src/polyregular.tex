@@ -73,7 +73,7 @@ A \intro{first-order string-to-string interpretation} consists of:
       The free variables represent positions in the input word, and can be queried using the predicates: 
       $x_i = x_j$, $x_i < x_j$, and $x_i =_L a$ for $a \in A$.
 \item An order formula $\varphi_{\leq}^{t,t'}((x_1,\ldots,x_{\text{arity}(t)}),(y_1,\ldots,y_{\text{arity}(t')}))$ for every pair of tags $t,t' \in T$. 
-      It can use the same predicates as the domain formula, and it has to define a total order on elements of $(t : T) \times \mathbb{N}^{\mathsf{arity}(t)}$.
+      It can use the same predicates as the domain formula. 
 \end{enumerate}
 \end{definition}
 
@@ -84,7 +84,10 @@ The output for a word $w$ is obtained by the following process:
            of \emph{elements} as the set $T(P) = (t : T) \times P^{\text{arity}(t)}$
            of all tags from $T$ equipped with position tuples of the appropriate arity.
     \item Filter out the elements that do not satisfy the domain formula.
-    \item Sort the remaining elements according to the order formula.
+    \item Sort the remaining elements according to the order formula. Intuitively, we 
+          want the order formula to define a total order on the elements of $T(P)$ that 
+          were not filtered out by the domain formula -- if this is not the case,
+          the interpretation return an empty word.
     \item Assign a letter to each element according to the output function.
           In order to choose the letter for an element $t(p_1, \ldots, p_k)$, we look at the 
           output of $\text{out}(t)$: if it is a letter $a \in A$ we simply choose it,
