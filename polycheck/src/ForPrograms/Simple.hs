@@ -374,10 +374,10 @@ prettyPrintForStmt _ _ = error "prettyPrintForStmt: not implemented"
 prettyPrintBoolExpr :: BoolExpr -> String 
 prettyPrintBoolExpr (BConst b) = show b
 prettyPrintBoolExpr (BVar (BName b)) = b
-prettyPrintBoolExpr (BTest op (PName p1) (PName p2)) = p1 ++ " " ++ show op ++ " " ++ p2
+prettyPrintBoolExpr (BTest op (PName p1) (PName p2)) = p1 ++ " " ++ prettyPrintOp op ++ " " ++ p2
 prettyPrintBoolExpr (BLabelAt (PName p) l) = "label(" ++ p ++ ") == " ++ show l
 prettyPrintBoolExpr (BNot e) = "not " ++ prettyPrintBoolExpr e
-prettyPrintBoolExpr (BBin op e1 e2) = "(" ++ prettyPrintBoolExpr e1 ++ ")" ++ " " ++ show op ++ " " ++ "(" ++ prettyPrintBoolExpr e2 ++ ")"
+prettyPrintBoolExpr (BBin op e1 e2) = "(" ++ prettyPrintBoolExpr e1 ++ ")" ++ " " ++ prettyPrintBin op ++ " " ++ "(" ++ prettyPrintBoolExpr e2 ++ ")"
 
 
 
