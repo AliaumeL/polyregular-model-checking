@@ -195,13 +195,15 @@ defined as functions from $\semT{\mathsf{arg}_1} \times \cdots \times
 \semT{\mathsf{arg}_k}$ to $\Bools$, and similarly for functions with output
 type $\TOut[n]$ for some $n \in \Nat$.
 
-\todo[inline]{
-    Define what is an evaluation environment
-}
-\AP
-The evaluation of boolean expressions ($\bexpr$), constant expressions
+\AP The evaluation of boolean expressions ($\bexpr$), constant expressions
 ($\cexpr$), and \kl{list expressions} ($\oexpr$) pose no difficulty and are
-described in \textbf{TODO}. For the statements, the key point of the semantics
+described in \cref{fig:semantics-expr}. We therefore have a denotational
+semantics where the evaluation of such expressions in an \intro{evaluation
+environment} $\rho$ are functions $\semB{\cdot}{\rho} : \bexpr \to \Bools$,
+$\semC{\cdot} : \cexpr \to \NestedWords$, and $\semO{\cdot}{\rho} : \oexpr
+\to \NestedWords$ respectively.
+
+For the statements, the key point of the semantics
 is that the for loops are taken to be of the form
 $\hlfor{(i,x)}{o}{s}$ (in the case of a forward iteration) and
 $\hlforRev{(i,x)}{o}{s}$ (in the case of a backward iteration).

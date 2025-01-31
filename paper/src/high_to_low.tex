@@ -256,23 +256,8 @@ In our case, $s_\mathsf{rev}$ is defined as:
 \begin{equation*}
     \hlforRev{(j',y')}{ u }{\hlyield{y'}}
 \end{equation*}
-Remark that there are some statements that are reachable in
-$s_\mathsf{rev}$, but do not correspond to a production when iterating over $s$
-in reverse order, because of the boolean variables and conditionals that we
-discarded. To ensure that we only output correct elements,
-we will replace every $\hlyield{\cdot}$ statement in $s_{\mathsf{rev}}$ by a
-copy of $s$, leading to the program $s' = s_{\mathsf{rev}}[ \hlyield{\cdot} \mapsto s ]$.
-In our case, this leads to the following program:
-\begin{align*}
-    \hlforRev{(j',y')}{ u }{ s }
-\end{align*}
-It is now possible to replace every yield statement in this new program
-by a conditional check ensuring that the output would actually be 
-produced by the original program $s$.
-\begin{equation*}
-    s'' = s'[ \hlyield{e} \mapsto \hlifnoelse{\bcomp{i}{=}{j'}}{\hlyield{e}}]
-\end{equation*}
-In our case, the final program is the following one:
+\begin{wrapfigure}{r}{0.5\textwidth}
+    \centering
 \begin{tikzpicture}[overlay, remember picture]
     \draw[fill=D4hint,draw=none] 
                      ([yshift=1em, xshift=-0.5em]pic cs:revloopexpstart) 
@@ -289,9 +274,9 @@ In our case, the final program is the following one:
                      rectangle 
                      ([yshift=-0.3em, xshift=4.4em]pic cs:revloopifend);
 
-     \node[anchor=east,D4] at ([xshift=-1em]pic cs:revloopexpstart) {$s_{\mathsf{rev}}$};
-     \node[anchor=west,D3] at ([xshift=11em]pic cs:revloopexpinnerstart) {$s$};
-     \node[anchor=west,D2] at ([xshift=9em]pic cs:revloopifstart) {yield guard};
+     \node[anchor=east,D4] at ([xshift=1.5em,yshift=2em]pic cs:revloopexpstart) {$s_{\mathsf{rev}}$};
+     \node[anchor=west,D3,rotate=90] at ([xshift=11em]pic cs:revloopexpinnerstart) {$s$};
+     \node[anchor=west,D2,rotate=90] at ([xshift=9em,yshift=-3em]pic cs:revloopifstart) {yield guard};
 \end{tikzpicture}
 \begin{align*}
     &\tikzmark{revloopexpstart}\mathsf{for}^{\leftarrow}~(j',y')~\mathsf{in}~ u ~\mathsf{do} \\
@@ -303,6 +288,26 @@ In our case, the final program is the following one:
     &\quad \quad \mathsf{else} \\
     &\quad \quad \quad b \leftarrow \mathsf{true}\tikzmark{revloopexpend} \\
 \end{align*}
+\caption{Backward for loop expansion.}
+\label{fig:revloopexp}
+\end{wrapfigure}
+Remark that there are some statements that are reachable in
+$s_\mathsf{rev}$, but do not correspond to a production when iterating over $s$
+in reverse order, because of the boolean variables and conditionals that we
+discarded. To ensure that we only output correct elements,
+we will replace every $\hlyield{\cdot}$ statement in $s_{\mathsf{rev}}$ by a
+copy of $s$, leading to the program $s' = s_{\mathsf{rev}}[ \hlyield{\cdot} \mapsto s ]$.
+In our case, this leads to the following program:
+\begin{align*}
+    \hlforRev{(j',y')}{ u }{ s }
+\end{align*}
+It is now possible to replace every yield statement in this new program
+by a conditional check ensuring that the output would actually be 
+produced by the original program $s$.
+\begin{equation*}
+    s'' = s'[ \hlyield{e} \mapsto \hlifnoelse{\bcomp{i}{=}{j'}}{\hlyield{e}}]
+\end{equation*}
+In our case, the final program is described in \cref{fig:revloopexp}.
 This rewriting can be generalised to any program of the form
 $\hlforRev{(i,x)}{\ogen{s_1}}{s_2}$ combining the construction illustrated here
 with the one taking care of position variables in the case of forward loops.

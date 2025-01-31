@@ -1,78 +1,36 @@
 \section{Benchmarks}
 \label{sec:benchmarks}
 
-We implemented all the transformations expressed in this paper. In particular,
-we transformed \kl{high-level for-programs} into \kl{first-order
-interpretations} which where then used to verify \kl{first-order Hoare triples}
-using an SMT solver or the \kl{MONA} program. In this section, we will present
-key indicators of these transformations, and ignore the time taken by the
-solvers to perform verification as it is for now out of the scope of this
-paper.
+We implemented all the transformations expressed in this paper in a
+\texttt{Haskell} program. In particular, we transformed \kl{high-level
+for-programs} into \kl{first-order interpretations} which where then used to
+verify \kl{first-order Hoare triples} using an SMT solver or the \kl{MONA}
+program. In this section, we will discuss the practical aspects of this
+implementation.
 
-We selected a number of programs in the \kl{high-level for-program} language
-and for each of them we computed its corresponding \kl{simple for-program} and
-its corresponding \kl{first-order interpretation}. To measure the complexity of
-these transformations, we associated to a \kl{high-level for-program} the
-following parameters: its \emph{size} (number of control flow statements), its
-\emph{loop depth} (the maximum number of nested loops), and its \emph{boolean
-depth} (the maximum number of boolean variables visible at any point in the
-program). We compute the same parameters for the corresponding \kl{simple
-for-program}. In the case of \kl{first-order interpretations}, we only compute
-its \emph{size} (number of nodes in the formula) and its \kl{quantifier rank}.
-The results are presented in \cref{tab:benchmarks}.
+\paragraph{Methodology.} We selected a number of programs in the \kl{high-level
+for-program} language and for each of them we computed its corresponding
+\kl{simple for-program} and its corresponding \kl{first-order interpretation}.
+To measure the complexity of these transformations, we associated to a
+\kl{high-level for-program} the following parameters: its \emph{size} (number
+of control flow statements), its \emph{loop depth} (the maximum number of
+nested loops), and its \emph{boolean depth} (the maximum number of boolean
+variables visible at any point in the program). We compute the same parameters
+for the corresponding \kl{simple for-program}. In the case of \kl{first-order
+interpretations}, we only compute its \emph{size} (number of nodes in the
+formula) and its \kl{quantifier rank}. The results are presented in
+\cref{tab:benchmarks}.
 
-\paragraph{Quantifier free results.}
-In the simplest cases, we do manage to obtain the optimal quantifier
-free results.
-
-\paragraph{Non-symmetric results.} Get first word and get last words
-are two programs that are very similar in their high-level
-representation, but the quantifier rank and number of boolean variables
-highly differ.
-
-\paragraph{Complexity of literals.}
-The results show that the \kl{elimination of literals} is responsible for a
-significant increase in the complexity of the formulas, as one can see in the
-\texttt{assets/HighLevel/litteral\_test.pr} benchmark. This is explained by the
-fact that the elimination of literals introduces a \emph{sequential} structure
-in the program which is simulated by introducing boolean variables.
-
-
-
-Similarly, we observe that our transformation does not introduce any
-quantifiers when boolean variables are not used, this is the case for the
-\texttt{reversed\_add\_hash} benchmark. 
-
-\subsection{Evaluation of Hoare Triple}
-While we did not use extensive testing, 
-we did witness that ... on the examples X and Y, 
-results in table XX. So the use of different solvers really is interesting.
-
-
-\begin{description}
-    \item[High Level transformation]
-        We compute for the output
-        \begin{itemize}
-            \item The time it took to transform the program (plot)
-            \item The size of the output program (ratio)
-            \item The nesting depth of for loops (ratio)
-            \item The number of print statements (ratio)
-        \end{itemize}
-    \item[Low level to interpretation]
-        We compute for the output
-        \begin{itemize}
-            \item The time it took to transform the program (plot)
-            \item The size of the formula (ratio)
-            \item The quantifier rank of the formula (ratio)
-        \end{itemize}
-    \item[Interpretation to SMT]
-        We compute for the output
-        \begin{itemize}
-            \item The time it took to transform the program (plot)
-            \item The size of the formula (ratio)
-            \item The quantifier rank of the formula (ratio)
-        \end{itemize}
-\end{description}
+Then, we used several existing solvers to verify basic \kl{first-order Hoare
+triples} for these programs. Because the goal of this paper was to showcase the
+usage of the theory of \kl{polyregular functions}, we did not focus on
+optimizing the input for a particular solver: all solvers (except \kl{MONA})
+were given an input in the \texttt{SMT-LIB} format. We list in
+\cref{tab:timings} the answer and the time it took for each solver to answer
+the different queries. This table illustrates the complementarity of the
+various solvers, and in particular, justifies that for some specific queries,
+the \kl{MONA} program (which is complete for \kl{first-order logic on words})
+does not provide an answer (either by timeout, or by memory exhaustion).
 
 \begin{table}
     \caption{Benchmark results for the transformations. 
@@ -86,4 +44,42 @@ results in table XX. So the use of different solvers really is interesting.
     \centering
     \input{figs/benches.tex}
 \end{table}
+
+\begin{table}
+    \caption{timings}
+    \label{tab:timings}
+    \centering
+    \input{figs/timings.tex}
+\end{table}
+
+\paragraph{Observations on the Compilation Process.} Let us highlight that in
+the simplest cases of
+\cref{tab:benchmarks},
+our compilation procedure is able to eliminate all boolean variables, thus
+producing a \emph{quantifier-free} formula. This is the case for the
+\texttt{identity.pr}, \texttt{reverse.pr} and \texttt{prefixes.pr} programs,
+respectively computing the identity function, the word reversal function, and
+the list of all prefixes.
+
+We can observe that the \kl{boolean depth} of the \kl{simple for-program} is a
+good indicator of the \kl{quantifier rank} of the generated \kl{first-order
+interpretation}. Furthermore, we demonstrate the \kl{elimination of literals}
+is responsible for a significant increase in the complexity of the formulas, as
+one can see in the \texttt{assets/HighLevel/litteral\_test.pr} benchmark. This
+is explained by the fact that the elimination of literals introduces a
+\emph{sequential} structure in the program which is simulated by introducing
+boolean variables.
+
+We found it interesting that our compilation process is non-symmetric when
+transforming \kl{high-level for-programs} into \kl{simple for-programs}: this
+can be seen in the \texttt{get\_first\_word.pr} and
+\texttt{get\_last\_word.pr}, leading to vastly different \kl{quantifier ranks}
+for the resulting \kl{first-order interpretations}, although these programs are
+very similar in their \kl{high-level representation}.
+
+
+\paragraph{Observations on the Solver Performance.} While we did not use
+extensive testing, we did witness that ... on the examples X and Y, results in
+table XX. So the use of different solvers really is interesting.
+
 

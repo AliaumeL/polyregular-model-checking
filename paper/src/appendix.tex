@@ -185,29 +185,23 @@ by compiling \cref{fig:high-level-example-nested}.}
         \semB{\bapp{f}{b}}{\rho}          =&~ \semF{f}{\rho}(\semB{b}{\rho}) \\
         \semB{\bliteq{c}{o}}{\rho}        =&~ \semC{c}{\rho} = \semO{o}{\rho}
     \end{align*}
-    \caption{Semantics of boolean expressions}.
-\end{figure}
-
-\begin{figure}
-    \centering
     \begin{align*}
         \semC{ \cdot }                  \colon&~ \cexpr \to \OutputType \\
         \semC{\cchar{c}}                =&~ c \\
         \semC{\clist{c_1, \ldots, c_n}} =&~ [c_1, \ldots, c_n]
     \end{align*}
-    \caption{Semantics of constant expressions.}
-\end{figure}
-
-\begin{figure}
-    \centering
     \begin{align*}
         \semO{ \cdot }{\rho}       \colon&~ \oexpr \to \OutputType \\
         \semO{x}{\rho}                  =&~ \rho(x) & x \in \OVars \\
-        \semO{\cexpr}{\rho}             =&~ \semC{\cexpr} \\
+        \semO{c}{\rho}             =&~ \semC{c} & c \in \cexpr \\
         \semO{\olist{o_1, \ldots, o_n}}{\rho} =&~ [\semO{o_1}{\rho}, \ldots, \semO{o_n}{\rho}] \\
         \semO{f(\aexpr_1, \dots, \aexpr_n)}{\rho} =&~ \semF{f}{\rho}(\semO{\aexpr_1}{\rho}, \dots, \semO{\aexpr_n}{\rho})
     \end{align*}
-    \caption{Semantics of output expressions.}
+    \caption{Semantics of \kl{boolean expressions}, \kl{constant expressions}
+        and \kl{list expressions}, in a given an \kl{evaluation environment} $\rho$
+    mapping variables to $\Bools$, $\NestedWords$, $\Nat$, or a function, depending 
+    on their type.}
+    \label{fig:semantics-expr}
 \end{figure}
 
 \begin{figure}

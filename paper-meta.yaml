@@ -15,9 +15,8 @@ abstract: |
   can be leveraged to verify simple string-to-string
   for-loop programs defined in a subset of Python efficiently.
 acknowledgements: |
-  We would like to acknowledge the work of 
-  Arnav Garg and Ojas Maheshwari in a previous version of
-  this project.
+  We would like to thank Arnav Garg and Ojas Maheshwari 
+  for their participation in the early stage of this project.
 classification:
   ccdesc:
     - Theory of computation~Automata extensions

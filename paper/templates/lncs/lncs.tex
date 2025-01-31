@@ -126,9 +126,12 @@ $for(keywords)$$it$$sep$ and  $endfor$
 $body$
 
 % Include acknowledgements
+$if(draft)$
+$endif$
 $if(acknowledgements)$
 \section*{Acknowledgements}
 $acknowledgements$
+$endif$
 $endif$
 
 % Include the bibliography
