@@ -1,6 +1,152 @@
 \section{Benchmarks}
 \label{sec:benchmarks}
 
+% filename | high-level | low-level | interpretation
+%          | size | qr  | size | qr | size | qr 
+% ------------------------------------------------
+% test.pr  | 100 |  10 |  100 |  10 |  100 |  10
+\begin{tabular}{l|c|c|c|c|c|c}
+    \toprule
+    \textbf{filename} & \multicolumn{2}{c|}{\textbf{high-level}} & \multicolumn{2}{c|}{\textbf{low-level}} & \multicolumn{2}{c|}{\textbf{interpretation}} \\
+    \midrule
+                      & \textbf{size} & \textbf{qr} & \textbf{size} & \textbf{qr} & \textbf{size} & \textbf{qr} \\
+    \midrule
+            assets/HighLevel/prefixes.pr &
+        6 & 2 &
+         5 & 3  &
+         2 & 0  \\
+            assets/HighLevel/duplicate.pr &
+        6 & 1 &
+         5 & 2  &
+         3 & 0  \\
+            assets/HighLevel/reversed\_add\_hash.pr &
+        9 & 1 &
+         6 & 3  &
+         3 & 0  \\
+            assets/HighLevel/duplicate\_square.pr &
+        18 & 2 &
+         16 & 3  &
+         8 & 0  \\
+            assets/HighLevel/skip\_last\_letter\_single.pr &
+        12 & 2 &
+         6 & 3  &
+         69 & 4  \\
+            assets/HighLevel/return\_yield.pr &
+        11 & 1 &
+         18 & 2  &
+         1157 & 5  \\
+            assets/HighLevel/simple\_bool.pr &
+        6 & 0 &
+         1 & 1  &
+         1 & 0  \\
+            assets/HighLevel/compress\_as.pr &
+        12 & 1 &
+         12 & 3  &
+         209 & 10  \\
+            assets/HighLevel/map\_reverse.pr &
+        36 & 2 &
+         18 & 4  &
+         285 & 5  \\
+            assets/HighLevel/duplicate\_skip\_first\_square.pr &
+        20 & 2 &
+         25 & 3  &
+         - & -  \\
+            assets/HighLevel/word\_split.pr &
+        29 & 2 &
+         20 & 4  &
+         4310 & 11  \\
+            assets/HighLevel/lit\_eq\_empty\_list.pr &
+        7 & 0 &
+         10 & 2  &
+         139 & 10  \\
+            assets/HighLevel/triple\_square.pr &
+        18 & 2 &
+         34 & 6  &
+         38 & 0  \\
+            assets/HighLevel/as\_after\_as.pr &
+        8 & 1 &
+         6 & 2  &
+         155 & 4  \\
+            assets/HighLevel/bibtex.pr &
+        110 & 2 &
+         802 & 6  &
+         - & -  \\
+            assets/HighLevel/duplicate\_const.pr &
+        9 & 1 &
+         5 & 2  &
+         3 & 0  \\
+            assets/HighLevel/return\_elim.pr &
+        9 & 2 &
+         4 & 3  &
+         1 & 0  \\
+            assets/HighLevel/reverse\_generator.pr &
+        12 & 1 &
+         6 & 3  &
+         69 & 4  \\
+            assets/HighLevel/duplicate\_rev\_square.pr &
+        17 & 2 &
+         5 & 3  &
+         2 & 0  \\
+            assets/HighLevel/duplicate\_reverse.pr &
+        8 & 1 &
+         8 & 3  &
+         2 & 0  \\
+            assets/HighLevel/identity.pr &
+        3 & 1 &
+         2 & 2  &
+         1 & 0  \\
+            assets/HighLevel/squaring.pr &
+        4 & 2 &
+         3 & 3  &
+         1 & 0  \\
+            assets/HighLevel/no\_return.pr &
+        11 & 1 &
+         36 & 2  &
+         4397 & 8  \\
+            assets/HighLevel/boolean\_funcs.pr &
+        9 & 1 &
+         11 & 2  &
+         317 & 6  \\
+            assets/HighLevel/skip\_first\_letter.pr &
+        8 & 1 &
+         4 & 2  &
+         62 & 4  \\
+            assets/HighLevel/reverse\_between\_ands.pr &
+        9 & 2 &
+         7 & 4  &
+         - & -  \\
+            assets/HighLevel/tripple\_square2.pr &
+        19 & 2 &
+         13 & 6  &
+         10 & 0  \\
+            assets/HighLevel/get\_last\_word.pr &
+        18 & 1 &
+         23 & 4  &
+         8553 & 15  \\
+            assets/HighLevel/reverse.pr &
+        3 & 1 &
+         2 & 2  &
+         1 & 0  \\
+            assets/HighLevel/litteral\_test.pr &
+        29 & 1 &
+         129 & 3  &
+         326010 & 82  \\
+            assets/HighLevel/get\_first\_word.pr &
+        22 & 1 &
+         5 & 2  &
+         103 & 4  \\
+            assets/HighLevel/function\_that\_returns.pr &
+        4 & 0 &
+         1 & 1  &
+         1 & 0  \\
+            assets/HighLevel/suffixes.pr &
+        5 & 2 &
+         4 & 3  &
+         1 & 0  \\
+        \bottomrule
+\end{tabular}
+
+
 \begin{description}
     \item[High Level transformation]
         We compute for the output

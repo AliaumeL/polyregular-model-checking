@@ -24,6 +24,11 @@
 % microtype for better typography
 \usepackage{microtype}
 
+$if(draft)$
+\usepackage{todonotes}
+\usepackage{lineno}
+$endif$
+
 
 % math packages
 \usepackage{amsmath,amsthm,amssymb,stmaryrd,thmtools,upgreek}
