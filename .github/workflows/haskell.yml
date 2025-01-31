@@ -66,7 +66,8 @@ jobs:
           nix-build ./polycheck.nix -A polycheck
       - name: Run benchmarking tool
         run: |
-          ./result/bin/benchmarker -d polycheck/assets/HighLevel/ > benchmarks.json
+          cd polycheck
+          ./result/bin/benchmarker -d ./assets/HighLevel/ > benchmarks.json
       - name: Upload benchmarks
         uses: actions/upload-artifact@v4
         with:
