@@ -78,10 +78,11 @@ data BenchmarkSize = BenchmarkSize
     { bsDepth     :: Int     -- ^ The depth of the program (quantifier depth, number of nested loops)
     , bsSize      :: Int     -- ^ The size of the program (number of instructions)
     , bsCtn       :: String  -- ^ content for debugging purposes
+    , bsBoolDepth :: Int     -- ^ The depth of the boolean formula
     } deriving (Eq, Show, Ord, Generic, ToJSON, FromJSON)
     
 emptySize :: BenchmarkSize
-emptySize = BenchmarkSize 0 0 ""
+emptySize = BenchmarkSize 0 0 "" 0
 
 higherToSimpleProgram :: Program String ValueType -> SFP.ForProgram
 higherToSimpleProgram p = simplifyForProgram sfp
@@ -98,11 +99,12 @@ simpleForToInterpretation sfp = Interpretation tags alphabet simplifiedDomain si
 
 -- | Computing Sizes
 
-sizeOfHighLevel p = BenchmarkSize (programDepth p) (programSize p) ""
-sizeOfSfp       p = BenchmarkSize (SFP.programDepth p) (SFP.programSize p) "" -- (SFP.prettyPrintForProgram p)
+sizeOfHighLevel p = BenchmarkSize (programDepth p) (programSize p) "" (programBoolDepth p)
+sizeOfSfp       p = BenchmarkSize (SFP.programDepth p) (SFP.programSize p) "" (SFP.programBoolDepth p)
 sizeOfInterp    p = BenchmarkSize (maximum . map quantifierDepth $ doms)
                                   (sum . map formulaSize $ doms)
                                   "" -- (prettyPrintFormula $ andList doms)
+                                  0
     where
         doms = do 
             t <- FOI.tags p
@@ -143,22 +145,30 @@ typeCheckFormula f = do
 handleAny :: (SomeException -> IO a) -> IO a -> IO a 
 handleAny h m = Control.Exception.catch m h
 
-maybeTimeout :: Maybe Int -> IO a -> IO (Maybe a)
-maybeTimeout t m = case t of
-    Just t  -> timeout t m
-    Nothing -> Just <$> m
+eitherTimeout :: Int -> IO a -> IO (Either String a)
+eitherTimeout t m = do
+    res <- timeout t m
+    case res of
+        Nothing -> return $ Left "Timeout"
+        Just x  -> return $ Right x
 
 highToSfpWithTimeout :: Maybe Int -> Program String ValueType
-                     -> IO (Maybe SFP.ForProgram)
-highToSfpWithTimeout t high = handleAny (\_ -> return Nothing) $ maybeTimeout t $ do 
+                     -> IO (Either String SFP.ForProgram)
+highToSfpWithTimeout Nothing high = handleAny (\e -> return (Left (show e))) $ do
+        let sfp' = higherToSimpleProgram high
+        return $ Right sfp'
+highToSfpWithTimeout (Just t) high = handleAny (\e -> return (Left (show e))) $ eitherTimeout t $ do 
         let sfp' = higherToSimpleProgram high
         writeFile  "test.tmp" . SFP.prettyPrintForProgram $ sfp'
         removeFile "test.tmp"
         return sfp'
 
 sfpToIntWithTimeout :: Maybe Int -> SFP.ForProgram
-                    -> IO (Maybe (Interpretation String))
-sfpToIntWithTimeout t sfp = handleAny (\_ -> return Nothing) $ maybeTimeout t $ do
+                    -> IO (Either String (Interpretation String))
+sfpToIntWithTimeout Nothing sfp = handleAny (\e -> return (Left (show e))) $ do
+        let int = simpleForToInterpretation sfp
+        return $ Right int
+sfpToIntWithTimeout (Just t) sfp = handleAny (\e -> return (Left (show e))) $ eitherTimeout t $ do
         let int = simpleForToInterpretation sfp
         writeFile  "test.tmp" . show $ int           
         removeFile "test.tmp"                        
@@ -168,8 +178,8 @@ sfpToIntWithTimeout t sfp = handleAny (\_ -> return Nothing) $ maybeTimeout t $ 
 data BenchmarkFile = BenchmarkFile {
     bfName   :: FilePath,
     bfHigh   :: BenchmarkSize,
-    bfSfp    :: Maybe BenchmarkSize,
-    bfInterp :: Maybe BenchmarkSize
+    bfSfp    :: Either String BenchmarkSize,
+    bfInterp :: Either String BenchmarkSize
 } deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
 
@@ -184,13 +194,13 @@ benchmarkHighLevelFile t file = do
     let iSize = sizeOfHighLevel high
     sfp <- highToSfpWithTimeout t high
     case sfp of
-        Nothing  -> return $ BenchmarkFile file iSize Nothing Nothing
-        Just sfp -> do 
+        Left  err -> return $ BenchmarkFile file iSize (Left err) (Left "-")
+        Right sfp -> do 
             let sSize = sizeOfSfp sfp
             int <- sfpToIntWithTimeout t sfp
             case int of
-                Nothing  -> return $ BenchmarkFile file iSize (Just sSize) Nothing
-                Just int -> return $ BenchmarkFile file iSize (Just sSize) (Just $ sizeOfInterp int)
+                Left err  -> return $ BenchmarkFile file iSize (Right sSize) (Left err)
+                Right int -> return $ BenchmarkFile file iSize (Right sSize) (Right $ sizeOfInterp int)
 
 benchmarkHighLevelFiles :: Maybe Int -> [FilePath] -> IO BenchmarkMetadata
 benchmarkHighLevelFiles t files = BenchmarkMetadata <$> forM files (benchmarkHighLevelFile t)

@@ -81,6 +81,25 @@ programDepth (Program fs _) = maximum (map depthFun fs)
         depthStmt (SSeq [] _) x = x
         depthStmt (SSeq ss _) x = maximum (map (`depthStmt` x) ss)
 
+programBoolDepth :: Program v t -> Int
+programBoolDepth (Program [] _) = 0
+programBoolDepth (Program fs _) = maximum (map depthFun fs)
+    where
+        depthFun :: StmtFun v t -> Int
+        depthFun (StmtFun _ args s _) = depthStmt s
+
+        depthStmt :: Stmt v t -> Int
+        depthStmt (SIf _ s1 s2 _)  = max (depthStmt s1) (depthStmt s2)
+        depthStmt (SYield _ _)     = 0
+        depthStmt (SOReturn _ _)   = 0
+        depthStmt (SBReturn _ _)   = 0
+        depthStmt (SLetOutput _ _ s _) = depthStmt s
+        depthStmt (SLetBoolean _ s _)  = 1 + depthStmt s
+        depthStmt (SSetTrue _ _) = 0
+        depthStmt (SFor _ _ _ s _) = depthStmt s
+        depthStmt (SSeq [] _) = 0
+        depthStmt (SSeq ss _) = maximum (map depthStmt ss)
+
 programSize :: Program v t -> Int
 programSize (Program fs _) = sum (map sizeFun fs)
     where
