@@ -1,14 +1,16 @@
 % LTeX: language=EN
 \section{High Level For Programs}
-\label{sec:high_level}
+\label{sec:high-level}
 
 \AP In this section, we introduce our \intro{high-level language} for
 describing list-manipulating functions which can be seen as a subset of
-\texttt{Python}. Our goal is to reason algorithmically about the programs
-written in this language, so it needs to be highly restricted. To illustrate
-those restrictions, let us present a comprehensive example written in a subset
-of \texttt{Python}. The corresponding program in the syntax accepted by our
-solver is given in \cref{fig:high-level-example-nested}.
+\texttt{Python}, which we call \reintro{(high-level) for-programs}. Our goal is
+to reason algorithmically about the programs written in this language, so it
+needs to be highly restricted. To illustrate those restrictions, let us present
+in \cref{fig:python-example-nested}
+a comprehensive example written in a subset of \texttt{Python}.\footnote{The
+corresponding program in the syntax accepted by our solver is given in
+\cref{fig:high-level-example-nested}.}
 
 \begin{figure}[h]
     \centering
@@ -26,8 +28,10 @@ of values: booleans ($\intro*\Bools$), non-negative integers ($\Nat$), and
 ($\reintro*\NestedWords[0]$), words ($\NestedWords[1]$), lists of words
 ($\NestedWords[2]$), etc. 
 These lists can be created by \emph{yielding} values in a loop, such
-as in \circleref{2}{code:yield}. 
-In order to ensure decidable \kl{model checking}, we
+as in \circleref{2}{code:yield} of \cref{fig:python-example-nested}.
+In order to ensure decidable verification of Hoare triples,\footnote{
+    Using \kl{first-order logic on words} as a specification language.
+} we
 also will enforce the following conditions, which are satisfied in our example:
 \begin{enumerate}[label=(\Roman*), ref=R. \Roman*]
     \item \textbf{Loop Constructions.}
@@ -45,7 +49,7 @@ also will enforce the following conditions, which are satisfied in our example:
         as in \circleref{6}{code:enumerate},
         and their values are fixed during each iteration. Mutable integer
         variables could serve as unrestricted counters, resulting in
-        undecidable \kl{model checking}. Similarly, we prohibit mutable list
+        undecidable verification. Similarly, we prohibit mutable list
         variables, as their lengths could be used as counters.
         However, we still allow the use of immutable
         list variables, as in \circleref{8}{code:immutable:variable}.
@@ -57,7 +61,7 @@ also will enforce the following conditions, which are satisfied in our example:
         unless one of them is a constant expression.
         This is what happens in point \circleref{4}{code:string:comp}
         of our \cref{fig:python-example-nested}.
-        Without this restriction, \kl{model checking} would be undecidable
+        Without this restriction, verification would also be undecidable
         (\cref{lem:umc-equality-nested-words}).
         
     \item \textbf{Integer Comparisons.} 
@@ -71,16 +75,16 @@ also will enforce the following conditions, which are satisfied in our example:
         For instance, in points \circleref{6}{code:enumerate} and
         \circleref{7}{code:enumerate:rev} of our example, the variables
         $i$ and $j$ are associated to the same list variable \texttt{word}.
-        Similarly, in for the comparison 
+        Similarly, for the comparison 
         of point \circleref{1}{code:comparisons} to be valid,
-        the variables $k$,$i$, and $j$ should all be associated to the same 
+        the variables $k$, $i$, and $j$ should all be associated to the same 
         list variable $l$.
 
         To ensure this compatibility, we designed the following type system,
         containing Booleans, \kl{nested words} of a given depth
         (characters are of depth $0$), and integers associated to a list
         expression (the set of which is denoted by $\oexpr$, and will
-        be defined later on):
+        be defined in \cref{fig:out-expr}):
         \begin{align*}
             \tau ::=~ \TBool
             ~\mid~ \TPos[o] 
@@ -93,31 +97,27 @@ also will enforce the following conditions, which are satisfied in our example:
         These types can be inferred from the context,
         except in the case of function arguments, in which case
         we explicitly specify to which list argument integer variables
-        are associated.
+        are associated, as shown in \cref{fig:high-level-example-nested}.
 
-        Without this restriction, the equality predicate can be 
-        defined between two lists, leading to an undecidable
-        \kl{model checking problem}.
+        Without this restriction, the equality predicate between two lists can
+        be redefined (as shown in \cref{fig:eq-def-different-indices}).
 
 
     \item \textbf{Variable Shadowing.} 
         \label{item:variable-shadowing}
-        We disallow shadowing of variable names, as it could
-          be used to forge the origin of integers, leading to unrestricted comparisons.
-          \begin{verbatim}
-            \input{programs/eq_from_idxc_shadowing.py}
-          \end{verbatim} 
+          We disallow shadowing of variable names, as it could
+          be used to forge the origin of integers, leading to unrestricted comparisons
+          (as shown in \cref{fig:eq-def-shadowing}).
 
     \item \textbf{Boolean Arguments.}
         \label{item:boolean-arguments}
-        Allowing functions to take boolean arguments
+        We disallow functions to take boolean arguments,
+        as it
         would allow to forge the origin of integers,
-        by considering the function \texttt{switch(l1, l2, b)} which
+        by considering the function \texttt{switch(b, l1, l2)} which
         returns either \texttt{l1} or \texttt{l2} 
-        depending on the value of \texttt{b}.
-        \begin{verbatim}
-            \input{programs/eq_from_idxc_shadowing.py} 
-        \end{verbatim} 
+        depending on the value of \texttt{b}
+        (as in \cref{fig:eq-def-boolean}).
 
     \item \textbf{Boolean Updates.} 
         Boolean variables are initialized to \texttt{false}
@@ -130,7 +130,7 @@ also will enforce the following conditions, which are satisfied in our example:
         particular a variable declared in a loop is not
         accessible outside this loop.
 
-        This restriction allows us to reduce the \kl{model checking problem} to
+        This restriction allows us to reduce the verification problem to
         the satisfiability of a \kl{first-order formula} on finite words. This
         problem is not only decidable but also solvable by well-engineered
         existing tools, such as automata-based solvers (e.g., \kl{MONA}) and
@@ -142,59 +142,30 @@ also will enforce the following conditions, which are satisfied in our example:
 \end{enumerate}
 
 
-\paragraph{Formal Syntax and Typing.} 
-In order to give a type to our programs, it remains to give a type 
-to functions. Because every integer variable is associated to a list
-expression, we simplify the syntax of function calls and definitions
-by syntactically grouping positions and lists. In the type system,
-this is reflected by the creation of a type for \emph{function arguments}
-as follows:
-\begin{align*}
-    \mathsf{arg} ::=&~ (\TOut[n],\ell) & \ell \in \Nat \\
-    \mathsf{fun} ::=&~ 
-           \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TBool \\
-    \mid&~ \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TOut[n] 
-\end{align*}
+\paragraph{Formal Syntax and Typing.} We extend the typing system to functions
+by grouping input positions with the list they are associated to. For instance,
+the function \texttt{getBetweenIndicesBeforeStop(l, i, j)} has type
+$(\TOut[2],2) \to \TOut[2]$, that is, we are given an input list $l$ together
+with two pointers to indices of this list. Similarly, the function
+\texttt{containsAB(w)} has type $(\TOut[1], 0) \to \TBool$, while the function
+\texttt{subwordsWithAB(word)} has type $(\TOut[1], 0) \to \TOut[2]$. We
+implemented a linear-time algorithm for the
+type checking and inference problems.
 
-For instance, the function \texttt{getBetweenIndicesBeforeStop(l, i, j)}
-has type $(\TOut[2],2) \to \TOut[2]$, that is, we are given an input list $l$ together
-with two pointers to indices of this particular list. 
-Similarly, the function \texttt{containsAB(w)} has type $(\TOut[1], 0) \to \TBool$,
-while the function \texttt{subwordsWithAB(word)} has type $(\TOut[1], 0) \to \TOut[2]$.
-
-\AP The rest of the syntax of the high-level language is straightforward:
-boolean expressions ($\bexpr$), constant expressions ($\cexpr$), list
-expressions ($\oexpr$), and control statements ($\hlstmt$) are defined in
-\cref{fig:bool-expr,fig:const-expr,fig:out-expr,fig:high-level-stmt}.
-For readability, we distinguish boolean variables $\intro*\BVars$ ($b, p, q,
-\dots$), position variables $\intro*\PVars$ ($i,j, \dots$), list variables
-$\intro*\OVars$ ($x,y,u,v,w, \dots$), and function variables $\intro*\FunVars$
-($f,g,h, \dots$). A \intro{high-level program} is a list of function
-definitions together with a \emph{main} function. 
-
-\AP We provide a full type system for the \kl{high-level language} in appendix,
-that ensures non-shadowing and non-forgeability of the origin of integer
-variables.
-
-\begin{lemma}
-    \label{lem:type-checking}
-    Type checking of \kl{high-level programs} is decidable in linear time, and 
-    inference can be performed in linear time.
-\end{lemma}
+\AP The formal syntax of our language is given in
+\cref{fig:bool-expr,fig:const-expr,fig:out-expr,fig:high-level-stmt,fig:high-level-program}.
+They define the syntax of \intro{boolean expressions} ($\bexpr$),
+\intro{constant expressions} ($\cexpr$), \intro{list expressions} ($\oexpr$),
+and \intro{control statements} ($\hlstmt$). For readability, we distinguish
+boolean variables $\intro*\BVars$ ($b, p, q, \dots$), position variables
+$\intro*\PVars$ ($i,j, \dots$), list variables $\intro*\OVars$ ($x,y,u,v,w,
+\dots$), and function variables $\intro*\FunVars$ ($f,g,h, \dots$). A
+\intro{high-level program} is a list of function definitions together with a
+\emph{main} function. 
 
 
-\paragraph{Semantics.} While the semantics are standard, let us briefly go
-through how \kl{high-level programs} are executed by providing a denotational
-semantics. To that end, let us map types to their set of values:
-$\intro*\semT{\TBool} = \Bools$, $\reintro*\semT{\TPos[o]} = \Nat$ for all $o
-\in \oexpr$, and $\reintro*\semT{\TOut[n]} = \NestedWords[n]$. Then, for
-arguments to functions, we let $\reintro*\semT{(\TOut[n],\ell)} =
-\NestedWords[n] \times \Nat^\ell$ for all $\ell \in \Nat$,
-$\semT{\mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TBool}$ will be
-defined as functions from $\semT{\mathsf{arg}_1} \times \cdots \times
-\semT{\mathsf{arg}_k}$ to $\Bools$, and similarly for functions with output
-type $\TOut[n]$ for some $n \in \Nat$.
 
+\paragraph{Semantics.} 
 \AP The evaluation of boolean expressions ($\bexpr$), constant expressions
 ($\cexpr$), and \kl{list expressions} ($\oexpr$) pose no difficulty and are
 described in \cref{fig:semantics-expr}. We therefore have a denotational
@@ -203,33 +174,23 @@ environment} $\rho$ are functions $\semB{\cdot}{\rho} : \bexpr \to \Bools$,
 $\semC{\cdot} : \cexpr \to \NestedWords$, and $\semO{\cdot}{\rho} : \oexpr
 \to \NestedWords$ respectively.
 
-For the statements, the key point of the semantics
-is that the for loops are taken to be of the form
-$\hlfor{(i,x)}{o}{s}$ (in the case of a forward iteration) and
-$\hlforRev{(i,x)}{o}{s}$ (in the case of a backward iteration).
-While the forward iteration is defined as expected, the backward iteration 
-could be understood in two ways, assuming that $o$ evaluates to 
-a list $(x_0, \dots, x_k)$:
+Let us highlight a crucial design choice we made regarding the semantics of
+for-loops.
+While the semantics of forward iteration is unambiguous, the backward iteration 
+$\hlforRev{(i,x)}{l}{s}$
+could be understood in two different ways,
+provided that $l$ evaluates to a list $[x_0, \dots, x_k]$:
 \begin{itemize}
-    \item Executing the statement $s$ for every pair 
-        $(k, x_k), \dots, (0, x_0)$, that is,
-        the Python fragment \texttt{for (i,x) in reversed(enumerate(l))}
+    \item Executing the statement $s$ for pairs
+        $(k, x_k), \dots, (0, x_0)$. This corresponds to
+        Python's \texttt{for (i,x) in reversed(enumerate(l))}
         ;
-    \item Executing the statement $s$ for every pair
-        $(0, x_k), \dots, (k, x_0)$,
-        that is, 
-        the Python fragment \texttt{for (i,x) in enumerate(reversed(l))}.
+    \item Executing the statement $s$ for pairs
+        $(0, x_k), \dots, (k, x_0)$.
+        This corresponds to
+        Python's \texttt{for (i,x) in enumerate(reversed(l))}.
 \end{itemize}
-In our example program \cref{fig:python-example-nested}, 
-we used the first interpretation (see \circleref{7}{code:enumerate:rev}). In fact,
+As shown in our example program,
+we use the first interpretation (see \circleref{7}{code:enumerate:rev}). In fact,
 the second interpretation would allow us to define the equality predicate
-between two input \kl{list expressions}, leading to an undecidable \kl{model checking problem}.
-
-\AP Another technical decision we made is regarding \kl{list expressions} and
-the evaluation of statements. If a function $f$ has output type $\TOut[0]$,
-then it can only use the statement $\hlreturn{x}$ for some $x$ of type
-$\TOut[0]$. However, when a function has an output type $\TOut[n]$ for some $n
-> 0$, then it can use both $\hlyield{x}$ and $\hlreturn{y}$ to produce its
-output, in which case the output will be the concatenation of all the yields
-before the first return, concatenated with the return value.
-
+between two lists, leading to undecidable verification.

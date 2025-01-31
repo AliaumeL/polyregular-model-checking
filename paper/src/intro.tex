@@ -2,50 +2,54 @@
 \section{Introduction}
 \label{sec:intro}
 
-\paragraph{Motivation.} Verification is important. And it is hard. People have
-tried to make it easier. We are focusing on programs that do not use the full
-power of Turing machine and this is not absurd:
-\begin{itemize}
-    \item Configuration management
-    \item Simple string rewriting programs
-    \item "Extract transform load" pipelines
-\end{itemize}
-For these programs one wants to certify their behaviour,
-for instance using \intro{Hoare triples}
-$\hoaretriple{P}{\texttt{code}}{Q}$
-where $P$ and $Q$ are predicates and \texttt{code} is a program,
-meaning that whenever the input satisfies property $P$,
-the output of the program satisfies property $Q$.
+The goal of this paper is to define a programming language that is expressive
+enough to capture a wide range of functions, and yet simple enough to be
+amenable to formal verification. Specifically, we want to be able to verify
+Hoare triples of the form $\hoaretriple{P}{\texttt{code}}{Q}$, where $P$ and
+$Q$ are predicates and \texttt{code} is a program, meaning that whenever the
+input satisfies property $P$, the output of the program satisfies property $Q$.
 
-\AP When the language is expressive enough, which is our case, this can be
-reduced to the problem of \intro{model checking}. The crucial property of
-\kl{high-level language} it hat it has decidable \intro{model checking
-problem}: given a function $f \colon X \to \Bools$, we can decide whether there
-exists $x \in X$ such that $f(x) = \btrue$.
+To design our language, we leverage the theory of \kl{polyregular functions}
+that originated in the extension of automata theory to string-to-string
+functions of polynomial growth --- that is, $|f(w)|$ is bounded by a polynomial
+in $|w|$ --- \cite{ENMA02,bojanczyk2018polyregular}. For such functions, it is
+decidable whether a given \kl{Hoare triple} holds, when $P$ and $Q$ are given
+as formulas in the monadic second order logic on words \cite[Theorem
+1.7]{bojanczyk2018polyregular}. However, this result is of theoretical nature
+(no implementation or complexity bounds are given), and writing programs using
+this model is cumbersome and error-prone. Furthermore, relying on monadic
+second order logic implies that one cannot use the vast majority of SMT
+solvers, which only handle first-order logic.
 
-\paragraph{SMT solvers and Logic on Words.} 
-\AP
-\intro{MONA} \cite{MONA01}, \intro{Z3} \cite{z3},
-\intro{CVC5} \cite{cvc5}. \intro{Alt-Ergo} \cite{HOARE69}.
+\paragraph{Contributions.} In this paper our contributions are threefold.
+First, we introduce a programming language that corresponds to a rich subset of
+\texttt{Python}, which we argue is expressive enough to be usable in practice.
+Second, we demonstrate that this language can be compiled into a certain type
+of \kl{polyregular functions}. Third, we prove that for these polyregular
+functions, the verification of \kl{Hoare triples} (specified using
+\kl{first-order logic} on words) effectively reduces to a satisfiability
+problem of a first-order formula on finite words. While this last step was
+known to be theoretically possible, an efficient and effective implementation
+was lacking. Because we are using \kl{first-order logic} as a target language,
+we are not restricted to using automata based tools like \intro{MONA}
+\cite{MONA01}, but can also employ general purpose SMT solvers like \intro{Z3}
+\cite{z3}, \intro{CVC5} \cite{cvc5}, and \intro{Alt-Ergo},\todo{cite altergo} generating proof
+obligations in the \texttt{SMT-LIB} format \cite{BARRETT17}.
 
-\paragraph{Contributions.} 
-\begin{itemize}
-    \item Introduced a high level language that is close to Python and 
-        suitable for model checking.
-    \item Our language is modular and contains functions, enabling for a clear
-        and concise implementation.
-    \item Effectively proved equivalence of the high-level language with an existing
-        model (polyregular functions), building a conversion algorithm.
-    \item Implemented a model checking algorithm for polyregular functions,
-        by reducing it to the satisfiability of a first-order formula on finite words.
-    \item We tested our program on examples using different backends to solve
-        the resulting formulas (CVC5, Z3, Alt-Ergo and Mona), showing
-        their complementarity.
-\end{itemize}
-\cite{z3} \cite{cvc5}
-\cite{HOARE69}
-\cite{MONA01}
+We implemented all of these conversions in a \texttt{Haskell} program, and
+tested it on a number of examples with encouraging results. 
 
+
+\paragraph{Outline.} The structure of the paper is as follows. We introduce our
+\kl{high-level language} in \cref{sec:high-level}. In \cref{sec:polyregular},
+we recall the theory of \kl{polyregular functions} by introducing them in terms
+of \kl{simple for-programs} and \kl{$\FO$-interpretations}. We will also
+provide an efficient reduction of the verification of \kl{Hoare triples} to the
+satisfiability of a \kl{first-order formula on words} in \cref{sec:pullback}.
+In order to verify \kl{high-level programs}, we compile them into \kl{simple
+for-programs} in \cref{sec:htl}, and then compile \kl{simple for-programs} into
+\kl{$\FO$-interpretations} in \cref{sec:low-level}. These steps 
+are summarized in the following diagram:
 \begin{center}
     \begin{tikzpicture}[
         syntaxNode/.style={
@@ -75,6 +79,11 @@ exists $x \in X$ such that $f(x) = \btrue$.
         \draw[->] (c) -- node[above,rotate=90,xshift=2.7em,yshift=-0.3em] {\cref{sec:pullback}} (d);
     \end{tikzpicture}
 \end{center}
+Then, in \cref{sec:benchmarks}, we present
+benchmarks of our implementation on various examples, discussing
+the complexity of the transformations and the main bottlenecks of our approach.
+Finally, we conclude in \cref{sec:conclusion} by discussing potential
+optimizations and future work.
 
 \paragraph{Related work.} The correspondence between subsets of string to
 string functions and first order logic dates back to the origins of automata
@@ -82,14 +91,6 @@ theory and the seminal results of \cite{PEPI86,SCHU65,MNPA71}, establishing the
 equivalence between \emph{star-free languages}, \emph{first order definable
 languages}, and \emph{counter free automata}. Extensions of this correspondence
 to functions has been an active area of research (\cite{CADA15,MUSC19}), which
-we leverage in this work via the theory of \emph{polyregular functions}, a
-model that can be traced back to the work of \cite{ENMA02}, and whose theory
-has been developed and polished by \cite{bojanczyk2018polyregular}.
-
-Weakest preconditions \cite[Chapter 7]{WINSKEL93}.
-
-
-\paragraph{Outline.}
-
-
+we leverage in this work via the theory of \kl{polyregular functions}
+\cite{ENMA02,bojanczyk2018polyregular,bojanczyk2019string,bojanczyk2023growth}.
 

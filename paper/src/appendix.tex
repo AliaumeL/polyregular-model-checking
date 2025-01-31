@@ -1,3 +1,82 @@
+\section{Proofs}
+
+\begin{proofof}{lem:fo-emptiness}
+    Take a formula $\varphi$ and observe that is contains only a finite number of constants from $\mathcal{D}$ -- call this set $A$.
+    It is not hard to see that the truth value of $\varphi$ is \kl{supported} by $A$: for every function $f : \mathcal{D} \to \mathcal{D}$
+    that does not touch 
+    elements of $A$, the truth value of $\varphi$ is the same for $w$ and $f^*(w)$. (Remember that 
+    $f^*$ is the pointwise application of $f$). 
+    Let $\mathtt{blank} \in \mathcal{D}$ be a letter that does not appear in $A$,
+    and observe that the formula $\varphi$ is satisfied for some word in $\mathcal{D}^*$ if and only if it is satisfied by
+    some word in $(A \cup \{\mathtt{blank}\})^*$. Indeed, if we take a function $g: \mathcal{D} \to \mathcal{D}$ that does not touch elements of $A$
+    and maps all other letters to $\mathtt{blank}$, we can use it to map $\mathcal{D}^*$ to $(A \cup \{\mathtt{blank}\})^*$ in a way 
+    that preserves the truth value of $\varphi$.
+    This finishes the proof of the lemma, as we have reduced the general problem to a finite alphabet $A \cup \{\mathtt{blank}\}$.
+\end{proofof}
+
+\section{Encoding Equality of Subwords}
+
+\begin{figure}
+    \centering
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{def}\NormalTok{ eq(u, v):}
+    \ControlFlowTok{for}\NormalTok{ (i, ui) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(u):}
+        \ControlFlowTok{for}\NormalTok{ (j, vj) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(v):}
+            \ControlFlowTok{if}\NormalTok{ i }\OperatorTok{==}\NormalTok{ j }\KeywordTok{and}\NormalTok{ ui }\OperatorTok{!=}\NormalTok{ vj:}
+                \ControlFlowTok{return} \VariableTok{False}
+    \ControlFlowTok{return} \VariableTok{True}
+\end{Highlighting}
+\end{Shaded}
+\caption{Encoding the equality of two words $u$ and $v$ in Python,
+using a comparison between indices of two different lists.}
+\label{fig:eq-def-different-indices}
+\end{figure}
+
+\begin{figure}
+    \centering
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{def}\NormalTok{ switch(b, u, v):}
+    \ControlFlowTok{if}\NormalTok{ b:}
+        \ControlFlowTok{return}\NormalTok{ u}
+    \ControlFlowTok{else}\NormalTok{:}
+        \ControlFlowTok{return}\NormalTok{ v}
+
+\KeywordTok{def}\NormalTok{ eq(u, v):}
+\NormalTok{    b }\OperatorTok{=} \VariableTok{False}
+    \ControlFlowTok{for}\NormalTok{ (i, ui) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(switch(b, u, v)):}
+\NormalTok{        b }\OperatorTok{=} \VariableTok{True}
+        \ControlFlowTok{for}\NormalTok{ (j, vj) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(switch(b, u, v)):}
+            \ControlFlowTok{if}\NormalTok{ i }\OperatorTok{==}\NormalTok{ j }\KeywordTok{and}\NormalTok{ ui }\OperatorTok{!=}\NormalTok{ vj:}
+                \ControlFlowTok{return} \VariableTok{False}
+    \ControlFlowTok{return} \VariableTok{True}
+\end{Highlighting}
+\end{Shaded}
+\caption{Encoding the equality of two words $u$ and $v$ in Python,
+using a function taking a boolean as input.}
+\label{fig:eq-def-boolean}
+\end{figure}
+
+\begin{figure}
+    \centering
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{def}\NormalTok{ eq(u, v):}
+\NormalTok{    w }\OperatorTok{=}\NormalTok{ u}
+    \ControlFlowTok{for}\NormalTok{ (i, ui) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(w):}
+\NormalTok{        w }\OperatorTok{=}\NormalTok{ v}
+        \ControlFlowTok{for}\NormalTok{ (j, vj) }\KeywordTok{in} \BuiltInTok{enumerate}\NormalTok{(w):}
+            \ControlFlowTok{if}\NormalTok{ i }\OperatorTok{==}\NormalTok{ j }\KeywordTok{and}\NormalTok{ ui }\OperatorTok{!=}\NormalTok{ vj:}
+                \ControlFlowTok{return} \VariableTok{False}
+    \ControlFlowTok{return} \VariableTok{True}
+\end{Highlighting}
+\end{Shaded}
+\caption{Encoding the equality of two words $u$ and $v$ in Python,
+using the shadowing of a variable to switch between two lists.}
+\label{fig:eq-def-shadowing}
+\end{figure}
+
 \section{Subwords Containing the Substring $ab$}
 
 \begin{figure}
@@ -97,9 +176,26 @@ by compiling \cref{fig:high-level-example-nested}.}
 \end{figure}
 
 
+
 \section{Syntax and Semantics of High Level Programs}
 
+\subsection{Typing}
+
+
+\begin{figure}
+\begin{align*}
+    \mathsf{arg} ::=&~ (\TOut[n],\ell) & \ell \in \Nat \\
+    \mathsf{fun} ::=&~ 
+           \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TBool \\
+    \mid&~ \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TOut[n] 
+\end{align*}
+\caption{Typing of \kl{for-programs}.}
+\label{fig:typing-for-programs}
+\end{figure}
+
 \subsection{Syntax} 
+
+
 
 \begin{figure}[h]
     \centering
@@ -223,9 +319,19 @@ by compiling \cref{fig:high-level-example-nested}.}
     \label{fig:semantics-functions}
 \end{figure}
 
-\begin{figure}
-\end{figure}
+While the semantics are standard, let us briefly go
+through how \kl{high-level programs} are executed by providing a denotational
+semantics. To that end, let us map types to their set of values:
+$\intro*\semT{\TBool} = \Bools$, $\reintro*\semT{\TPos[o]} = \Nat$ for all $o
+\in \oexpr$, and $\reintro*\semT{\TOut[n]} = \NestedWords[n]$. Then, for
+arguments to functions, we let $\reintro*\semT{(\TOut[n],\ell)} =
+\NestedWords[n] \times \Nat^\ell$ for all $\ell \in \Nat$,
+$\semT{\mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TBool}$ will be
+defined as functions from $\semT{\mathsf{arg}_1} \times \cdots \times
+\semT{\mathsf{arg}_k}$ to $\Bools$, and similarly for functions with output
+type $\TOut[n]$ for some $n \in \Nat$.
 
+\subsection{Typing Rules}
 
 % Basic typing judgments
 \begin{figure}[h]

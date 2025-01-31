@@ -11,9 +11,17 @@ author:
     affiliation: University of Warsaw, Poland
     orcid: "0000-0002-8439-4056"
 abstract: |
-  In this paper, we demonstrate how the theory of polyregular functions
-  can be leveraged to verify simple string-to-string
-  for-loop programs defined in a subset of Python efficiently.
+  We reduce the model checking problem for a subset of Python
+  to
+  the satisfiability of a first-order formula over finite words,
+  which is known to be decidable. The reduction is based on the theory
+  of polyregular functions, a recently developed generalization of
+  regular langugages to polynomial output string-to-string
+  functions.
+  We implemented this reduction in a verification tool called PolyCheck, 
+  that can use
+  both automata-based solvers and 
+  classical SMT solvers as backends.
 acknowledgements: |
   We would like to thank Arnav Garg and Ojas Maheshwari 
   for their participation in the early stage of this project.
