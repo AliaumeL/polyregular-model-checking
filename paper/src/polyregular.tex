@@ -185,34 +185,150 @@ The tags are sorted by their positions, with ties resolved in favour of \texttt{
 
 \subsection{Hoare Triple Verification}
 
-An important property of the \kl{first-order string-to-string interpretations} is that they allow a direct 
-reduction of the following \kl{Hoare triple verification} problem to the \kl{emptiness problem} for the \kl{first-order logic on words}. 
+An important property of the \kl{first-order string-to-string interpretations} is that they a direct
+reduction of the \kl{first-order Hoare triple verification} problem to the \kl{emptiness problem} for the \kl{first-order logic on words}:
 \begin{definition}
-    The \intro{Hoare triple verification problem} for a \kl{first-order string-to-string interpretation} is the following decision problem: 
+    The \intro{first-order Hoare triple verification problem} for a \kl{first-order string-to-string interpretation} is the following decision problem: 
     \[
         \begin{tabular}{ll}
         \textbf{Input:} & A string-to-string interpretation $F$, and two first-order formulas $\varphi$ and $\psi$.\\
         \textbf{Output:} & Does $F(w)$ satisfy $\psi$ for every word $w$ that satisfies $\varphi$?
         \end{tabular}
     \]
-    The instance of this problem is called \intro{Hoare triple} and it is denoted as $\{ \varphi \}\; F\; \{ \psi \}$. 
-    We say that a \kl{Hoare triple} is \intro{valid} to the decision problem is positive.
+    The instance of this problem is called a \intro{Hoare triple} and is denoted as $\{ \varphi \}\; F\; \{ \psi \}$. 
 \end{definition}
-Here are two examples:
+For example, if \texttt{containsAB} and \texttt{containsBB} are formulas that check if the input word contains the
+subwords \texttt{ab} and \texttt{bb}, then:
 \[
-\begin{tabular}{lll}
-$\{ \mathtt{containsAB} \}\ \texttt{swapAsToBs}\ \{ \mathtt{containsBB} \}$ & is & valid\\
-$\{ \mathtt{containsBB} \}\ \mathtt{swapAsToBs}\ \{ \mathtt{containsAB} \}$ & is & not valid
+\begin{tabular}{ccc}
+$\{ \mathtt{containsAB} \}\ \texttt{swapAsToBs}\ \{ \mathtt{containsBB} \}$ & is  valid\\
+$\{ \mathtt{containsBB} \}\ \mathtt{swapAsToBs}\ \{ \mathtt{containsAB} \}$ & is not  valid
 \end{tabular}
 \]
 The decidability of the \kl{Hoare triple verification problem} for \kl{string-to-string first-order interpretations},
-is already known \cite[Theorem~1.7]{bojanczyk2018polyregular}. However, to the best of our knowledge, 
-no effort has been made so far to make this result practical. In the next section, we show how to construct a formula 
-$\chi(\phi, F, \psi)$ that is \kl{empty} if and only if the triple $\{ \phi \}\; F\; \{ \psi \}$ is valid.
-Moreover, the size and the quantifier depth of $\chi$ can be bound by the following low-degree polynomials:
+follows from \cite[Theorem~1.7]{bojanczyk2018polyregular}. However, this construction resulting from the proof is not practical to implement.
+Instead, we provide a direct construction of a first-order formula $\chi(\phi, F, \psi)$
+that is \kl{unsatisfiable} if and only if the triple $\{ \phi \}\; F\; \{ \psi \}$ is valid.
+Moreover, the size and the quantifier depth of $\chi$ are bounded by the following low-degree polynomials:
+\begin{align*}
+    \qrank(\chi) \leq \max\left(\qrank(\phi),\ \qrank(\psi) \cdot \left(\textsf{ar}(F) + 1\right)  + \qrank(F)\right) \quad |\chi| = \mathcal{O} (|\phi| + |F| \cdot |\psi|)
+\end{align*}
+
+Here $|F|$ denotes the sum of the formulas in $F$,
+$\qrank(F)$ denotes quantifier depth of the deepest formula in $F$, 
+and $\textsf{ar}(F)$ denotes the maximal arity of the tags in $F$.
+
+
+The most important element of the construction of $\chi$ is the \intro{pull-back operation}.
+It transforms the formula $\psi$ applied to the output $F$,
+to a formula $\pi(F, \psi)$ that can be applied directly the input word, 
+such that for every word $w$:
 \[
-\begin{tabular}{cc}
-    $\qrank(\chi) \leq \max\left(\qrank(\phi), \text{arity}(F) + 1) \cdot \qrank(\psi) + \qrank(F)\right)$ &
-    $|\chi| \leq \max\left(|\phi|, (|F| + \qrank(F)) \cdot |\psi|\right)$
+\begin{tabular}{ccc}
+    $F(w)$ satisfies $\psi$ & $\Leftrightarrow$ & $w$ satisfies $\pi(F, \psi)$
 \end{tabular}
 \]
+Once we have the pull-back operation, we can construct the formula $\chi$ as follows:
+\[ 
+    \chi(\phi, F, \psi)\ :=\ \phi \wedge \neg \pi(F, \psi)
+\]
+Indeed, a word $w$ satisfies $\phi \wedge \neg \pi(F, \psi)$ if and only if
+it satisfies $\phi$ and $F(w)$ does not satisfy $\psi$. This means that 
+$\chi$ is \kl{empty} if and only if the \kl{Hoare triple} is valid.
+
+In the rest of this section, we show how to construct $\pi(F, \psi)$. 
+The construction, is practically suggested by the definition of
+\kl{first-order string-to-string interpretations}, so the main difficulty 
+is to kep the size of the formula $\pi(F, \psi)$ small.
+Every position from $F(w)$ corresponds to a tag $t$ and a tuple of $\mathsf{ar}(t)$, 
+so the initial idea is to replace each quantification in $\psi$ with a conjunction or disjunction
+over the tags. For example: 
+\[ 
+\begin{tabular}{ccc}
+    $\forall_{x}, \psi$ & $\quad \rightsquigarrow \quad$ & $\bigwedge_{t_x \in T} \forall_{x_1, \ldots, x_{\mathsf{ar}(t)}} \left( \varphi_{\mathsf{dom}}^t(x_1, \ldots, x_{\mathsf{ar}(t)}) \Rightarrow \psi'_{t} \right)$
+\end{tabular}
+\]
+A similar transformation can be done for the existential quantification. Negation, conjunction, and disjunction are straight-forward to handle, so 
+the remaining part is to handle the predicates $=$, $\leq$, and $=_L$. The $\leq$ predicate can be handled by consulting the order formula:
+\[
+\begin{tabular}{ccc}
+    $x < y$ & $\quad \rightsquigarrow \quad$ & $\psi_{\leq}^{t_x, t_y}(x_1, \ldots, x_{\mathsf{ar}(t_x)}, y_1, \ldots, y_{\mathsf{ar}(t_y)})$
+\end{tabular}
+\]
+Similarly the $=_L$ predicate can be handled by consulting the output function, and
+$x = y$ predicate can be handled by comparing equality of the tags and the positions of $x$ and $y$. 
+
+This construction, although correct, is unfortunately inefficient:  Replacing each quantification with a disjunction or conjunction
+over tags, results in an exponential blow-up of the formula. In order to avoid this, we introduce 
+and additional finite sort to the logic,
+this introduces a new type of quantifiers, that allow us to quantify over the tags in a more efficient way: $\forall_{t \in T}, \varphi$ 
+and $\exists_{t \in T}, \varphi$. This does not add expressive power to the logic, as the new quantifiers can be replaced by 
+a finite conjunction (resp. disjunction) that goes trough the tags. However, they will allow us to construct the pull-back formula
+in a more efficient way, that can be understood by the solvers (we discuss it in more details at the end of this section).
+With the new sort of tags, we can pull-back the quantifiers in the following way: 
+\[ 
+\begin{tabular}{ccc}
+   $ \pi(F, \forall_{x}, \psi)$ & $\quad = \quad$ & $\forall{t_x \in T} \forall_{x_1, \ldots, x_{\mathsf{ar}(F)}} \left( {\mathsf{dom}}(t_x, x_1, \ldots, x_{\mathsf{ar}(F)}) \Rightarrow \pi(F, \psi)\right)$
+\end{tabular}
+\]
+Here $\mathsf{dom}$ the following is a predicate based on $\varphi_{\mathsf{dom}}$:
+\begin{align*}
+    \mathsf{dom}(t, x_1, \ldots, x_{\mathsf{ar}(t)}) :=&~ \bigvee_{t' \in T} \left( t = t' \wedge \varphi_{\mathsf{dom}}^{t'}(x_1, \ldots, x_{\mathsf{ar}(t')}) \right)
+\end{align*}
+The existential quantification can be handled in an analogous way. Boolean operations are again straight-forward: 
+\begin{align*}
+    \pi(F, \psi_1 \wedge \psi_2) = \pi(F, \psi_1) \wedge \pi(F, \psi_2) \quad \pi(F, \neg \psi) = \neg \pi(F, \psi)
+\end{align*}
+In order to check if $x \leq y$, we use a formula similar to $\mathsf{dom}$, but based on $\varphi_\leq$:
+\begin{align*}
+   \pi(F, x \leq y) & \ \ =  &~ \bigvee_{t_1, t_2 \in T} \left( t_x = t_1 \wedge t_y = t_2 \wedge \varphi_{\leq}^{t_1, t_2}(x_1, \ldots, x_{\mathsf{ar}(t_1)}, y_1, \ldots, y_{\mathsf{ar}(t_2)}) \right) \\
+\end{align*}
+Finally, to check if $x =_L \mathtt{a}$, we use a similar formula based on the output function, and to check if $x = y$ we compare the tags and all the positions. (The complete translation can be found in the appendix).
+
+
+\subsubsection{Encoding tags} Finally, let us briefly discuss how we handle the tags in the formulas fed to solvers.
+For the SMT-solvers, we use \kl{smtlib v2.6} format with logic set to \texttt{UFDTLIA}, which allows us to add finite sorts and quantify over them.
+For the MONA solver, which only supports the sort of positions, we encode the tags as as the first $|T|$ positions of the input word.
+
+% \begin{align*}
+%     \mathsf{out}_{\mathtt{a}}(t, x_1, \ldots, x_{\mathsf{ar}(t)}) :=&~ \bigvee_{t' \in T} \left( t = t' \wedge \mathsf{out}(t') = \mathtt{a} \right)
+% \end{align*}
+
+
+
+
+% The rest of this section is devoted to the construction of the pullback formula $\pi(F, \psi)$.
+% Observe that each position in $F(w)$ corresponds to a tag $t$ together with $\mathsf{ar}(t)$
+% positions of the input, that satisfy the domain formula of $t$. For this reason, whenever 
+% $\pi$ sees a quantification it needs to go through all tags $t$ and all possible positions $x_1, \ldots, x_{\mathsf{ar}(t)}$
+% that satisfy the domain formula of $t$. For example $\pi(F, \forall_x. \psi)$ could get translated to:
+% \begin{equation*}
+%     (\forall_{x_1, \ldots, x_{\mathsf{ar}(t_1)}}, \ \varphi_{\mathsf{dom}}^{t_1}(x_1, \ldots, x_{\mathsf{ar}(t_1)}) \Rightarrow \psi'_{t_1} )\ \wedge \   \ldots\\
+%     \wedge (\forall_{x_1, \ldots, x_{\mathsf{ar}(t_n)}}, \ \varphi_{\mathsf{dom}}^{t_n}(x_1, \ldots, x_{\mathsf{ar}(t_n)}) \Rightarrow \psi'_{t_n} ) 
+% \end{equation*}
+% The existential quantification can be  handled in a similar way. Whenever the formula $\psi$ wants to check if $x < y$, 
+% it consults the order formula with the tags and positions that correspond to $x$ and $y$:
+% \[ \psi_{\leq}^{t_x, t_y}(x_1, \ldots, x_{\mathsf{ar}(t_x)}, y_1, \ldots, y_{\mathsf{ar}(t_y)}) \]
+% Similarly, when it wants to check if $x =_L \mathtt{a}$, it consults the output function $\psi_{\text{out}}$.
+
+% However, replacing each quantification with a disjunction over tags, would result in an exponential blow-up of the formula. For this reason, we introduce 
+% an additional finite sort to the logic, that will allow us to quantify over the tags in a more efficient way. The new quantifiers will be of the form: 
+% $\forall_{t \in T} \varphi$ and $\exists_{t \in T} \varphi$. They do not add expressive power to the logic, as they can be replace by 
+% a finite conjunction (resp. disjunction) that goes trough the tags. However, they will allow us to construct the pull-back formula
+% in a more efficient way, without confusing the solvers. The final translation is given by the following formulas: 
+% \begin{enumerate}
+%     \item $\pi(F, \forall_x. \psi) = \forall_{t_x \in T} \forall_{x_1, \ldots, x_{\mathsf{x_n}}} \left( \mathsf{dom}(t_x, x_1, \ldots, x_{\mathsf{t}})\Rightarrow \psi'_{t_x} \right)$\\
+%     \item $\pi(F, \exists_x. \psi) = \exists_{t_x \in T} \exists_{x_1, \ldots, x_{\mathsf{x_n}}} \left( \mathsf{dom}(t_x, x_1, \ldots, x_{\mathsf{t}})\wedge \psi'_{t_x} \right)$\\
+%     \item $\pi(F, \psi_1 \wedge \psi_2) = \pi(F, \psi_1) \wedge \pi(F, \psi_2)$\\
+%     \item $\pi(F, \psi_1 \vee \psi_2) = \pi(F, \psi_1) \vee \pi(F, \psi_2)$\\
+%     \item $\pi(F, \neg \psi) = \neg \pi(F, \psi)$\\
+%     \item $\pi(F, x = y) = x_t = y_t \wedge x_1 = y_1 \ldots x_k = y_k$\\
+%     \item $\pi(F, x < y) = \mathsf{order}(x_t, y_t, x_1, \ldots, x_k, y_1, \ldots, y_k)$\\
+%     \item $\pi(F, x =_L \mathtt{a}) = \mathsf{out}_{\mathtt{a}}(x_t, x_1, \ldots, x_k)$\\
+% \end{enumerate}
+% Here the formulas $\mathsf{dom}$, $\mathsf{order}$ and $\mathsf{out}_{\mathtt{a}}$ are defined in the following way: 
+% \begin{enumerate}
+%     \item $\mathsf{dom}(x_t, x_1, \ldots, x_{\mathsf{t}}) = \bigvee_{t \in T} \left( t = x_t \wedge \varphi_{\mathsf{dom}}^t(x_1, \ldots, x_{\mathsf{ar}(t)}) \right)$\\ 
+%     \item $\mathsf{order}(x_t, y_t, x_1, \ldots, x_{\mathsf{t}}, y_1, \ldots, y_{\mathsf{t}}) = \bigvee_{t, t' \in T} \left( t = x_t \wedge t' = y_t \wedge \varphi_{\leq}^{t, t'}(x_1, \ldots, x_{\mathsf{ar}(t)}, y_1, \ldots, y_{\mathsf{ar}(t')}) \right)$\\
+%     \item $\mathsf{out}_{\mathtt{a}}(x_t, x_1, \ldots, x_{\mathsf{t}}) = \bigvee_{t \in T} \left( t = x_t \wedge () \right)$\\
+% \end{enumerate}
