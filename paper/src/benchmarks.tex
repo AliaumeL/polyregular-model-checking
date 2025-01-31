@@ -1,11 +1,36 @@
 \section{Benchmarks}
 \label{sec:benchmarks}
 
+\begin{description}
+    \item[High Level transformation]
+        We compute for the output
+        \begin{itemize}
+            \item The time it took to transform the program (plot)
+            \item The size of the output program (ratio)
+            \item The nesting depth of for loops (ratio)
+            \item The number of print statements (ratio)
+        \end{itemize}
+    \item[Low level to interpretation]
+        We compute for the output
+        \begin{itemize}
+            \item The time it took to transform the program (plot)
+            \item The size of the formula (ratio)
+            \item The quantifier rank of the formula (ratio)
+        \end{itemize}
+    \item[Interpretation to SMT]
+        We compute for the output
+        \begin{itemize}
+            \item The time it took to transform the program (plot)
+            \item The size of the formula (ratio)
+            \item The quantifier rank of the formula (ratio)
+        \end{itemize}
+\end{description}
+
 % filename | high-level | low-level | interpretation
 %          | size | qr  | size | qr | size | qr 
 % ------------------------------------------------
 % test.pr  | 100 |  10 |  100 |  10 |  100 |  10
-\begin{tabular}{l|c|c|c|c|c|c}
+\begin{tabular}{|l|c|c|c|c|c|c|}
     \toprule
     \textbf{filename} & \multicolumn{2}{c|}{\textbf{high-level}} & \multicolumn{2}{c|}{\textbf{low-level}} & \multicolumn{2}{c|}{\textbf{interpretation}} \\
     \midrule
@@ -95,6 +120,10 @@
         3 & 1 &
          2 & 2  &
          1 & 0  \\
+            assets/HighLevel/subwords\_ab.pr &
+        24 & 2 &
+         15 & 4  &
+         956 & 14  \\
             assets/HighLevel/squaring.pr &
         4 & 2 &
          3 & 3  &
@@ -146,46 +175,3 @@
         \bottomrule
 \end{tabular}
 
-
-\begin{description}
-    \item[High Level transformation]
-        We compute for the output
-        \begin{itemize}
-            \item The time it took to transform the program (plot)
-            \item The size of the output program (ratio)
-            \item The nesting depth of for loops (ratio)
-            \item The number of print statements (ratio)
-        \end{itemize}
-    \item[Low level to interpretation]
-        We compute for the output
-        \begin{itemize}
-            \item The time it took to transform the program (plot)
-            \item The size of the formula (ratio)
-            \item The quantifier rank of the formula (ratio)
-        \end{itemize}
-    \item[Interpretation to SMT]
-        We compute for the output
-        \begin{itemize}
-            \item The time it took to transform the program (plot)
-            \item The size of the formula (ratio)
-            \item The quantifier rank of the formula (ratio)
-        \end{itemize}
-\end{description}
-
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{def}\NormalTok{ main (w : }\DataTypeTok{[Char]}\NormalTok{) : }\DataTypeTok{[Char]}\NormalTok{ := }
-    \KeywordTok{let} \KeywordTok{mut}\NormalTok{ seen\_a := }\KeywordTok{False} \KeywordTok{in}
-\NormalTok{    for (i, c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(w) }\KeywordTok{do}
-        \KeywordTok{if}\NormalTok{ seen\_a }\KeywordTok{then} 
-            \KeywordTok{yield}\NormalTok{ \textquotesingle{}a\textquotesingle{}}
-        \KeywordTok{else}
-            \KeywordTok{yield}\NormalTok{ c}
-        \KeywordTok{endif}
-        \KeywordTok{if}\NormalTok{ c === \textquotesingle{}a\textquotesingle{} }\KeywordTok{then}
-\NormalTok{            seen\_a := }\KeywordTok{True}
-        \KeywordTok{endif}
-    \KeywordTok{done}
-\end{Highlighting}
-\end{Shaded}

@@ -1,0 +1,18 @@
+% filename | high-level | low-level | interpretation
+%          | size | qr  | size | qr | size | qr 
+% ------------------------------------------------
+% test.pr  | 100 |  10 |  100 |  10 |  100 |  10
+\begin{tabular}{|l|c|c|c|c|c|c|}
+    \toprule
+    \textbf{filename} & \multicolumn{2}{c|}{\textbf{high-level}} & \multicolumn{2}{c|}{\textbf{low-level}} & \multicolumn{2}{c|}{\textbf{interpretation}} \\
+    \midrule
+                      & \textbf{size} & \textbf{qr} & \textbf{size} & \textbf{qr} & \textbf{size} & \textbf{qr} \\
+    \midrule
+    $for(benches)$
+        $it.bfName$ &
+        $it.bfHigh.bsSize$ & $it.bfHigh.bsDepth$ &
+        $if(it.bfSfp)$ $it.bfSfp.bsSize$ & $it.bfSfp.bsDepth$ $else$ - & - $endif$ &
+        $if(it.bfInterp)$ $it.bfInterp.bsSize$ & $it.bfInterp.bsDepth$ $else$ - & - $endif$ \\
+    $endfor$
+    \bottomrule
+\end{tabular}
