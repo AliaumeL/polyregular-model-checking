@@ -1,0 +1,54 @@
+<language name="SimpleForProgram" version="1.0" kateversion="5.1" section="Scripts" extensions="*.spr">
+    <highlighting>
+        <list name="keywords">
+            <item>let</item>
+            <item>in</item>
+            <item>input</item>
+            <item>reversed</item>
+            <item>for</item>
+            <item>do</item>
+            <item>done</item>
+            <item>true</item>
+            <item>false</item>
+            <item>if</item>
+            <item>then</item>
+            <item>else</item>
+            <item>endif</item>
+            <item>print</item>
+            <item>skip</item>
+            <item>not</item>
+            <item>and</item>
+            <item>or</item>
+        </list>
+
+        <list name="operators">
+            <item>=</item>
+            <item>&lt;=</item>
+            <item>&lt;</item>
+            <item>&gt;=</item>
+            <item>&gt;</item>
+            <item>==</item>
+            <item>!=</item>
+            <item>:=</item>
+        </list>
+
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Operator" context="#stay" String="operators"/>
+                <DetectChar attribute="Comment" context="Comment" String="#"/>
+            </context>
+
+            <context attribute="Comment" lineEndContext="Normal" name="Comment">
+                <DetectChar attribute="Comment" String="\n"/>
+            </context>
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword"/>
+            <itemData name="Operator" defStyleNum="dsOperator"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+        </itemDatas>
+    </highlighting>
+</language>

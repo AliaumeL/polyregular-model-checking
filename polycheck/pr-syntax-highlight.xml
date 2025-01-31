@@ -1,0 +1,65 @@
+<language name="ForProgram" version="1.0" kateversion="5.1" section="Scripts" extensions="*.pr">
+    <highlighting>
+        <list name="keywords">
+            <item>def</item>
+            <item>in</item>
+            <item>enumerate</item>
+            <item>reversed</item>
+            <item>do</item>
+            <item>done</item>
+            <item>if</item>
+            <item>then</item>
+            <item>else</item>
+            <item>endif</item>
+            <item>yield</item>
+            <item>return</item>
+            <item>let</item>
+            <item>mut</item>
+            <item>True</item>
+            <item>False</item>
+            <item>not</item>
+            <item>and</item>
+            <item>or</item>
+            <item>with</item>
+        </list>
+
+        <list name="types">
+            <item>Char</item>
+            <item>Bool</item>
+        </list>
+
+        <list name="operators">
+            <item>=</item>
+            <item>!=</item>
+            <item>&lt;=</item>
+            <item>&lt;</item>
+            <item>&gt;=</item>
+            <item>&gt;</item>
+            <item>===</item>
+            <item>!==</item>
+            <item>:=</item>
+        </list>
+
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Type" context="#stay" String="types"/>
+                <keyword attribute="Operator" context="#stay" String="operators"/>
+                <DetectChar attribute="Comment" context="Comment" String="#"/>
+                <RegExpr attribute="Type" context="#stay" String="\[\s*(Char|Bool)(\s*\])+" insensitive="true"/>
+            </context>
+
+            <context attribute="Comment" lineEndContext="Normal" name="Comment">
+                <DetectChar attribute="Comment" String="\n"/>
+            </context>
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword"/>
+            <itemData name="Type" defStyleNum="dsDataType"/>
+            <itemData name="Operator" defStyleNum="dsOperator"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+        </itemDatas>
+    </highlighting>
+</language>

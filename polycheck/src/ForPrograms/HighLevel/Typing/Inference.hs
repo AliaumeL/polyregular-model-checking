@@ -17,6 +17,8 @@ import ForPrograms.HighLevel.Typing(ValueType(..),
 import Logic.QuantifierFree
 import ForPrograms.HighLevel.PrettyPrint
 
+import Debug.Trace
+
 import Control.Monad
 import Control.Monad.State
 
@@ -150,7 +152,9 @@ insertCodings ps (PosCoding m1 m2) = PosCoding (M.union newMap m1) (IntMap.union
         newMap' = IntMap.fromList $ map (\(p, i) -> (i, p)) ps
 
 readPosCoding :: PosCoding -> Pos -> Int
-readPosCoding (PosCoding m _) p = m M.! p
+readPosCoding (PosCoding m _) p = case M.lookup p m of
+    Just i -> i
+    Nothing -> 0 -- TODO: this could be reachable if a function name is not defined
 
 readIntCoding :: PosCoding -> Int -> Pos
 readIntCoding (PosCoding _ m) i = m IntMap.! i

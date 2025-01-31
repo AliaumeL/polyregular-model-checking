@@ -54,6 +54,7 @@ jobs:
       - name: Build release assets
         run: |
           cd polycheck
+          stack init
           stack setup
           stack build --copy-bins --ghc-options="-O2"
       - name: Package binaries

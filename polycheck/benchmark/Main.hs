@@ -50,6 +50,8 @@ import System.Directory
 import System.Timeout
 import System.FilePath ((</>))
 
+import Control.Exception
+
 data Options = Options
     { optInputHL   :: Maybe FilePath
     , optInputDir  :: Maybe FilePath
@@ -57,6 +59,7 @@ data Options = Options
     , optPreCond   :: Maybe FilePath
     , optPostCond  :: Maybe FilePath
     , optHuman     :: Bool
+    , optTimeout   :: Maybe Int
     } deriving (Eq,Show)
 
 options :: Parser Options
@@ -67,6 +70,7 @@ options = Options
       <*> optional (strOption (long "precondition"     <> short 'b' <> metavar "FILE" <> help "The precondition file"))
       <*> optional (strOption (long "postcondition"    <> short 'a' <> metavar "FILE" <> help "The postcondition file"))
       <*> switch (long "human" <> short 'u' <> help "Human readable output")
+      <*> optional (option auto (long "timeout" <> short 't' <> metavar "TIME" <> help "Timeout in seconds"))
 
 
 
@@ -75,32 +79,15 @@ data BenchmarkSize = BenchmarkSize
     , bsSize      :: Int     -- ^ The size of the program (number of instructions)
     , bsCtn       :: String  -- ^ content for debugging purposes
     } deriving (Eq, Show, Ord, Generic, ToJSON, FromJSON)
-
-data BenchmarkTransform = BenchmarkTransform
-    { btInput   :: BenchmarkSize       -- ^ The input benchmark size
-    , btOutput  :: BenchmarkSize -- ^ The output benchmark size
-    } deriving (Eq, Show, Generic, ToJSON, FromJSON)
     
-emptyBench :: BenchmarkTransform
-emptyBench = BenchmarkTransform (BenchmarkSize 0 0 "") (BenchmarkSize 0 0 "")
+emptySize :: BenchmarkSize
+emptySize = BenchmarkSize 0 0 ""
 
 higherToSimpleProgram :: Program String ValueType -> SFP.ForProgram
 higherToSimpleProgram p = simplifyForProgram sfp
     where
         transformedProg = foldl (flip applyTransform) p transformationsInOrder
         Right sfp = toSimpleForProgram transformedProg
-
-
-benchHtoS :: String -> BenchmarkTransform
-benchHtoS inputProg = BenchmarkTransform sizeInput sizeOutput
-    where
-        inputHigh' = unwrapEither "Parsing Program Failed" $ PHL.parseHighLevel inputProg
-        inputHigh  = unwrapEither "Type Inference Failed" $ inferAndCheckProgram inputHigh'
-        ctnInput   = inputProg
-        sizeInput  = BenchmarkSize (programDepth inputHigh) (programSize inputHigh) ctnInput
-        transformedProg = higherToSimpleProgram inputHigh
-        sizeOutput = BenchmarkSize (SFP.programDepth transformedProg) (SFP.programSize transformedProg) ctnOuptut
-        ctnOuptut  = SFP.prettyPrintForProgram transformedProg
 
 simpleForToInterpretation :: SFP.ForProgram -> Interpretation String
 simpleForToInterpretation sfp = Interpretation tags alphabet simplifiedDomain simplifiedOrder labelOrCopy arity
@@ -109,19 +96,25 @@ simpleForToInterpretation sfp = Interpretation tags alphabet simplifiedDomain si
         simplifiedDomain = \s vs -> simplifyFormula $ domain s vs
         simplifiedOrder  = \s1 s2 vs1 vs2 -> simplifyFormula $ order s1 s2 vs1 vs2
 
+-- | Computing Sizes
 
-benchStoI :: String -> BenchmarkTransform
-benchStoI inputProg = BenchmarkTransform sizeInput sizeOutput
+sizeOfHighLevel p = BenchmarkSize (programDepth p) (programSize p) ""
+sizeOfSfp       p = BenchmarkSize (SFP.programDepth p) (SFP.programSize p) "" -- (SFP.prettyPrintForProgram p)
+sizeOfInterp    p = BenchmarkSize (maximum . map quantifierDepth $ doms)
+                                  (sum . map formulaSize $ doms)
+                                  "" -- (prettyPrintFormula $ andList doms)
     where
-        inputSfp = unwrapEither "Parsing SFP Failed" $ PS.parseSimpleForProgram inputProg
-        sizeInput = BenchmarkSize (SFP.programDepth inputSfp) (SFP.programSize inputSfp) inputProg
-        interpretation = simpleForToInterpretation inputSfp
         doms = do 
-            t <- FOI.tags interpretation
-            return $ domain interpretation t [In ("x" ++ show i) | i <- [1..]]
-        sizeOutput = BenchmarkSize (maximum . map quantifierDepth $ doms)
-                                   (sum . map formulaSize $ doms)
-                                   (prettyPrintFormula $ andList doms)
+            t <- FOI.tags p
+            return $ domain p t [In ("x" ++ show i) | i <- [1..]]
+
+
+parseHL :: String -> Program String ValueType
+parseHL inputProg = inputHigh
+    where
+        inputHigh' = unwrapEither "Parsing Program Failed" $ PHL.parseHighLevel inputProg
+        inputHigh  = unwrapEither "Type Inference Failed" $ inferAndCheckProgram inputHigh'
+
 
 cmdParser :: ParserInfo Options
 cmdParser = info (options <**> helper)
@@ -147,50 +140,74 @@ typeCheckFormula f = do
         Left err -> error $ "Type error: " ++ show err
         Right _  -> return f
 
-printBenchmarkTransrom :: BenchmarkTransform -> IO ()
-printBenchmarkTransrom (BenchmarkTransform (BenchmarkSize id is ic) (BenchmarkSize od os oc)) = do
-    putStrLn $ "Benchmark depth: " ++ show id ++ " -> " ++ show od
-    putStrLn $ "Benchmark size:  " ++ show is ++ " -> " ++ show os
-    putStrLn $ ic
-    putStrLn $ "----------------"
-    putStrLn $ oc
+handleAny :: (SomeException -> IO a) -> IO a -> IO a 
+handleAny h m = Control.Exception.catch m h
+
+maybeTimeout :: Maybe Int -> IO a -> IO (Maybe a)
+maybeTimeout t m = case t of
+    Just t  -> timeout t m
+    Nothing -> Just <$> m
+
+highToSfpWithTimeout :: Maybe Int -> Program String ValueType
+                     -> IO (Maybe SFP.ForProgram)
+highToSfpWithTimeout t high = handleAny (\_ -> return Nothing) $ maybeTimeout t $ do 
+        let sfp' = higherToSimpleProgram high
+        writeFile  "test.tmp" . SFP.prettyPrintForProgram $ sfp'
+        removeFile "test.tmp"
+        return sfp'
+
+sfpToIntWithTimeout :: Maybe Int -> SFP.ForProgram
+                    -> IO (Maybe (Interpretation String))
+sfpToIntWithTimeout t sfp = handleAny (\_ -> return Nothing) $ maybeTimeout t $ do
+        let int = simpleForToInterpretation sfp
+        writeFile  "test.tmp" . show $ int           
+        removeFile "test.tmp"                        
+        return int
 
 
-benchmarkHighLevelFile :: FilePath -> IO (Maybe (BenchmarkTransform, BenchmarkTransform))
-benchmarkHighLevelFile file = timeout 1000000 $ do 
+data BenchmarkFile = BenchmarkFile {
+    bfName   :: FilePath,
+    bfHigh   :: BenchmarkSize,
+    bfSfp    :: Maybe BenchmarkSize,
+    bfInterp :: Maybe BenchmarkSize
+} deriving (Eq, Show, Generic, ToJSON, FromJSON)
+
+
+data BenchmarkMetadata = BenchmarkMetadata {
+    benches :: [BenchmarkFile]
+} deriving (Eq, Show, Generic, ToJSON, FromJSON)
+
+benchmarkHighLevelFile :: Maybe Int -> FilePath -> IO BenchmarkFile
+benchmarkHighLevelFile t file = do
     ctn <- readFile file
-    let bench = benchHtoS ctn
-    putStrLn . bsCtn . btOutput $ bench
-    let bench' = benchStoI (bsCtn . btOutput $ bench)
-    return (bench, bench')
+    let high  = parseHL ctn
+    let iSize = sizeOfHighLevel high
+    sfp <- highToSfpWithTimeout t high
+    case sfp of
+        Nothing  -> return $ BenchmarkFile file iSize Nothing Nothing
+        Just sfp -> do 
+            let sSize = sizeOfSfp sfp
+            int <- sfpToIntWithTimeout t sfp
+            case int of
+                Nothing  -> return $ BenchmarkFile file iSize (Just sSize) Nothing
+                Just int -> return $ BenchmarkFile file iSize (Just sSize) (Just $ sizeOfInterp int)
 
-benchmarkHighLevelFiles :: [FilePath] -> IO [(FilePath, BenchmarkTransform, BenchmarkTransform)]
-benchmarkHighLevelFiles files = do
-    benches <- forM files $ \file -> do
-        bench <- benchmarkHighLevelFile file
-        case bench of 
-            Just (b1, b2) -> return (file, b1, b2)
-            Nothing -> return (file, emptyBench, emptyBench)
-    return benches
+benchmarkHighLevelFiles :: Maybe Int -> [FilePath] -> IO BenchmarkMetadata
+benchmarkHighLevelFiles t files = BenchmarkMetadata <$> forM files (benchmarkHighLevelFile t)
 
 main :: IO ()
 main = do 
     opts <- execParser cmdParser
+    let timeoutMilisec = (*1000000) <$> optTimeout opts
     case optInputDir opts of
         Just dir -> do
             files <- listDirectory dir
             let files' = map (dir </>) files
-            benches <- benchmarkHighLevelFiles files'
+            benches <- benchmarkHighLevelFiles timeoutMilisec files'
             putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
         Nothing -> return ()
     case optInputHL opts of
         Just file  -> do
-            b <- benchmarkHighLevelFile file
+            b <- benchmarkHighLevelFile timeoutMilisec file
             putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ b
-        Nothing -> return ()
-    case optInputSFP opts of
-        Just file  -> do
-            ctn <- readFile file
-            let bench = benchStoI ctn
-            putStrLn $ "Benchmark: " ++ show bench
         Nothing -> return ()

@@ -1,4 +1,101 @@
-This is an example appendix
+\section{Subwords Containing the Substring $ab$}
+
+\begin{figure}
+    \centering
+\begin{Shaded}
+\begin{Highlighting}[numbers=left]
+\KeywordTok{def}\NormalTok{ getBetween( l : }\DataTypeTok{[Char]} \KeywordTok{with}\NormalTok{ (i,j) ) : }\DataTypeTok{[Char]}\NormalTok{ := }
+\KeywordTok{    for}\NormalTok{ (k,c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(l) }\KeywordTok{do}
+        \KeywordTok{if}\NormalTok{ i \textless{}= k }\KeywordTok{and}\NormalTok{ k \textless{}= j }\KeywordTok{then}
+            \KeywordTok{yield}\NormalTok{ c}
+        \KeywordTok{endif}
+    \KeywordTok{done}
+
+\KeywordTok{def}\NormalTok{ containsAB(w : }\DataTypeTok{[Char]}\NormalTok{) : }\DataTypeTok{Bool}\NormalTok{ := }
+    \KeywordTok{let} \KeywordTok{mut}\NormalTok{ seen\_a := }\KeywordTok{False} \KeywordTok{in} 
+\KeywordTok{    for}\NormalTok{ (i, c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(w) }\KeywordTok{do}
+    \KeywordTok{if}\NormalTok{ c === }\StringTok{\textquotesingle{}a\textquotesingle{} }\KeywordTok{then}
+\NormalTok{            seen\_a := }\KeywordTok{True}
+    \KeywordTok{else} \KeywordTok{if}\NormalTok{ c === }\StringTok{\textquotesingle{}b\textquotesingle{} }\KeywordTok{and}\NormalTok{ seen\_a }\KeywordTok{then}
+            \KeywordTok{return} \KeywordTok{True}
+        \KeywordTok{endif} \KeywordTok{endif}
+    \KeywordTok{done}
+    \KeywordTok{return} \KeywordTok{False}
+
+\KeywordTok{def}\NormalTok{ subwordsWithAB(w : }\DataTypeTok{[Char]}\NormalTok{) : }\DataTypeTok{[[Char]]}\NormalTok{ := }
+\KeywordTok{    for}\NormalTok{ (i,c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(w) }\KeywordTok{do}
+\KeywordTok{        for}\NormalTok{ (j,d) }\KeywordTok{in} \KeywordTok{reversed}\NormalTok{(}\KeywordTok{enumerate}\NormalTok{(w)) }\KeywordTok{do}
+            \KeywordTok{let}\NormalTok{ s := getBetween(w }\KeywordTok{with}\NormalTok{ (i,j)) }\KeywordTok{in}
+            \KeywordTok{if}\NormalTok{ containsAB(s) }\KeywordTok{then}
+                \KeywordTok{yield}\NormalTok{ s}
+            \KeywordTok{endif}
+        \KeywordTok{done}
+    \KeywordTok{done}
+
+\KeywordTok{def}\NormalTok{ main (w : }\DataTypeTok{[Char]}\NormalTok{) : }\DataTypeTok{[Char]}\NormalTok{ := }
+    \KeywordTok{let}\NormalTok{ subwrds := subwordsWithAB(w) }\KeywordTok{in}
+\KeywordTok{    for}\NormalTok{ (j,s) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(subwrds) }\KeywordTok{do}
+\KeywordTok{        for}\NormalTok{ (i,c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(s) }\KeywordTok{do}
+            \KeywordTok{yield}\NormalTok{ c}
+        \KeywordTok{done}
+        \KeywordTok{yield}\StringTok{ \textquotesingle{}\#\textquotesingle{}}
+    \KeywordTok{done}
+\end{Highlighting}
+\end{Shaded}
+\caption{The \kl{high-level program} computing all subwords of a word containing the substring $ab$,
+corresponding to the Python code in \cref{fig:python-example-nested}.}
+\label{fig:high-level-example-nested}
+\end{figure}
+
+\begin{figure}
+    \centering
+\begin{Shaded}
+\begin{Highlighting}[numbers=left]
+\KeywordTok{for}\NormalTok{ i }\KeywordTok{in} \KeywordTok{input} \KeywordTok{do}
+    \KeywordTok{for}\NormalTok{ j }\KeywordTok{in} \KeywordTok{reversed}\NormalTok{(}\KeywordTok{input}\NormalTok{) }\KeywordTok{do}
+        \KeywordTok{let}\NormalTok{ b2, b3, b4 := }\KeywordTok{false} \KeywordTok{in}
+        \KeywordTok{for}\NormalTok{ k }\KeywordTok{in} \KeywordTok{input} \KeywordTok{do}
+            \KeywordTok{if}\NormalTok{ (i <= k) and (k <= j) }\KeywordTok{then}
+                \KeywordTok{if}\NormalTok{ label(k) == \textquotesingle{}a\textquotesingle{} }\KeywordTok{then}
+\NormalTok{                    b4 := }\KeywordTok{true}
+                \KeywordTok{else}
+                    \KeywordTok{if}\NormalTok{ (label(k) == \textquotesingle{}b\textquotesingle{}) and (b4) }\KeywordTok{then}
+                        \KeywordTok{if}\NormalTok{ b3 }\KeywordTok{then}
+                            \KeywordTok{skip}
+                        \KeywordTok{else}
+\NormalTok{                            b3 := }\KeywordTok{true}
+\NormalTok{                            b2 := }\KeywordTok{true}
+                        \KeywordTok{endif}
+                    \KeywordTok{else}
+                        \KeywordTok{skip}
+                    \KeywordTok{endif}
+                \KeywordTok{endif}
+            \KeywordTok{else}
+                \KeywordTok{skip}
+            \KeywordTok{endif}
+        \KeywordTok{done}
+        \KeywordTok{if}\NormalTok{ b2 }\KeywordTok{then}
+            \KeywordTok{for}\NormalTok{ l }\KeywordTok{in} \KeywordTok{input} \KeywordTok{do}
+                \KeywordTok{if}\NormalTok{ (i <= l) and (l <= j) }\KeywordTok{then}
+                    \KeywordTok{print}\NormalTok{ label(l)}
+                \KeywordTok{else}
+                    \KeywordTok{skip}
+                \KeywordTok{endif}
+            \KeywordTok{done}
+            \KeywordTok{print}\NormalTok{ \textquotesingle{}\#\textquotesingle{}}
+        \KeywordTok{else}
+            \KeywordTok{skip}
+        \KeywordTok{endif}
+     \KeywordTok{done}
+\KeywordTok{done}
+\end{Highlighting}
+\end{Shaded}
+\caption{The \kl{simple for-program} computing all subwords of a word containing the substring $ab$,
+corresponding to the Python code in \cref{fig:python-example-nested}, and obtained
+by compiling \cref{fig:high-level-example-nested}.}
+\label{fig:low-level-example-nested}
+\end{figure}
+
 
 \section{Syntax and Semantics of High Level Programs}
 
