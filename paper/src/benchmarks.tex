@@ -21,18 +21,32 @@ for-program}. In the case of \kl{first-order interpretations}, we only compute
 its \emph{size} (number of nodes in the formula) and its \kl{quantifier rank}.
 The results are presented in \cref{tab:benchmarks}.
 
+\paragraph{Quantifier free results.}
+In the simplest cases, we do manage to obtain the optimal quantifier
+free results.
+
+\paragraph{Non-symmetric results.} Get first word and get last words
+are two programs that are very similar in their high-level
+representation, but the quantifier rank and number of boolean variables
+highly differ.
+
+\paragraph{Complexity of literals.}
 The results show that the \kl{elimination of literals} is responsible for a
 significant increase in the complexity of the formulas, as one can see in the
 \texttt{assets/HighLevel/litteral\_test.pr} benchmark. This is explained by the
 fact that the elimination of literals introduces a \emph{sequential} structure
 in the program which is simulated by introducing boolean variables.
 
+
+
 Similarly, we observe that our transformation does not introduce any
 quantifiers when boolean variables are not used, this is the case for the
 \texttt{reversed\_add\_hash} benchmark. 
 
-
-
+\subsection{Evaluation of Hoare Triple}
+While we did not use extensive testing, 
+we did witness that ... on the examples X and Y, 
+results in table XX. So the use of different solvers really is interesting.
 
 
 \begin{description}
@@ -67,8 +81,6 @@ quantifiers when boolean variables are not used, this is the case for the
         and \kl[first-order interpretation]{$\FO$-I} is a \kl{first-order interpretation}.
         The columns \textbf{size}, \textbf{l.d.}, and \textbf{b.d.} stand for the size, loop depth, and boolean depth respectively. While the columns \textbf{size} and \textbf{q.r.} stand for the size and \kl{quantifier rank} of the 
         \kl{first-order interpretation} respectively.
-        When the value is $-$, it means that the transformation took more than $5$ seconds to compute,
-        and we stopped the computation.
     }
     \label{tab:benchmarks}
     \centering

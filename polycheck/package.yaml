@@ -73,6 +73,7 @@ executables:
       - -with-rtsopts=-N
     dependencies:
       - polycheck
+      - time
       - optparse-applicative
 tests:
   polycheck-test:
