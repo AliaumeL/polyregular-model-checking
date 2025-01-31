@@ -131,12 +131,13 @@ also will enforce the following conditions, which are satisfied in our example:
         accessible outside this loop.
 
         This restriction allows us to reduce the \kl{model checking problem} to
-        the satisfiability of a \kl{first order formula} on finite words.
-        This problem is not only decidable but also solvable by well-engineered
-        existing tools, such as automata-based solvers (e.g., MONA) and
-        classical SMT solvers (e.g., Alt-Ergo, Z3, CVC5). Without this
-        restriction, the problem would require the use the MSO logic on words
-        which is still decidable but not supported by the SMT solvers. 
+        the satisfiability of a \kl{first-order formula} on finite words. This
+        problem is not only decidable but also solvable by well-engineered
+        existing tools, such as automata-based solvers (e.g., \kl{MONA}) and
+        classical SMT solvers (e.g., \kl{Alt-Ergo}, \kl{Z3}, and \kl{CVC5}).
+        Without this restriction, the problem would require the use the monadic
+        second order logic on words which is still decidable but not supported
+        by the SMT solvers. 
 
 \end{enumerate}
 
@@ -194,6 +195,9 @@ defined as functions from $\semT{\mathsf{arg}_1} \times \cdots \times
 \semT{\mathsf{arg}_k}$ to $\Bools$, and similarly for functions with output
 type $\TOut[n]$ for some $n \in \Nat$.
 
+\todo[inline]{
+    Define what is an evaluation environment
+}
 \AP
 The evaluation of boolean expressions ($\bexpr$), constant expressions
 ($\cexpr$), and \kl{list expressions} ($\oexpr$) pose no difficulty and are

@@ -1,6 +1,54 @@
 \section{Benchmarks}
 \label{sec:benchmarks}
 
+We implemented all the transformations expressed in this paper. In particular,
+we transformed \kl{high-level for-programs} into \kl{first-order
+interpretations} which where then used to verify \kl{first-order Hoare triples}
+using an SMT solver or the \kl{MONA} program. In this section, we will present
+key indicators of these transformations, and ignore the time taken by the
+solvers to perform verification as it is for now out of the scope of this
+paper.
+
+We selected a number of programs in the \kl{high-level for-program} language
+and for each of them we computed its corresponding \kl{simple for-program} and
+its corresponding \kl{first-order interpretation}. To measure the complexity of
+these transformations, we associated to a \kl{high-level for-program} the
+following parameters: its \emph{size} (number of control flow statements), its
+\emph{loop depth} (the maximum number of nested loops), and its \emph{boolean
+depth} (the maximum number of boolean variables visible at any point in the
+program). We compute the same parameters for the corresponding \kl{simple
+for-program}. In the case of \kl{first-order interpretations}, we only compute
+its \emph{size} (number of nodes in the formula) and its \kl{quantifier rank}.
+The results are presented in \cref{tab:benchmarks}.
+
+\paragraph{Quantifier free results.}
+In the simplest cases, we do manage to obtain the optimal quantifier
+free results.
+
+\paragraph{Non-symmetric results.} Get first word and get last words
+are two programs that are very similar in their high-level
+representation, but the quantifier rank and number of boolean variables
+highly differ.
+
+\paragraph{Complexity of literals.}
+The results show that the \kl{elimination of literals} is responsible for a
+significant increase in the complexity of the formulas, as one can see in the
+\texttt{assets/HighLevel/litteral\_test.pr} benchmark. This is explained by the
+fact that the elimination of literals introduces a \emph{sequential} structure
+in the program which is simulated by introducing boolean variables.
+
+
+
+Similarly, we observe that our transformation does not introduce any
+quantifiers when boolean variables are not used, this is the case for the
+\texttt{reversed\_add\_hash} benchmark. 
+
+\subsection{Evaluation of Hoare Triple}
+While we did not use extensive testing, 
+we did witness that ... on the examples X and Y, 
+results in table XX. So the use of different solvers really is interesting.
+
+
 \begin{description}
     \item[High Level transformation]
         We compute for the output
@@ -26,152 +74,16 @@
         \end{itemize}
 \end{description}
 
-% filename | high-level | low-level | interpretation
-%          | size | qr  | size | qr | size | qr 
-% ------------------------------------------------
-% test.pr  | 100 |  10 |  100 |  10 |  100 |  10
-\begin{tabular}{|l|c|c|c|c|c|c|}
-    \toprule
-    \textbf{filename} & \multicolumn{2}{c|}{\textbf{high-level}} & \multicolumn{2}{c|}{\textbf{low-level}} & \multicolumn{2}{c|}{\textbf{interpretation}} \\
-    \midrule
-                      & \textbf{size} & \textbf{qr} & \textbf{size} & \textbf{qr} & \textbf{size} & \textbf{qr} \\
-    \midrule
-            assets/HighLevel/prefixes.pr &
-        6 & 2 &
-         5 & 3  &
-         2 & 0  \\
-            assets/HighLevel/duplicate.pr &
-        6 & 1 &
-         5 & 2  &
-         3 & 0  \\
-            assets/HighLevel/reversed\_add\_hash.pr &
-        9 & 1 &
-         6 & 3  &
-         3 & 0  \\
-            assets/HighLevel/duplicate\_square.pr &
-        18 & 2 &
-         16 & 3  &
-         8 & 0  \\
-            assets/HighLevel/skip\_last\_letter\_single.pr &
-        12 & 2 &
-         6 & 3  &
-         69 & 4  \\
-            assets/HighLevel/return\_yield.pr &
-        11 & 1 &
-         18 & 2  &
-         1157 & 5  \\
-            assets/HighLevel/simple\_bool.pr &
-        6 & 0 &
-         1 & 1  &
-         1 & 0  \\
-            assets/HighLevel/compress\_as.pr &
-        12 & 1 &
-         12 & 3  &
-         209 & 10  \\
-            assets/HighLevel/map\_reverse.pr &
-        36 & 2 &
-         18 & 4  &
-         285 & 5  \\
-            assets/HighLevel/duplicate\_skip\_first\_square.pr &
-        20 & 2 &
-         25 & 3  &
-         - & -  \\
-            assets/HighLevel/word\_split.pr &
-        29 & 2 &
-         20 & 4  &
-         4310 & 11  \\
-            assets/HighLevel/lit\_eq\_empty\_list.pr &
-        7 & 0 &
-         10 & 2  &
-         139 & 10  \\
-            assets/HighLevel/triple\_square.pr &
-        18 & 2 &
-         34 & 6  &
-         38 & 0  \\
-            assets/HighLevel/as\_after\_as.pr &
-        8 & 1 &
-         6 & 2  &
-         155 & 4  \\
-            assets/HighLevel/bibtex.pr &
-        110 & 2 &
-         802 & 6  &
-         - & -  \\
-            assets/HighLevel/duplicate\_const.pr &
-        9 & 1 &
-         5 & 2  &
-         3 & 0  \\
-            assets/HighLevel/return\_elim.pr &
-        9 & 2 &
-         4 & 3  &
-         1 & 0  \\
-            assets/HighLevel/reverse\_generator.pr &
-        12 & 1 &
-         6 & 3  &
-         69 & 4  \\
-            assets/HighLevel/duplicate\_rev\_square.pr &
-        17 & 2 &
-         5 & 3  &
-         2 & 0  \\
-            assets/HighLevel/duplicate\_reverse.pr &
-        8 & 1 &
-         8 & 3  &
-         2 & 0  \\
-            assets/HighLevel/identity.pr &
-        3 & 1 &
-         2 & 2  &
-         1 & 0  \\
-            assets/HighLevel/subwords\_ab.pr &
-        24 & 2 &
-         15 & 4  &
-         956 & 14  \\
-            assets/HighLevel/squaring.pr &
-        4 & 2 &
-         3 & 3  &
-         1 & 0  \\
-            assets/HighLevel/no\_return.pr &
-        11 & 1 &
-         36 & 2  &
-         4397 & 8  \\
-            assets/HighLevel/boolean\_funcs.pr &
-        9 & 1 &
-         11 & 2  &
-         317 & 6  \\
-            assets/HighLevel/skip\_first\_letter.pr &
-        8 & 1 &
-         4 & 2  &
-         62 & 4  \\
-            assets/HighLevel/reverse\_between\_ands.pr &
-        9 & 2 &
-         7 & 4  &
-         - & -  \\
-            assets/HighLevel/tripple\_square2.pr &
-        19 & 2 &
-         13 & 6  &
-         10 & 0  \\
-            assets/HighLevel/get\_last\_word.pr &
-        18 & 1 &
-         23 & 4  &
-         8553 & 15  \\
-            assets/HighLevel/reverse.pr &
-        3 & 1 &
-         2 & 2  &
-         1 & 0  \\
-            assets/HighLevel/litteral\_test.pr &
-        29 & 1 &
-         129 & 3  &
-         326010 & 82  \\
-            assets/HighLevel/get\_first\_word.pr &
-        22 & 1 &
-         5 & 2  &
-         103 & 4  \\
-            assets/HighLevel/function\_that\_returns.pr &
-        4 & 0 &
-         1 & 1  &
-         1 & 0  \\
-            assets/HighLevel/suffixes.pr &
-        5 & 2 &
-         4 & 3  &
-         1 & 0  \\
-        \bottomrule
-\end{tabular}
+\begin{table}
+    \caption{Benchmark results for the transformations. 
+        Here \kl[for program]{FP} is a \kl{high-level program},
+        \kl[simple for-program]{S.FP} is a \kl{simple for-program},
+        and \kl[first-order interpretation]{$\FO$-I} is a \kl{first-order interpretation}.
+        The columns \textbf{size}, \textbf{l.d.}, and \textbf{b.d.} stand for the size, loop depth, and boolean depth respectively. While the columns \textbf{size} and \textbf{q.r.} stand for the size and \kl{quantifier rank} of the 
+        \kl{first-order interpretation} respectively.
+    }
+    \label{tab:benchmarks}
+    \centering
+    \input{figs/benches.tex}
+\end{table}
 

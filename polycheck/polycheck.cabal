@@ -135,6 +135,7 @@ executable benchmarker
     , scotty
     , temporary
     , text
+    , time
   default-language: Haskell2010
 
 executable polycheck

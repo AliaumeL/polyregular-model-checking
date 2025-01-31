@@ -70,6 +70,10 @@
  | first-order string-to-string interpretation
  | first-order word-to-word interpretation
  | first-order interpretation
+ | $\FO$-interpretation
+ | $\FO$-interpretations
+ | $\FO$ interpretation
+ | $\FO$ interpretations
 
 
 % symbolic

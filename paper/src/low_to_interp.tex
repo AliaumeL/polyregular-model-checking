@@ -70,8 +70,6 @@ $\obvar{b_1}, \dots, \obvar{m}$, and the positions $\ipvar{1}, \dots,
 \ipvar{k}$. We will only consider \kl{program formulas} that define
 \emph{functions} for every fixed input word $w$.
 
-\todo[inline]{Add to the semantics of the program formulas the ability
-to quantify over booleans}
 
 Our goal is to compute inductively a \kl{program formula} for every statement
 of a \kl{simple for-program}. As an example, the statement \texttt{b := True}
@@ -82,6 +80,13 @@ that is always true (no boolean variables are modified). To perform our
 induction step, we need to consider three constructions: the conditional
 branching, the sequence and the iteration.
 
+In order to keep the size of the resulting formulas manageable, we will use a
+similar technique as the one used to compute the \kl{pullback operation} in
+\cref{sec:pullback}: we introduce
+a new finite sort, the booleans. This allows us to quantify over the truth
+values of boolean variables, and is central in our construction. Notice that it
+does not increase the expressive power of the logic, as we can always replace
+the quantification over booleans by a disjunction over its truth value.
 
 \paragraph{Conditional Branching.} 
 Given two \kl{program formulas} $\Phi_1$ and $\Phi_2$ having 
@@ -143,42 +148,83 @@ on the \kl{quantifier rank} of the composition:
 
 
 \paragraph{Iteration of Program Formulas.} The second (and more problematic)
-operation on \kl{program formulas} is the iteration. Assume that we have a
-\kl{program formula} $\Phi$ that contains an \kl{input position variable} $i$
-that we want to iterate over, that is, we want to build a \kl{program formula}
-$\Phi^*$ such that:
-\begin{equation*}
-    \forall_{w \in \mathcal{D}^*}
-    \quad 
-    w \models
-    \Phi^* 
-    \iff 
-    \Phi(i = 0) ; \Phi(i = 1) ; \cdots ; \Phi(i = |w|) \quad .
-\end{equation*}
-The crucial remark is that the \kl{program formula} $\Phi$ has a \emph{finite
-output} (finitely many possibilities for the output boolean variables), and
-that this finite output set is \emph{ordered}: the variables can only be set to
-\texttt{True} (\ref{item:mut-variables}). As a consequence, in a loop
-construction, the output of $\Phi$ differs from the input for at most the
-number of boolean variables of $\Phi$ iteration steps.
-The resulting \kl{program formula} $\Phi^*$ will guess these 
-steps $i_1, \dots, i_k$, the truth value of the boolean variables at 
-these steps and assert the following:
-\begin{itemize}
-    \item The steps are \emph{correct}  in the sense
-        that the guessed boolean values for the output of step $j$
-        are the result of applying $\Phi$ to the guessed boolean
-        variables for the input of step $j$.
-    \item The steps are \emph{complete} in the sense
-        that between two guessed positions $i_j$ and $i_{j+1}$,
-        the boolean variables are not modified.
-\end{itemize}
-These formulas can be written in \kl{first-order logic},
+operation on \kl{program formulas} is the iteration. We will explain its
+construction in the case of a \kl{program formula} $\Phi$ with a single
+\kl{input position variable} $\ipvar{i}$, \kl{input boolean variables} in a set
+$B^{\mathsf{in}}$ and \kl{output boolean variables} in a set
+$B^{\mathsf{out}}$, where $B^{\mathsf{in}} = B^{\mathsf{out}}$. Given a word $w \in \mathcal{D}^*$, evaluating a forward
+loop over $i$ in the range $0$ to $|w|$ can be done by computing the following
+composition: 
+\begin{equation}
+    \label{eq:iteration-dumb}
+    \Phi[\ipvar{i} \mapsto 0] ; \Phi[\ipvar{i} \mapsto 1] ; \cdots ;
+    \Phi[\ipvar{i} \mapsto |w|] \quad ,
+\end{equation}
+Where we replaced the \kl{input position variable}
+$\ipvar{i}$ by every possible value in the range $0$ to $|w|$. The main
+difficulty is to compute this composition efficiently (in terms of formula size and 
+\kl{quantifier depth}), and indepenently of the
+length of the word $w$.
 
-\begin{equation*}
+To that end, remark that \kl{program formula} $\Phi$ has a finitely many output
+values, and that this finite output set is \emph{ordered}: the variables can
+only be set to \texttt{True} (\ref{item:mut-variables}). As a
+consequence, in the composition in \cref{eq:iteration-dumb}, at
+most $|B^{\mathsf{out}}|$ steps actually update the boolean variables. As a
+consequence, one can \emph{accelerate} the computation of the composition by
+only guessing the steps $p_1, \dots, p_{|B^{\mathsf{out}}|}$ that update the
+boolean variables.
+The resulting \kl{program formula} $\Phi^*$ will have the following shape, provided
+that $|B^{\mathsf{out}}| = n > 2$ and $B^{\mathsf{out}} = \set{b_1, \dots, b_n}$:
+\begin{align}
+    \Phi^* :=&~\exists_{p_0 \leq p_1 \leq \cdots \leq p_{n} \leq p_{n+1} : \mathbb{N}} 
+    \label{eq:iteration-smart-pos}
+    \\
+             &~\exists_{\vec{b}_0, \vec{b}_1, \dots, \vec{b}_{n+1} : \mathbb{B}^n}
+    \label{eq:iteration-smart-bool}
+             \\
+             &\bigwedge_{1 \leq j \leq n} \Phi(p_j ; \vec{b}_{j-1} ; \vec{b}_j)
+    \label{eq:iteration-smart-correct}
+             \\
+             &\bigwedge_{1 \leq j \leq n+1}
+               \forall_{p_{j-1} \leq p \leq p_j : \mathbb{N}} \;
+               \Phi(p ; \vec{b}_{j-1} ; \vec{b}_{j-1}) 
+    \label{eq:iteration-smart-complete}
+    \\
+             &\bigwedge_{1 \leq i \leq n} (\vec{b}_0)_i = \ibvar{b_i}
+    \label{eq:iteration-smart-inital}
+    \\
+             &\bigwedge_{1 \leq i \leq n} (\vec{b}_{n+1})_i = \obvar{b_i} 
+    \label{eq:iteration-smart-final}
+            \quad .
+\end{align}
+In this formula, the variables $\vec{b}_j$ are vectors of boolean variables
+that represent the output of the \kl{program formula} $\Phi$ at step $j$.
+To simplify notations, we wrote 
+$\Phi(p ; \vec{b}_{j-1} ; \vec{b}_j)$ to denote the \kl{program formula}
+$\Phi$ where the \kl{input position variable} $\ipvar{i}$ is replaced by $p$,
+the \kl{input boolean variables} $\ibvar{b}$ are replaced by the vector
+$\vec{b}_{j-1}$, and the \kl{output boolean variables} $\obvar{b}$ are replaced
+by the vector $\vec{b}_j$.
+In \cref{eq:iteration-smart-pos}, we quantify over the steps that may change
+boolean variables. In \cref{eq:iteration-smart-bool}, we quantify over the
+actual values of those boolean variables. Then,
+we assert that the guesses were \emph{correct} in \cref{eq:iteration-smart-correct},
+and ensure that no other modifications are made at different positions (i.e., the guesses were \emph{complete})
+in \cref{eq:iteration-smart-complete}. Finally, we ensure that the initial
+and final values of the boolean variables are correctly set in \cref{eq:iteration-smart-inital}.
+
+The formula for the reverse loop is similar, as one only needs to quantify over
+the steps in decreasing order. Notice that our construction ensures the following
+bound on the quantifier rank of the resulting \kl{program formula}:
+\begin{equation}
+    \label{eq:iteration-smart-quantifier-rank}
     \qrank(\Phi^*) 
     \leq \qrank(\Phi) 
-    + (\bcount(\Phi))^2
-    + \bcount(\Phi)
-    + 1 \quad ,
-\end{equation*}
+    + |B^{\mathsf{out}}|^2
+    + |B^{\mathsf{out}}|
+    + 1 \quad .
+\end{equation}
+In particular, this shows how the number of modified boolean variables
+is a crucial parameter for the complexity of the overall procedure,
+justifying the need for a careful analysis of this parameter.

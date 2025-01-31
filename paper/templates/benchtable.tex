@@ -1,18 +1,17 @@
-% filename | high-level | low-level | interpretation
-%          | size | qr  | size | qr | size | qr 
-% ------------------------------------------------
-% test.pr  | 100 |  10 |  100 |  10 |  100 |  10
-\begin{tabular}{|l|c|c|c|c|c|c|}
+%          | high-level                         | low-level                         | interpretation
+% filename | size | loop depth | boolean depth  | size | loop depth | boolean depth | size | qr 
+% increase table column spacing to 2mm
+\setlength{\tabcolsep}{2mm}
+\begin{tabular}{l|rrr|rrr|rrr}
     \toprule
-    \textbf{filename} & \multicolumn{2}{c|}{\textbf{high-level}} & \multicolumn{2}{c|}{\textbf{low-level}} & \multicolumn{2}{c|}{\textbf{interpretation}} \\
-    \midrule
-                      & \textbf{size} & \textbf{qr} & \textbf{size} & \textbf{qr} & \textbf{size} & \textbf{qr} \\
+     & \multicolumn{3}{c|}{\kl[for program]{FP}} & \multicolumn{3}{c|}{\kl[simple for-program]{S.FP}} & \multicolumn{2}{c}{\kl[first-order interpretation]{$$\FO$$-I}} \\
+    \textbf{filename} & \textbf{size} & \textbf{l.d.} & \textbf{b.d.} & \textbf{size} & \textbf{l.d.} & \textbf{b.d.} & \textbf{size} & \textbf{q.r.} \\
     \midrule
     $for(benches)$
-        $it.bfName$ &
-        $it.bfHigh.bsSize$ & $it.bfHigh.bsDepth$ &
-        $if(it.bfSfp)$ $it.bfSfp.bsSize$ & $it.bfSfp.bsDepth$ $else$ - & - $endif$ &
-        $if(it.bfInterp)$ $it.bfInterp.bsSize$ & $it.bfInterp.bsDepth$ $else$ - & - $endif$ \\
+        \texttt{$it.bfName$} &
+        $$ $it.bfHigh.bsSize$ $$ & $$ $it.bfHigh.bsDepth$ $$ & $$ $it.bfHigh.bsBoolDepth$ $$ &
+        $if(it.bfSfp)$    $$ $it.bfSfp.bsSize$    $$ & $$ $it.bfSfp.bsDepth$  $$ & $$ $it.bfSfp.bsBoolDepth$ $$ $else$ - & - & - $endif$ &
+        $if(it.bfInterp)$ $$ $it.bfInterp.bsSize$ $$ & $$ $it.bfInterp.bsDepth$ $$ $else$ - & - $endif$ \\
     $endfor$
     \bottomrule
 \end{tabular}

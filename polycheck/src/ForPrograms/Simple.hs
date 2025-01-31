@@ -90,9 +90,6 @@ programBoolDepth (ForProgram _ stmt) = programBoolDepth' stmt
         programBoolDepth' (Seq [])    = 0
         programBoolDepth' (Seq stmts) = maximum $ map programBoolDepth' stmts
 
-programYieldCount :: ForProgram -> Int
-programYieldCount (ForProgram _ _) = undefined
-
 
 data Movement = MoveIfL  BoolExpr
               | MoveIfR  BoolExpr

@@ -1,0 +1,51 @@
+%          | high-level                         | low-level                         | interpretation
+% filename | size | loop depth | boolean depth  | size | loop depth | boolean depth | size | qr 
+% increase table column spacing to 2mm
+\setlength{\tabcolsep}{2mm}
+\begin{tabular}{l|rrr|rrr|rrr}
+    \toprule
+     & \multicolumn{3}{c|}{\kl[for program]{FP}} & \multicolumn{3}{c|}{\kl[simple for-program]{S.FP}} & \multicolumn{2}{c}{\kl[first-order interpretation]{$\FO$-I}} \\
+    \textbf{filename} & \textbf{size} & \textbf{l.d.} & \textbf{b.d.} & \textbf{size} & \textbf{l.d.} & \textbf{b.d.} & \textbf{size} & \textbf{q.r.} \\
+    \midrule
+            \texttt{identity.pr} &
+        $ 3 $ & $ 1 $ & $ 0 $ &
+            $ 2    $ & $ 2  $ & $ 0 $  &
+         $ 1 $ & $ 0 $  \\
+            \texttt{reverse.pr} &
+        $ 3 $ & $ 1 $ & $ 0 $ &
+            $ 2    $ & $ 2  $ & $ 0 $  &
+         $ 1 $ & $ 0 $  \\
+            \texttt{subwords\_ab.pr} &
+        $ 24 $ & $ 2 $ & $ 1 $ &
+            $ 15    $ & $ 4  $ & $ 3 $  &
+         $ 956 $ & $ 14 $  \\
+            \texttt{map\_reverse.pr} &
+        $ 36 $ & $ 2 $ & $ 1 $ &
+            $ 18    $ & $ 4  $ & $ 1 $  &
+         $ 285 $ & $ 5 $  \\
+            \texttt{prefixes.pr} &
+        $ 6 $ & $ 2 $ & $ 0 $ &
+            $ 5    $ & $ 3  $ & $ 0 $  &
+         $ 2 $ & $ 0 $  \\
+            \texttt{get\_last\_word.pr} &
+        $ 18 $ & $ 1 $ & $ 1 $ &
+            $ 23    $ & $ 4  $ & $ 2 $  &
+         $ 8553 $ & $ 15 $  \\
+            \texttt{get\_first\_word.pr} &
+        $ 22 $ & $ 1 $ & $ 1 $ &
+            $ 5    $ & $ 2  $ & $ 0 $  &
+         $ 103 $ & $ 4 $  \\
+            \texttt{compress\_as.pr} &
+        $ 12 $ & $ 1 $ & $ 1 $ &
+            $ 12    $ & $ 3  $ & $ 2 $  &
+         $ 209 $ & $ 10 $  \\
+            \texttt{litteral\_test.pr} &
+        $ 29 $ & $ 1 $ & $ 1 $ &
+            $ 129    $ & $ 3  $ & $ 12 $  &
+         $ 3.2 \times 10^4 $ & $ 82 $  \\
+            \texttt{bibtex.pr} &
+        $ 110 $ & $ 2 $ & $ 1 $ &
+            $ 802    $ & $ 6  $ & $ 29 $  &
+         $13.7 \times 10^6$ & $136$  \\
+        \bottomrule
+\end{tabular}
