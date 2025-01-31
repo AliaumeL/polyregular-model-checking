@@ -1,4 +1,4 @@
-<language name="SimpleForProgram" version="1.0" kateversion="5.1" section="Scripts" extensions="*.sfp">
+<language name="SimpleForProgram" version="1.0" kateversion="5.1" section="Scripts" extensions="*.spr">
     <highlighting>
         <list name="keywords">
             <item>let</item>

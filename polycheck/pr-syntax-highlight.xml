@@ -1,4 +1,4 @@
-<language name="polyreg" version="1.0" kateversion="5.1" section="Scripts" extensions="*.pr">
+<language name="ForProgram" version="1.0" kateversion="5.1" section="Scripts" extensions="*.pr">
     <highlighting>
         <list name="keywords">
             <item>def</item>
