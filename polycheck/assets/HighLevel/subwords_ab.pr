@@ -8,25 +8,29 @@ def getBewtween( l : [Char] with (i,j) ) : [Char] :=
 def containsAB(w : [Char]) : Bool := 
     let mut seen_a := False in 
     for (i, c) in enumerate(w) do
-        if c == 'a' then
+        if c === 'a' then
             seen_a := True
-        else if c == 'b' and seen_a then
+        else if c === 'b' and seen_a then
             return True
         endif endif
     done
     return False
 
-def subwordsWithAB( w : [Char]) : [[Char]] := 
+def subwordsWithAB(w : [Char]) : [[Char]] := 
     for (i,c) in enumerate(w) do
         for (j,d) in reversed(enumerate(w)) do
-            let s = getBetween(w with (i,j)) in
+            let s := getBetween(w with (i,j)) in
             if containsAB(s) then
                 yield s
+            endif
+        done
+    done
 
 def main (w : [Char]) : [Char] := 
-    for s in subwordsWithAB(w) do
+    let subwrds := subwordsWithAB(w) in
+    for (j,s) in enumerate(subwrds) do
         for (i,c) in enumerate(s) do
-            yield s
+            yield c
         done
         yield '#'
     done
