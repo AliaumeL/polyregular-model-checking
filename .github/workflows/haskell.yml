@@ -22,12 +22,13 @@ jobs:
       - name: Build
         run: |
           cd paper
-          make all
+          make polycheck.pdf
+          make polycheck.lncs.pdf
       - name: Upload pdfs as artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: polycheck.pdf
-          path: paper/polycheck.pdf
+          name: polycheck-paper
+          path: paper/*.pdf
 
   build:
     runs-on: ubuntu-latest
