@@ -59,6 +59,7 @@ data Options = Options
     , optPreCond   :: Maybe FilePath
     , optPostCond  :: Maybe FilePath
     , optHuman     :: Bool
+    , optTimeout   :: Maybe Int
     } deriving (Eq,Show)
 
 options :: Parser Options
@@ -69,6 +70,7 @@ options = Options
       <*> optional (strOption (long "precondition"     <> short 'b' <> metavar "FILE" <> help "The precondition file"))
       <*> optional (strOption (long "postcondition"    <> short 'a' <> metavar "FILE" <> help "The postcondition file"))
       <*> switch (long "human" <> short 'u' <> help "Human readable output")
+      <*> optional (option auto (long "timeout" <> short 't' <> metavar "TIME" <> help "Timeout in seconds"))
 
 
 
@@ -141,17 +143,22 @@ typeCheckFormula f = do
 handleAny :: (SomeException -> IO a) -> IO a -> IO a 
 handleAny h m = Control.Exception.catch m h
 
-highToSfpWithTimeout :: Program String ValueType
+maybeTimeout :: Maybe Int -> IO a -> IO (Maybe a)
+maybeTimeout t m = case t of
+    Just t  -> timeout t m
+    Nothing -> Just <$> m
+
+highToSfpWithTimeout :: Maybe Int -> Program String ValueType
                      -> IO (Maybe SFP.ForProgram)
-highToSfpWithTimeout high = handleAny (\_ -> return Nothing) $ timeout 5000000 $ do 
+highToSfpWithTimeout t high = handleAny (\_ -> return Nothing) $ maybeTimeout t $ do 
         let sfp' = higherToSimpleProgram high
         writeFile  "test.tmp" . SFP.prettyPrintForProgram $ sfp'
         removeFile "test.tmp"
         return sfp'
 
-sfpToIntWithTimeout :: SFP.ForProgram
+sfpToIntWithTimeout :: Maybe Int -> SFP.ForProgram
                     -> IO (Maybe (Interpretation String))
-sfpToIntWithTimeout sfp = handleAny (\_ -> return Nothing) $ timeout 5000000  $ do
+sfpToIntWithTimeout t sfp = handleAny (\_ -> return Nothing) $ maybeTimeout t $ do
         let int = simpleForToInterpretation sfp
         writeFile  "test.tmp" . show $ int           
         removeFile "test.tmp"                        
@@ -165,36 +172,42 @@ data BenchmarkFile = BenchmarkFile {
     bfInterp :: Maybe BenchmarkSize
 } deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
-benchmarkHighLevelFile :: FilePath -> IO BenchmarkFile
-benchmarkHighLevelFile file = do
+
+data BenchmarkMetadata = BenchmarkMetadata {
+    benches :: [BenchmarkFile]
+} deriving (Eq, Show, Generic, ToJSON, FromJSON)
+
+benchmarkHighLevelFile :: Maybe Int -> FilePath -> IO BenchmarkFile
+benchmarkHighLevelFile t file = do
     ctn <- readFile file
     let high  = parseHL ctn
     let iSize = sizeOfHighLevel high
-    sfp <- highToSfpWithTimeout high
+    sfp <- highToSfpWithTimeout t high
     case sfp of
         Nothing  -> return $ BenchmarkFile file iSize Nothing Nothing
         Just sfp -> do 
             let sSize = sizeOfSfp sfp
-            int <- sfpToIntWithTimeout sfp
+            int <- sfpToIntWithTimeout t sfp
             case int of
                 Nothing  -> return $ BenchmarkFile file iSize (Just sSize) Nothing
                 Just int -> return $ BenchmarkFile file iSize (Just sSize) (Just $ sizeOfInterp int)
 
-benchmarkHighLevelFiles :: [FilePath] -> IO [BenchmarkFile]
-benchmarkHighLevelFiles files = forM files benchmarkHighLevelFile 
+benchmarkHighLevelFiles :: Maybe Int -> [FilePath] -> IO BenchmarkMetadata
+benchmarkHighLevelFiles t files = BenchmarkMetadata <$> forM files (benchmarkHighLevelFile t)
 
 main :: IO ()
 main = do 
     opts <- execParser cmdParser
+    let timeoutMilisec = (*1000000) <$> optTimeout opts
     case optInputDir opts of
         Just dir -> do
             files <- listDirectory dir
             let files' = map (dir </>) files
-            benches <- benchmarkHighLevelFiles files'
+            benches <- benchmarkHighLevelFiles timeoutMilisec files'
             putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
         Nothing -> return ()
     case optInputHL opts of
         Just file  -> do
-            b <- benchmarkHighLevelFile file
+            b <- benchmarkHighLevelFile timeoutMilisec file
             putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ b
         Nothing -> return ()

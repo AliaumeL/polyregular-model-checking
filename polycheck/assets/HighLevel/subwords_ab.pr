@@ -1,4 +1,4 @@
-def getBewtween( l : [Char] with (i,j) ) : [Char] := 
+def getBetween( l : [Char] with (i,j) ) : [Char] := 
     for (k,c) in enumerate(l) do
         if i <= k and k <= j then
             yield c
