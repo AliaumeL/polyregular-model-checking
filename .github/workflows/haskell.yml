@@ -67,9 +67,9 @@ jobs:
       - name: Run benchmarking tool
         run: |
           cd polycheck
-          ./result/bin/benchmarker -d ./assets/HighLevel/ > benchmarks.json
+          ../result/bin/benchmarker -d ./assets/HighLevel/ > benchmarks.json
       - name: Upload benchmarks
         uses: actions/upload-artifact@v4
         with:
           name: benchmarks.json
-          path: benchmarks.json
+          path: polycheck/benchmarks.json
