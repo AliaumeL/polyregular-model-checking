@@ -1,4 +1,67 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-todo: conclude
+
+\begin{enumerate}
+    \item \textbf{Optimization.}
+    \begin{enumerate}
+        \item \emph{Simple-for programs.} The benchmarks indicate that the most promising optimization direction is minimizing the boolean depth.
+        This can be approached in two ways: post-compilation optimization and improving the initial code generation. 
+        We have already implemented basic post-compilation optimizations,
+        such as constant propagation and dead code elimination,
+        but there is significant potential for further improvements.
+    
+        So far, we have not implemented any optimizations in the translation process itself, but we believe that this could be a fruitful direction.
+        Based on the benchmarks, we believe that \kl{elimination of Literal Equality} is a particularly costly step of the translation
+        that introduces a large number of boolean variables. We should investigate whether this can be mitigated. Since, the boolean variables introduced
+        in this step are used to simulate counters, it might be useful to introduce explicit counters and position successor operations (i.e. $x + 1$)
+        in the language of simple-for programs.
+    
+        \item \emph{First-order interpretation.} At this level, optimization should focus on reducing quantifier depth and.
+        As with simple-for programs, this can be approached either by applying static optimizations
+        to the generated formulas or by improving the initial translation process. 
+        So far, we have not implemented static formula optimizations, relying instead on solvers' capabilities.
+        However, it might be still beneficial to explore this direction.
+    
+        On the translation side, we have implemented one significant optimization: Instead of structuring sequential compositions in a left-associative sequence,
+        we structure them in a balanced binary-tree fashion. For example, instead of \(\psi_1 (\psi_2, (\psi_3, \psi_4))\),
+        we construct \(((\psi_1, \psi_2), (\psi_3, \psi_4))\), reducing  the overhead quantifier depth from \(n\) to \(\log n\).
+        Additional potential optimizations include eliminating quantification while composing simple programs.
+        For example, instead of computing the composition \( [[x := \text{true}]]; \psi \) using quantification,
+        we could computing directly with the following substitution \(\psi\) with \(\psi[\text{In } x := \text{true}]\).
+        We should also explore simplifying some formulas by using arithmetic operations such as successor, predecessor or addition.
+    
+        The final potential optimization that we would like to discuss considers the treatment of loops. It is based on the observation that 
+        if a loop tracks $n$ variables and has already undergone $n$ updates, we do not need to need to verify \kl{completes} of the loop, 
+        as no more state changes are possible. Based on this observation, we might be able to significantly reduce the number of universal 
+        quantification in the generated formulas.
+    \end{enumerate}
+
+    \item \textbf{Understanding the solvers.} The performance of the solvers is highly dependent on the structure of the formulas.
+    We would like to investigate how the solvers work internally and how we can structure the formulas to make them more efficient.
+    For example, reducing the number of universal quantifier, described at the previous item might improve the performance of MONA.
+    An interesting research direction would be to reduce the verification problem to emptiness of LTL formulas (rather than first-order formulas on
+    words) and use LTL solvers.
+
+    \item \textbf{Modular verification.} Expanding the for loops is a quite expensive step of the translation process. For this reason,
+     it would be very helpful to verify statements of the form \texttt{for (i, e) in enumerate(f(x)) do s done}, based on the 
+     specification of $f$ given as a Hoare triple, rather than by expanding the for loop. However, as for now our approach is not 
+     modular, it is unclear whether this is possible. 
+
+    \item \textbf{MSO and unrestricted booleans.} As mentioned in \cref{sec:high_level}, the version of \kl{high-level language}
+    with unrestricted booleans is still decidable, but it requires the use of monadic second-order logic (MSO) for word
+    instead of first-order logic. This logic can be handled by the MONA solver, and it might be interesting to implement and 
+    benchmark the unrestricted version of the language.
+
+    \item \textbf{Richer type system.} For now, the the type system of the high-level language is very simple,
+    with list being the only constructor for nested words. The language could be extended with more complex types, 
+    such as pairs, records, or maps. This would make our language more usable, making it feasible, to use it 
+    to implement transformations on more complex data structures (such as JSON).
+    
+    \item \textbf{Integrating with existing tools.} Finally, it could be useful to integrate our tool with
+    existing tools or programming languages. For example, we could implement a translation from a subset 
+    of Python to our high-level language, allowing users to verify parts of their Python programs using our tool.
+    Another interesting project, would be to integrate our tool with the Why3 tool,
+    allowing the users to discharge using our framework the verification conditions generated by Why3.
+
+\end{enumerate}
