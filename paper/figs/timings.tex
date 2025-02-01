@@ -1,0 +1,625 @@
+% latex timings
+% 
+%      "Right": {
+%        "bsmtFormula": {
+%          "bsBoolDepth": 0,
+%          "bsCtn": "",
+%          "bsDepth": 6,
+%          "bsSize": 89
+%        },
+%        "bsmtName": "test-bench/prefixes.pr",
+%        "bsmtPost": "assets/Formulas/endsWithA.fo",
+%        "bsmtPre": "assets/Formulas/endsWithA.fo",
+%        "bsmtResponses": {
+%          "AltErgoSingle": {
+%            "contents": "32.51886 ms",
+%            "tag": "SmtQQWithTime"
+%          },
+%          "Mona": { "contents": "22.72391 ms", "tag": "SmtOkWithTime" },
+%          "SMTLibAltErgo": {
+%            "contents": "20.94126 ms",
+%            "tag": "SmtOkWithTime"
+%          },
+%          "SMTLibCVC5": { "contents": "69.29064 ms", "tag": "SmtOkWithTime" },
+%          "SMTLibYices": { "contents": "6.820917 ms", "tag": "SmtQQWithTime" },
+%          "SMTLibZ3": { "tag": "SmtTimeout" }
+%        }
+%      }
+%
+% name | pre | post | depth | size | mona | alt-ergo | yices | cvc5 | z3
+% ---- | --- | ---- | ----- | ---- | ---- | -------- | ----- | ---- | --
+
+\begin{tabular}{l|l|l|r|r|r|r|r|r|r}
+    \toprul
+\textbf{name} & \textbf{pre} & \textbf{post} & \textbf{depth} & \textbf{size} & \textbf{mona} &  \textbf{cvc5} & \textbf{z3} \\
+\midrule
+prefixes.pr & endsWithA.fo & endsWithA.fo & 6 & 89 & OK & 
+OK & timeout \\
+prefixes.pr & endsWithA.fo & containsAB.fo & 9 & 221 & KO & 
+UK & KO \\
+prefixes.pr & endsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+prefixes.pr & endsWithA.fo & containsA.fo & 3 & 39 & OK & 
+OK & OK \\
+prefixes.pr & endsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+prefixes.pr & endsWithA.fo & startsWithA.fo & 6 & 89 & KO & 
+timeout & timeout \\
+prefixes.pr & endsWithA.fo & containsAA.fo & 9 & 221 & KO & 
+UK & KO \\
+get\_last\_word.pr & endsWithA.fo & endsWithA.fo & 23 & 18767 & KO & 
+UK & KO \\
+get\_last\_word.pr & endsWithA.fo & containsAB.fo & 27 & 28274 & timeout & 
+UK & KO \\
+get\_last\_word.pr & endsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+get\_last\_word.pr & endsWithA.fo & containsA.fo & 19 & 9372 & KO & 
+UK & KO \\
+get\_last\_word.pr & endsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+get\_last\_word.pr & endsWithA.fo & startsWithA.fo & 23 & 18767 & KO & 
+UK & KO \\
+get\_last\_word.pr & endsWithA.fo & containsAA.fo & 27 & 28274 & timeout & 
+UK & KO \\
+get\_first\_word.pr & endsWithA.fo & endsWithA.fo & 8 & 279 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & endsWithA.fo & containsAB.fo & 10 & 447 & KO & 
+UK & timeout \\
+get\_first\_word.pr & endsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+get\_first\_word.pr & endsWithA.fo & containsA.fo & 6 & 143 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & endsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+get\_first\_word.pr & endsWithA.fo & startsWithA.fo & 8 & 279 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & endsWithA.fo & containsAA.fo & 10 & 447 & KO & 
+UK & timeout \\
+map\_reverse.pr & endsWithA.fo & endsWithA.fo & 13 & 801 & timeout & 
+UK & timeout \\
+map\_reverse.pr & endsWithA.fo & containsAB.fo & 17 & 1378 & UK & 
+UK & KO \\
+map\_reverse.pr & endsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+map\_reverse.pr & endsWithA.fo & containsA.fo & 9 & 378 & OK & 
+UK & timeout \\
+map\_reverse.pr & endsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+map\_reverse.pr & endsWithA.fo & startsWithA.fo & 13 & 801 & timeout & 
+UK & timeout \\
+map\_reverse.pr & endsWithA.fo & containsAA.fo & 17 & 1378 & UK & 
+UK & KO \\
+compress\_as.pr & endsWithA.fo & endsWithA.fo & 14 & 483 & OK & 
+UK & timeout \\
+compress\_as.pr & endsWithA.fo & containsAB.fo & 16 & 753 & KO & 
+UK & timeout \\
+compress\_as.pr & endsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+compress\_as.pr & endsWithA.fo & containsA.fo & 12 & 245 & OK & 
+UK & timeout \\
+compress\_as.pr & endsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+compress\_as.pr & endsWithA.fo & startsWithA.fo & 14 & 483 & KO & 
+UK & timeout \\
+compress\_as.pr & endsWithA.fo & containsAA.fo & 16 & 753 & KO & 
+UK & timeout \\
+subwords\_ab.pr & endsWithA.fo & endsWithA.fo & 22 & 2095 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & endsWithA.fo & containsAB.fo & 26 & 3266 & timeout & 
+UK & KO \\
+subwords\_ab.pr & endsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+subwords\_ab.pr & endsWithA.fo & containsA.fo & 18 & 1034 & timeout & 
+UK & KO \\
+subwords\_ab.pr & endsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+subwords\_ab.pr & endsWithA.fo & startsWithA.fo & 22 & 2095 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & endsWithA.fo & containsAA.fo & 26 & 3266 & timeout & 
+UK & KO \\
+prefixes.pr & containsAB.fo & endsWithA.fo & 6 & 99 & KO & 
+timeout & timeout \\
+prefixes.pr & containsAB.fo & containsAB.fo & 9 & 231 & OK & 
+OK & timeout \\
+prefixes.pr & containsAB.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+prefixes.pr & containsAB.fo & containsA.fo & 3 & 49 & OK & 
+OK & OK \\
+prefixes.pr & containsAB.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+prefixes.pr & containsAB.fo & startsWithA.fo & 6 & 99 & KO & 
+timeout & timeout \\
+prefixes.pr & containsAB.fo & containsAA.fo & 9 & 231 & KO & 
+UK & timeout \\
+get\_last\_word.pr & containsAB.fo & endsWithA.fo & 23 & 18777 & KO & 
+UK & KO \\
+get\_last\_word.pr & containsAB.fo & containsAB.fo & 27 & 28284 & timeout & 
+UK & KO \\
+get\_last\_word.pr & containsAB.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+get\_last\_word.pr & containsAB.fo & containsA.fo & 19 & 9382 & KO & 
+UK & KO \\
+get\_last\_word.pr & containsAB.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+get\_last\_word.pr & containsAB.fo & startsWithA.fo & 23 & 18777 & KO & 
+UK & KO \\
+get\_last\_word.pr & containsAB.fo & containsAA.fo & 27 & 28284 & timeout & 
+UK & KO \\
+get\_first\_word.pr & containsAB.fo & endsWithA.fo & 8 & 289 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & containsAB.fo & containsAB.fo & 10 & 457 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & containsAB.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+get\_first\_word.pr & containsAB.fo & containsA.fo & 6 & 153 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & containsAB.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+get\_first\_word.pr & containsAB.fo & startsWithA.fo & 8 & 289 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & containsAB.fo & containsAA.fo & 10 & 457 & KO & 
+UK & timeout \\
+map\_reverse.pr & containsAB.fo & endsWithA.fo & 13 & 811 & timeout & 
+UK & timeout \\
+map\_reverse.pr & containsAB.fo & containsAB.fo & 17 & 1388 & UK & 
+UK & KO \\
+map\_reverse.pr & containsAB.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+map\_reverse.pr & containsAB.fo & containsA.fo & 9 & 388 & OK & 
+UK & timeout \\
+map\_reverse.pr & containsAB.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+map\_reverse.pr & containsAB.fo & startsWithA.fo & 13 & 811 & timeout & 
+UK & timeout \\
+map\_reverse.pr & containsAB.fo & containsAA.fo & 17 & 1388 & UK & 
+UK & KO \\
+compress\_as.pr & containsAB.fo & endsWithA.fo & 14 & 493 & KO & 
+UK & timeout \\
+compress\_as.pr & containsAB.fo & containsAB.fo & 16 & 763 & OK & 
+UK & timeout \\
+compress\_as.pr & containsAB.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+compress\_as.pr & containsAB.fo & containsA.fo & 12 & 255 & OK & 
+UK & timeout \\
+compress\_as.pr & containsAB.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+compress\_as.pr & containsAB.fo & startsWithA.fo & 14 & 493 & KO & 
+UK & timeout \\
+compress\_as.pr & containsAB.fo & containsAA.fo & 16 & 763 & KO & 
+UK & timeout \\
+subwords\_ab.pr & containsAB.fo & endsWithA.fo & 22 & 2105 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & containsAB.fo & containsAB.fo & 26 & 3276 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & containsAB.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+subwords\_ab.pr & containsAB.fo & containsA.fo & 18 & 1044 & timeout & 
+UK & OK \\
+subwords\_ab.pr & containsAB.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+subwords\_ab.pr & containsAB.fo & startsWithA.fo & 22 & 2105 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & containsAB.fo & containsAA.fo & 26 & 3276 & timeout & 
+UK & KO \\
+prefixes.pr & false.fo & endsWithA.fo & 6 & 81 & OK & 
+OK & OK \\
+prefixes.pr & false.fo & containsAB.fo & 9 & 213 & OK & 
+OK & OK \\
+prefixes.pr & false.fo & false.fo & 0 & 3 & OK & 
+OK & OK \\
+prefixes.pr & false.fo & containsA.fo & 3 & 31 & OK & 
+OK & OK \\
+prefixes.pr & false.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+prefixes.pr & false.fo & startsWithA.fo & 6 & 81 & OK & 
+OK & OK \\
+prefixes.pr & false.fo & containsAA.fo & 9 & 213 & OK & 
+OK & OK \\
+get\_last\_word.pr & false.fo & endsWithA.fo & 23 & 18759 & OK & 
+OK & OK \\
+get\_last\_word.pr & false.fo & containsAB.fo & 27 & 28266 & OK & 
+OK & OK \\
+get\_last\_word.pr & false.fo & false.fo & 0 & 3 & OK & 
+OK & OK \\
+get\_last\_word.pr & false.fo & containsA.fo & 19 & 9364 & OK & 
+OK & OK \\
+get\_last\_word.pr & false.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+get\_last\_word.pr & false.fo & startsWithA.fo & 23 & 18759 & OK & 
+OK & OK \\
+get\_last\_word.pr & false.fo & containsAA.fo & 27 & 28266 & OK & 
+OK & OK \\
+get\_first\_word.pr & false.fo & endsWithA.fo & 8 & 271 & OK & 
+OK & OK \\
+get\_first\_word.pr & false.fo & containsAB.fo & 10 & 439 & OK & 
+OK & OK \\
+get\_first\_word.pr & false.fo & false.fo & 0 & 3 & OK & 
+OK & OK \\
+get\_first\_word.pr & false.fo & containsA.fo & 6 & 135 & OK & 
+OK & OK \\
+get\_first\_word.pr & false.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+get\_first\_word.pr & false.fo & startsWithA.fo & 8 & 271 & OK & 
+OK & OK \\
+get\_first\_word.pr & false.fo & containsAA.fo & 10 & 439 & OK & 
+OK & OK \\
+map\_reverse.pr & false.fo & endsWithA.fo & 13 & 793 & OK & 
+OK & OK \\
+map\_reverse.pr & false.fo & containsAB.fo & 17 & 1370 & OK & 
+OK & OK \\
+map\_reverse.pr & false.fo & false.fo & 0 & 3 & OK & 
+OK & OK \\
+map\_reverse.pr & false.fo & containsA.fo & 9 & 370 & OK & 
+OK & OK \\
+map\_reverse.pr & false.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+map\_reverse.pr & false.fo & startsWithA.fo & 13 & 793 & OK & 
+OK & OK \\
+map\_reverse.pr & false.fo & containsAA.fo & 17 & 1370 & OK & 
+OK & OK \\
+compress\_as.pr & false.fo & endsWithA.fo & 14 & 475 & OK & 
+OK & OK \\
+compress\_as.pr & false.fo & containsAB.fo & 16 & 745 & OK & 
+OK & OK \\
+compress\_as.pr & false.fo & false.fo & 0 & 3 & OK & 
+OK & OK \\
+compress\_as.pr & false.fo & containsA.fo & 12 & 237 & OK & 
+OK & OK \\
+compress\_as.pr & false.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+compress\_as.pr & false.fo & startsWithA.fo & 14 & 475 & OK & 
+OK & OK \\
+compress\_as.pr & false.fo & containsAA.fo & 16 & 745 & OK & 
+OK & OK \\
+subwords\_ab.pr & false.fo & endsWithA.fo & 22 & 2087 & OK & 
+OK & OK \\
+subwords\_ab.pr & false.fo & containsAB.fo & 26 & 3258 & OK & 
+OK & OK \\
+subwords\_ab.pr & false.fo & false.fo & 0 & 3 & OK & 
+OK & OK \\
+subwords\_ab.pr & false.fo & containsA.fo & 18 & 1026 & OK & 
+OK & OK \\
+subwords\_ab.pr & false.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+subwords\_ab.pr & false.fo & startsWithA.fo & 22 & 2087 & OK & 
+OK & OK \\
+subwords\_ab.pr & false.fo & containsAA.fo & 26 & 3258 & OK & 
+OK & OK \\
+prefixes.pr & containsA.fo & endsWithA.fo & 6 & 84 & KO & 
+timeout & timeout \\
+prefixes.pr & containsA.fo & containsAB.fo & 9 & 216 & KO & 
+UK & KO \\
+prefixes.pr & containsA.fo & false.fo & 1 & 6 & KO & 
+UK & KO \\
+prefixes.pr & containsA.fo & containsA.fo & 3 & 34 & OK & 
+OK & OK \\
+prefixes.pr & containsA.fo & true.fo & 1 & 6 & OK & 
+OK & OK \\
+prefixes.pr & containsA.fo & startsWithA.fo & 6 & 84 & KO & 
+timeout & timeout \\
+prefixes.pr & containsA.fo & containsAA.fo & 9 & 216 & KO & 
+UK & KO \\
+get\_last\_word.pr & containsA.fo & endsWithA.fo & 23 & 18762 & KO & 
+UK & KO \\
+get\_last\_word.pr & containsA.fo & containsAB.fo & 27 & 28269 & timeout & 
+UK & KO \\
+get\_last\_word.pr & containsA.fo & false.fo & 1 & 6 & KO & 
+UK & KO \\
+get\_last\_word.pr & containsA.fo & containsA.fo & 19 & 9367 & KO & 
+UK & KO \\
+get\_last\_word.pr & containsA.fo & true.fo & 1 & 6 & OK & 
+OK & OK \\
+get\_last\_word.pr & containsA.fo & startsWithA.fo & 23 & 18762 & KO & 
+UK & KO \\
+get\_last\_word.pr & containsA.fo & containsAA.fo & 27 & 28269 & timeout & 
+UK & KO \\
+get\_first\_word.pr & containsA.fo & endsWithA.fo & 8 & 274 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & containsA.fo & containsAB.fo & 10 & 442 & KO & 
+UK & timeout \\
+get\_first\_word.pr & containsA.fo & false.fo & 1 & 6 & KO & 
+UK & KO \\
+get\_first\_word.pr & containsA.fo & containsA.fo & 6 & 138 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & containsA.fo & true.fo & 1 & 6 & OK & 
+OK & OK \\
+get\_first\_word.pr & containsA.fo & startsWithA.fo & 8 & 274 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & containsA.fo & containsAA.fo & 10 & 442 & KO & 
+UK & timeout \\
+map\_reverse.pr & containsA.fo & endsWithA.fo & 13 & 796 & timeout & 
+UK & timeout \\
+map\_reverse.pr & containsA.fo & containsAB.fo & 17 & 1373 & UK & 
+UK & KO \\
+map\_reverse.pr & containsA.fo & false.fo & 1 & 6 & KO & 
+UK & KO \\
+map\_reverse.pr & containsA.fo & containsA.fo & 9 & 373 & OK & 
+UK & timeout \\
+map\_reverse.pr & containsA.fo & true.fo & 1 & 6 & OK & 
+OK & OK \\
+map\_reverse.pr & containsA.fo & startsWithA.fo & 13 & 796 & timeout & 
+UK & timeout \\
+map\_reverse.pr & containsA.fo & containsAA.fo & 17 & 1373 & UK & 
+UK & KO \\
+compress\_as.pr & containsA.fo & endsWithA.fo & 14 & 478 & KO & 
+UK & timeout \\
+compress\_as.pr & containsA.fo & containsAB.fo & 16 & 748 & KO & 
+UK & KO \\
+compress\_as.pr & containsA.fo & false.fo & 1 & 6 & KO & 
+UK & KO \\
+compress\_as.pr & containsA.fo & containsA.fo & 12 & 240 & OK & 
+UK & timeout \\
+compress\_as.pr & containsA.fo & true.fo & 1 & 6 & OK & 
+OK & OK \\
+compress\_as.pr & containsA.fo & startsWithA.fo & 14 & 478 & KO & 
+UK & timeout \\
+compress\_as.pr & containsA.fo & containsAA.fo & 16 & 748 & KO & 
+UK & KO \\
+subwords\_ab.pr & containsA.fo & endsWithA.fo & 22 & 2090 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & containsA.fo & containsAB.fo & 26 & 3261 & timeout & 
+UK & KO \\
+subwords\_ab.pr & containsA.fo & false.fo & 1 & 6 & KO & 
+UK & KO \\
+subwords\_ab.pr & containsA.fo & containsA.fo & 18 & 1029 & timeout & 
+UK & KO \\
+subwords\_ab.pr & containsA.fo & true.fo & 1 & 6 & OK & 
+OK & OK \\
+subwords\_ab.pr & containsA.fo & startsWithA.fo & 22 & 2090 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & containsA.fo & containsAA.fo & 26 & 3261 & timeout & 
+UK & KO \\
+prefixes.pr & true.fo & endsWithA.fo & 6 & 81 & KO & 
+UK & KO \\
+prefixes.pr & true.fo & containsAB.fo & 9 & 213 & KO & 
+UK & KO \\
+prefixes.pr & true.fo & false.fo & 0 & 3 & KO & 
+UK & KO \\
+prefixes.pr & true.fo & containsA.fo & 3 & 31 & KO & 
+UK & KO \\
+prefixes.pr & true.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+prefixes.pr & true.fo & startsWithA.fo & 6 & 81 & KO & 
+UK & KO \\
+prefixes.pr & true.fo & containsAA.fo & 9 & 213 & KO & 
+UK & KO \\
+get\_last\_word.pr & true.fo & endsWithA.fo & 23 & 18759 & KO & 
+UK & KO \\
+get\_last\_word.pr & true.fo & containsAB.fo & 27 & 28266 & timeout & 
+UK & KO \\
+get\_last\_word.pr & true.fo & false.fo & 0 & 3 & KO & 
+UK & KO \\
+get\_last\_word.pr & true.fo & containsA.fo & 19 & 9364 & KO & 
+UK & KO \\
+get\_last\_word.pr & true.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+get\_last\_word.pr & true.fo & startsWithA.fo & 23 & 18759 & KO & 
+UK & KO \\
+get\_last\_word.pr & true.fo & containsAA.fo & 27 & 28266 & timeout & 
+UK & KO \\
+get\_first\_word.pr & true.fo & endsWithA.fo & 8 & 271 & KO & 
+UK & KO \\
+get\_first\_word.pr & true.fo & containsAB.fo & 10 & 439 & KO & 
+UK & KO \\
+get\_first\_word.pr & true.fo & false.fo & 0 & 3 & KO & 
+UK & KO \\
+get\_first\_word.pr & true.fo & containsA.fo & 6 & 135 & KO & 
+UK & KO \\
+get\_first\_word.pr & true.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+get\_first\_word.pr & true.fo & startsWithA.fo & 8 & 271 & KO & 
+UK & KO \\
+get\_first\_word.pr & true.fo & containsAA.fo & 10 & 439 & KO & 
+UK & KO \\
+map\_reverse.pr & true.fo & endsWithA.fo & 13 & 793 & timeout & 
+UK & KO \\
+map\_reverse.pr & true.fo & containsAB.fo & 17 & 1370 & UK & 
+UK & KO \\
+map\_reverse.pr & true.fo & false.fo & 0 & 3 & KO & 
+UK & KO \\
+map\_reverse.pr & true.fo & containsA.fo & 9 & 370 & KO & 
+UK & KO \\
+map\_reverse.pr & true.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+map\_reverse.pr & true.fo & startsWithA.fo & 13 & 793 & timeout & 
+UK & KO \\
+map\_reverse.pr & true.fo & containsAA.fo & 17 & 1370 & UK & 
+UK & KO \\
+compress\_as.pr & true.fo & endsWithA.fo & 14 & 475 & KO & 
+UK & KO \\
+compress\_as.pr & true.fo & containsAB.fo & 16 & 745 & KO & 
+UK & KO \\
+compress\_as.pr & true.fo & false.fo & 0 & 3 & KO & 
+UK & KO \\
+compress\_as.pr & true.fo & containsA.fo & 12 & 237 & KO & 
+UK & KO \\
+compress\_as.pr & true.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+compress\_as.pr & true.fo & startsWithA.fo & 14 & 475 & KO & 
+UK & KO \\
+compress\_as.pr & true.fo & containsAA.fo & 16 & 745 & KO & 
+UK & KO \\
+subwords\_ab.pr & true.fo & endsWithA.fo & 22 & 2087 & timeout & 
+UK & KO \\
+subwords\_ab.pr & true.fo & containsAB.fo & 26 & 3258 & timeout & 
+UK & KO \\
+subwords\_ab.pr & true.fo & false.fo & 0 & 3 & KO & 
+UK & KO \\
+subwords\_ab.pr & true.fo & containsA.fo & 18 & 1026 & timeout & 
+UK & KO \\
+subwords\_ab.pr & true.fo & true.fo & 0 & 3 & OK & 
+OK & OK \\
+subwords\_ab.pr & true.fo & startsWithA.fo & 22 & 2087 & timeout & 
+UK & KO \\
+subwords\_ab.pr & true.fo & containsAA.fo & 26 & 3258 & timeout & 
+UK & KO \\
+prefixes.pr & startsWithA.fo & endsWithA.fo & 6 & 89 & KO & 
+timeout & timeout \\
+prefixes.pr & startsWithA.fo & containsAB.fo & 9 & 221 & KO & 
+UK & KO \\
+prefixes.pr & startsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+prefixes.pr & startsWithA.fo & containsA.fo & 3 & 39 & OK & 
+OK & OK \\
+prefixes.pr & startsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+prefixes.pr & startsWithA.fo & startsWithA.fo & 6 & 89 & KO & 
+timeout & timeout \\
+prefixes.pr & startsWithA.fo & containsAA.fo & 9 & 221 & KO & 
+UK & KO \\
+get\_last\_word.pr & startsWithA.fo & endsWithA.fo & 23 & 18767 & KO & 
+UK & KO \\
+get\_last\_word.pr & startsWithA.fo & containsAB.fo & 27 & 28274 & timeout & 
+UK & KO \\
+get\_last\_word.pr & startsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+get\_last\_word.pr & startsWithA.fo & containsA.fo & 19 & 9372 & KO & 
+UK & KO \\
+get\_last\_word.pr & startsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+get\_last\_word.pr & startsWithA.fo & startsWithA.fo & 23 & 18767 & KO & 
+UK & KO \\
+get\_last\_word.pr & startsWithA.fo & containsAA.fo & 27 & 28274 & timeout & 
+UK & KO \\
+get\_first\_word.pr & startsWithA.fo & endsWithA.fo & 8 & 279 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & startsWithA.fo & containsAB.fo & 10 & 447 & KO & 
+UK & timeout \\
+get\_first\_word.pr & startsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+get\_first\_word.pr & startsWithA.fo & containsA.fo & 6 & 143 & OK & 
+OK & OK \\
+get\_first\_word.pr & startsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+get\_first\_word.pr & startsWithA.fo & startsWithA.fo & 8 & 279 & OK & 
+OK & timeout \\
+get\_first\_word.pr & startsWithA.fo & containsAA.fo & 10 & 447 & KO & 
+UK & timeout \\
+map\_reverse.pr & startsWithA.fo & endsWithA.fo & 13 & 801 & timeout & 
+UK & timeout \\
+map\_reverse.pr & startsWithA.fo & containsAB.fo & 17 & 1378 & UK & 
+UK & KO \\
+map\_reverse.pr & startsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+map\_reverse.pr & startsWithA.fo & containsA.fo & 9 & 378 & OK & 
+UK & timeout \\
+map\_reverse.pr & startsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+map\_reverse.pr & startsWithA.fo & startsWithA.fo & 13 & 801 & timeout & 
+UK & timeout \\
+map\_reverse.pr & startsWithA.fo & containsAA.fo & 17 & 1378 & UK & 
+UK & KO \\
+compress\_as.pr & startsWithA.fo & endsWithA.fo & 14 & 483 & KO & 
+UK & timeout \\
+compress\_as.pr & startsWithA.fo & containsAB.fo & 16 & 753 & KO & 
+UK & timeout \\
+compress\_as.pr & startsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+compress\_as.pr & startsWithA.fo & containsA.fo & 12 & 245 & OK & 
+UK & timeout \\
+compress\_as.pr & startsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+compress\_as.pr & startsWithA.fo & startsWithA.fo & 14 & 483 & OK & 
+UK & timeout \\
+compress\_as.pr & startsWithA.fo & containsAA.fo & 16 & 753 & KO & 
+UK & timeout \\
+subwords\_ab.pr & startsWithA.fo & endsWithA.fo & 22 & 2095 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & startsWithA.fo & containsAB.fo & 26 & 3266 & timeout & 
+UK & KO \\
+subwords\_ab.pr & startsWithA.fo & false.fo & 2 & 11 & KO & 
+UK & KO \\
+subwords\_ab.pr & startsWithA.fo & containsA.fo & 18 & 1034 & timeout & 
+UK & KO \\
+subwords\_ab.pr & startsWithA.fo & true.fo & 2 & 11 & OK & 
+OK & OK \\
+subwords\_ab.pr & startsWithA.fo & startsWithA.fo & 22 & 2095 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & startsWithA.fo & containsAA.fo & 26 & 3266 & timeout & 
+UK & KO \\
+prefixes.pr & containsAA.fo & endsWithA.fo & 6 & 99 & KO & 
+timeout & timeout \\
+prefixes.pr & containsAA.fo & containsAB.fo & 9 & 231 & KO & 
+UK & KO \\
+prefixes.pr & containsAA.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+prefixes.pr & containsAA.fo & containsA.fo & 3 & 49 & OK & 
+OK & OK \\
+prefixes.pr & containsAA.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+prefixes.pr & containsAA.fo & startsWithA.fo & 6 & 99 & KO & 
+timeout & timeout \\
+prefixes.pr & containsAA.fo & containsAA.fo & 9 & 231 & OK & 
+OK & timeout \\
+get\_last\_word.pr & containsAA.fo & endsWithA.fo & 23 & 18777 & KO & 
+UK & timeout \\
+get\_last\_word.pr & containsAA.fo & containsAB.fo & 27 & 28284 & timeout & 
+UK & KO \\
+get\_last\_word.pr & containsAA.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+get\_last\_word.pr & containsAA.fo & containsA.fo & 19 & 9382 & KO & 
+UK & timeout \\
+get\_last\_word.pr & containsAA.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+get\_last\_word.pr & containsAA.fo & startsWithA.fo & 23 & 18777 & KO & 
+UK & timeout \\
+get\_last\_word.pr & containsAA.fo & containsAA.fo & 27 & 28284 & timeout & 
+UK & KO \\
+get\_first\_word.pr & containsAA.fo & endsWithA.fo & 8 & 289 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & containsAA.fo & containsAB.fo & 10 & 457 & KO & 
+UK & timeout \\
+get\_first\_word.pr & containsAA.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+get\_first\_word.pr & containsAA.fo & containsA.fo & 6 & 153 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & containsAA.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+get\_first\_word.pr & containsAA.fo & startsWithA.fo & 8 & 289 & KO & 
+timeout & timeout \\
+get\_first\_word.pr & containsAA.fo & containsAA.fo & 10 & 457 & KO & 
+timeout & timeout \\
+map\_reverse.pr & containsAA.fo & endsWithA.fo & 13 & 811 & timeout & 
+UK & timeout \\
+map\_reverse.pr & containsAA.fo & containsAB.fo & 17 & 1388 & UK & 
+UK & KO \\
+map\_reverse.pr & containsAA.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+map\_reverse.pr & containsAA.fo & containsA.fo & 9 & 388 & OK & 
+UK & timeout \\
+map\_reverse.pr & containsAA.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+map\_reverse.pr & containsAA.fo & startsWithA.fo & 13 & 811 & timeout & 
+UK & timeout \\
+map\_reverse.pr & containsAA.fo & containsAA.fo & 17 & 1388 & UK & 
+UK & timeout \\
+compress\_as.pr & containsAA.fo & endsWithA.fo & 14 & 493 & KO & 
+UK & timeout \\
+compress\_as.pr & containsAA.fo & containsAB.fo & 16 & 763 & KO & 
+UK & timeout \\
+compress\_as.pr & containsAA.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+compress\_as.pr & containsAA.fo & containsA.fo & 12 & 255 & OK & 
+UK & timeout \\
+compress\_as.pr & containsAA.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+compress\_as.pr & containsAA.fo & startsWithA.fo & 14 & 493 & KO & 
+UK & timeout \\
+compress\_as.pr & containsAA.fo & containsAA.fo & 16 & 763 & KO & 
+UK & timeout \\
+subwords\_ab.pr & containsAA.fo & endsWithA.fo & 22 & 2105 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & containsAA.fo & containsAB.fo & 26 & 3276 & timeout & 
+UK & KO \\
+subwords\_ab.pr & containsAA.fo & false.fo & 3 & 21 & KO & 
+UK & KO \\
+subwords\_ab.pr & containsAA.fo & containsA.fo & 18 & 1044 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & containsAA.fo & true.fo & 3 & 21 & OK & 
+OK & OK \\
+subwords\_ab.pr & containsAA.fo & startsWithA.fo & 22 & 2105 & timeout & 
+UK & timeout \\
+subwords\_ab.pr & containsAA.fo & containsAA.fo & 26 & 3276 & timeout & 
+UK & KO \\
+    \bottomrule
+\end{tabular}
