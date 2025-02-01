@@ -83,6 +83,11 @@ $for(libraries)$
 \input{$libraries$}
 $endfor$
 
+$if(anonymous)$
+\newcommand{\repositoryUrl}{\url{https://anonymous.4open.science/r/polyregular-model-checking-73A0/README.md}}
+$else$
+\newcommand{\repositoryUrl}{\url{https://github.com/AliaumeL/polyregular-model-checking}}
+$endif$
 
 \begin{document}
 %

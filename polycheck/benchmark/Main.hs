@@ -21,6 +21,7 @@ import qualified Parser.ParseHighLevel  as PHL
 import qualified Parser.ParseSimple     as PS
 
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Text.Encoding as TE
 
@@ -125,6 +126,7 @@ data Options = Options
     , optInputDir  :: Maybe FilePath
     , optFormDir   :: Maybe FilePath
     , optTimeout   :: Maybe Int
+    , optOutput    :: Maybe FilePath
     } deriving (Eq,Show)
 
 options :: Parser Options
@@ -133,6 +135,7 @@ options = Options
       <*> optional (strOption (long "input-high-directory" <> short 'd' <> metavar "DIRECTORY" <> help "The input directory"))
       <*> optional (strOption (long "input-formula-directory" <> short 'f' <> metavar "DIRECTORY" <> help "The input directory for formulas"))
       <*> optional (option auto (long "timeout" <> short 't' <> metavar "TIME" <> help "Timeout in seconds"))
+      <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE" <> help "The output file"))
 
 
 
@@ -218,11 +221,11 @@ highToSfpWithTimeout :: Maybe Int -> Program String ValueType
                      -> IO (Either String SFP.ForProgram)
 highToSfpWithTimeout Nothing high = handleAny (\e -> return (Left (show e))) $ do
         let sfp' = higherToSimpleProgram high
-        hPutStrLn stderr $ "Simple For Program: " ++ SFP.prettyPrintForProgram sfp'
+        hPutStrLn stderr $ "Simple For Program: " ++ show sfp'
         return $ Right sfp'
 highToSfpWithTimeout (Just t) high = handleAny (\e -> return (Left (show e))) $ eitherTimeout t $ do 
         let sfp' = higherToSimpleProgram high
-        hPutStrLn stderr $ "Simple For Program: " ++ SFP.prettyPrintForProgram sfp'
+        hPutStrLn stderr $ "Simple For Program: " ++ show sfp'
         return sfp'
 
 sfpToIntWithTimeout :: Maybe Int -> SFP.ForProgram
@@ -335,18 +338,34 @@ main = do
             let filesH' = map (dirH </>) filesH
             let triples = [(f, h, p) | f <- filesF', h <- filesH', p <- filesF']
             benches <- forM triples (\(pre, prog, post) -> benchmarkSMT timeoutMilisec pre prog post)
-            putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
-            exitSuccess
+            case (optOutput opts) of
+                Just file -> do
+                    TIO.writeFile file . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    exitSuccess
+                Nothing -> do
+                    putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    exitSuccess
     case optInputDir opts of
         Just dir -> do
             files <- listDirectory dir
             let files' = map (dir </>) files
             benches <- benchmarkHighLevelFiles timeoutMilisec files'
-            putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
-            exitSuccess
+            case (optOutput opts) of
+                Just file -> do
+                    TIO.writeFile file . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    exitSuccess
+                Nothing -> do 
+                    putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    exitSuccess
         Nothing -> return ()
     case optInputHL opts of
         Just file  -> do
             b <- benchmarkHighLevelFile timeoutMilisec file
-            putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ b
+            case (optOutput opts) of
+                Just file -> do
+                    TIO.writeFile file . TE.decodeUtf8 . B.toStrict . encode $ b
+                    exitSuccess
+                Nothing -> do
+                    putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ b
+                    exitSuccess
         Nothing -> return ()

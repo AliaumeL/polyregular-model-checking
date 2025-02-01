@@ -1,4 +1,4 @@
-# Changelog for `polyreg`
+# Changelog for `polycheck`
 
 All notable changes to this project will be documented in this file.
 

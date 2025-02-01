@@ -6,7 +6,7 @@ for i in input do
                 if label(k) == 'a' then
                     b4 := true
                 else
-                    if (label(k) == 'b') ∧ (b4) then
+                    if (label(k) == 'b') and (b4) then
                         if b3 then
                             skip
                         else

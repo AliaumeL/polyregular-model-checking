@@ -18,7 +18,9 @@ jobs:
       - name: Setup Pandoc
         uses: r-lib/actions/setup-pandoc@v2
       - name: Install texlive-full
-        run: sudo apt-get install -y texlive-full
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-full
       - name: Build
         run: |
           cd paper
