@@ -79,13 +79,14 @@
 \begin{document}
 %
 \title{Polyregular Model Checking \\
-       main 3a357ebeb5f778f1e8dae026601d899766c97d0f \\
-       2025-01-28 16:41:10 +0100
+       main fc935ca61a5833c23d2153fbf2e5fad4bb4b614e \\
+       2025-02-01 01:54:16 +0100
 }
 
 \author{
         Aliaume Lopez\inst{1}\orcidID{0000-0002-4205-327X} \and
         Rafał Stefański\inst{1}\orcidID{0000-0002-8439-4056}}
+
 
 \date{\today}
 
@@ -97,7 +98,7 @@
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-    In this paper, we demonstrate how the theory of polyregular functions can be leveraged to verify simple string-to-string for-loop programs defined in a subset of Python efficiently.
+    We reduce the model checking problem for a subset of Python to the satisfiability of a first-order formula over finite words, which is known to be decidable. The reduction is based on the theory of polyregular functions, a recently developed generalization of regular langugages to polynomial output string-to-string functions. We implemented this reduction in a verification tool called PolyCheck, that can use both automata-based solvers and classical SMT solvers as backends.
 Program verification and  Polyregular functions and  SMT Solver and  First order transduction
 \end{abstract}
 
@@ -111,9 +112,6 @@ Program verification and  Polyregular functions and  SMT Solver and  First order
 \input{src/conclusion.tex}
 
 % Include acknowledgements
-\section*{Acknowledgements}
-We would like to thank Arnav Garg and Ojas Maheshwari 
-for their participation in the early stage of this project.
 
 % Include the bibliography
 \bibliographystyle{splncs04}

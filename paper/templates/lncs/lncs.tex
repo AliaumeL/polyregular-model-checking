@@ -98,11 +98,18 @@ $if(short-title)$
 \titlerunning{$short-title$}
 $endif$
 
+$if(anonymous)$
 \author{
     $for(author)$
     $author.name$\inst{1}$if(author.orcid)$\orcidID{$author.orcid$}$endif$$sep$ \and
     $endfor$
 }
+$else$
+\author{
+    Anonymized for review
+}
+$endif$
+
 
 \date{\today}
 
@@ -126,8 +133,8 @@ $for(keywords)$$it$$sep$ and  $endfor$
 $body$
 
 % Include acknowledgements
-$if(draft)$
-$endif$
+$if(anonymous)$
+$else$
 $if(acknowledgements)$
 \section*{Acknowledgements}
 $acknowledgements$
