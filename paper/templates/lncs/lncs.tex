@@ -104,18 +104,17 @@ $if(anonymous)$
     $author.name$\inst{1}$if(author.orcid)$\orcidID{$author.orcid$}$endif$$sep$ \and
     $endfor$
 }
+\authorrunning{$for(author)$$author.initials$$sep$ and $endfor$}
+\institute{University of Warsaw}
 $else$
 \author{
     Anonymized for review
 }
+\authorrunning{Anonymized for review}
+\institute{Anonymized for review}
 $endif$
 
-
 \date{\today}
-
-\authorrunning{$for(author)$$author.initials$$sep$ and $endfor$}
-
-\institute{University of Warsaw}
 
 %
 \maketitle              % typeset the header of the contribution
