@@ -20,7 +20,7 @@ when evaluating the statement $s$ in a generator,
 we hide all boolean variables from the \kl{evaluation context}.
 In particular, $\hlletboolean{b}{\hlreturn{\bgen{ \hlreturn{b} }}}$ is an \emph{invalid
 program}, because the variable $b$ is undefined in the context of the generator
-expression $\bgen{b}$. The formal typing rules and semantics of generator expressions 
+expression $\bgen{b}$. The formal typing rules of \kl{generator expressions}
 can be found in \cref{fig:generators}. 
 
 Hiding the booleans from the context, ensures that the evaluation order of 

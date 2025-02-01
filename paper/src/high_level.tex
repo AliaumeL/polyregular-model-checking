@@ -86,9 +86,9 @@ also will enforce the following conditions, which are satisfied in our example:
         expression} (the set of which is denoted by $\oexpr$, and will
         be defined in \cref{fig:out-expr}):
         \begin{align*}
-            \tau ::=~ \TBool
-            ~\mid~ \TPos[o] 
-            ~\mid~ \TOut[n] 
+            \tau ::=~ \intro*\TBool
+            ~\mid~ \intro*\TPos[o] 
+            ~\mid~ \intro*\TOut[n] 
             \quad 
             n \in \Nat, \,
             o \in \oexpr
@@ -149,8 +149,8 @@ $(\TOut[2],2) \to \TOut[2]$, that is, we are given an input list $l$ together
 with two pointers to indices of this list. Similarly, the function
 \texttt{containsAB(w)} has type $(\TOut[1], 0) \to \TBool$, while the function
 \texttt{subwordsWithAB(word)} has type $(\TOut[1], 0) \to \TOut[2]$. We
-implemented a linear-time algorithm for the
-type checking and inference problems.
+implemented a linear-time algorithm for the type checking and inference
+problems.
 
 \AP The formal syntax of our language is given in
 \cref{fig:bool-expr,fig:const-expr,fig:out-expr,fig:high-level-stmt,fig:high-level-program}.
@@ -169,8 +169,7 @@ $\intro*\PVars$ ($i,j, \dots$), list variables $\intro*\OVars$ ($x,y,u,v,w,
 values (functions, positions, booleans, nested words) to variables, the
 semantics of \kl{boolean expressions} into booleans $\Bools$, \kl{constant
 expressions} into \kl{nested words}, and \kl{list expressions} into \kl{nested
-words} pose no difficulty and are described in \cref{fig:semantics-expr}. 
-
+words} pose no difficulty.
 For the \kl{control statements}, there is a crucial design choice regarding
 the semantics of backward iteration.
 While the semantics of forward iteration is unambiguous, the backward iteration 

@@ -136,7 +136,7 @@
 \NewDocumentCommand{\clist}{m}{\withkl{\kl[\clist]}{\mathsf{list}(#1)}}
 \knowledge{\clist}{notion}
 
-\NewDocumentCommand{\olist}{m}{\withkl{\kl[\olist]}{\mathsf{list}(#1)}}
+\NewDocumentCommand{\olist}{m}{\mathop{\kl[\olist]{\mathsf{list}}(#1)}}
 \knowledge{\olist}{notion}
 
 \NewDocumentCommand{\hlfundef}{m m m}{\withkl{\kl[\hlfundef]}{\mathsf{def} \; #1(#2) \; \{ #3 \}}}
@@ -158,14 +158,14 @@
 
 % Semantics
 
-\NewDocumentCommand{\semB}{ m m }{ \llbracket #1 \rrbracket_{#2} }
-\NewDocumentCommand{\semS}{ m m }{ \llbracket #1 \rrbracket_{#2} }
-\NewDocumentCommand{\semO}{ m m }{ \llbracket #1 \rrbracket_{#2} }
-\NewDocumentCommand{\semC}{ m }{ \llbracket #1 \rrbracket }
-\NewDocumentCommand{\semF}{ m m }{ \llbracket #1 \rrbracket_{#2} }
-\NewDocumentCommand{\semT}{ m }{\withkl{\kl[\semT]}{\mathopen{\cmdkl{\llbracket}} #1 \mathclose{\cmdkl{\rrbracket}}}}
-\knowledge{\semT}{notion}
+\NewDocumentCommand{\semB}{ m m }{ \llbracket #1 \rrbracket_{#2}^{\mathsf{b}} }
+\NewDocumentCommand{\semS}{ m m }{ \llbracket #1 \rrbracket_{#2}^{\mathsf{s}} }
+\NewDocumentCommand{\semO}{ m m }{ \llbracket #1 \rrbracket_{#2}^{\mathsf{l}} }
+\NewDocumentCommand{\semA}{ m m }{ \llbracket #1 \rrbracket_{#2}^{\mathsf{a}} }
+\NewDocumentCommand{\semC}{ m }{ \llbracket #1 \rrbracket^{\mathsf{c}} }
+\NewDocumentCommand{\semF}{ m m }{ \llbracket #1 \rrbracket_{#2}^{\mathsf{f}} }
 
+\NewDocumentCommand{\Env}{}{\mathsf{Env}}
 
 
 

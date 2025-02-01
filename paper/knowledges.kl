@@ -37,6 +37,7 @@
  | constant expressions
 \knowledge{notion}
  | control statements
+ | high-level control statements
 
 
 \knowledge{notion}
@@ -94,6 +95,7 @@
  | order@formula
 
 \knowledge{notion}
+ | First-order string-to-string interpretations
  | first-order string-to-string interpretations
  | first-order string-to-string interpretation
  | first-order word-to-word interpretation

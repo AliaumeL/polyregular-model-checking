@@ -33,7 +33,6 @@ $(PAPER).tex: $(SRC) $(TEMPLATES) ../paper-meta.yaml
 	pandoc --template=templates/plain-article.tex \
 		   --lua-filter=templates/git-meta.lua \
 		   --metadata-file=../paper-meta.yaml \
-		   --metadata=draft:true \
 		   --wrap=none \
 		   -o $(PAPER).tex \
 		   $(PAPER).md
@@ -43,7 +42,6 @@ $(PAPER).lipics.tex: $(SRC) $(TEMPLATES) ../paper-meta.yaml
 	pandoc --template=templates/lipics/lipics.tex \
 		   --lua-filter=templates/git-meta.lua \
 		   --metadata-file=../paper-meta.yaml \
-		   --metadata=draft:true \
 		   --wrap=none \
 		   -o $(PAPER).lipics.tex \
 		   $(PAPER).md
@@ -53,7 +51,6 @@ $(PAPER).lncs.tex: $(SRC) $(TEMPLATES) ../paper-meta.yaml
 	pandoc --template=templates/lncs/lncs.tex \
 		   --lua-filter=templates/git-meta.lua \
 		   --metadata-file=../paper-meta.yaml \
-		   --metadata=draft:true \
 		   --wrap=none \
 		   -o $(PAPER).lncs.tex \
 		   $(PAPER).md
@@ -97,4 +94,4 @@ $(PAPER).arxiv.pdf: $(PAPER).arxiv.tar.gz
 
 clean: 
 	latexmk -C
-	rm -f *.tex *.tar.gz *.aux *.bbl *.blg *.log *.out *.fls *.fdb_latexmk *.synctex.gz
+	rm -f *.tex *.tar.gz *.aux *.bbl *.kaux *.blg *.log *.out *.fls *.fdb_latexmk *.synctex.gz
