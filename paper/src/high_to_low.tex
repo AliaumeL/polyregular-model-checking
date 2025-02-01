@@ -6,7 +6,7 @@
 to \kl{simple for-programs}. To smoothen the conversion, we introduce
 \intro{generator expressions} to the language, as a way to inline 
 function calls. We distinguish between \kl{nested-word} generators $\intro*\ogen{s}$
-and \kl{boolean} generators $\intro*\bgen{s}$.
+and boolean generators $\intro*\bgen{s}$.
 
 \paragraph{Generator Expressions.} Let us briefly discuss the new typing rules
 and semantics of these \kl{generator expressions}. The meaning of 
@@ -20,7 +20,7 @@ when evaluating the statement $s$ in a generator,
 we hide all boolean variables from the \kl{evaluation context}.
 In particular, $\hlletboolean{b}{\hlreturn{\bgen{ \hlreturn{b} }}}$ is an \emph{invalid
 program}, because the variable $b$ is undefined in the context of the generator
-expression $\bgen{b}$. The formal typing rules and semantics of generator expressions 
+expression $\bgen{b}$. The formal typing rules of \kl{generator expressions}
 can be found in \cref{fig:generators}. 
 
 Hiding the booleans from the context, ensures that the evaluation order of 
@@ -80,8 +80,8 @@ some of them only apply to programs of type $\TOut[1] \to \TOut[1]$.
         and for this edge case, we refer the readers to our implementation.
 
     \item \label{item:for_loop_exp} \intro{Expansion of For Loops},
-        ensuring that every for loop iterates over a single \kl{list
-        variable}. This is the key step of the compilation, and it will be 
+        ensuring that every for loop iterates over a single list
+        variable. This is the key step of the compilation, and it will be 
         thoroughly explained later in this section.
 
     \item \label{item:let_bools_top} 
@@ -139,16 +139,16 @@ In this example, there are three yield statements at
 positions $p_1$, $p_2$ and $p_3$. We can compute
 the \emph{happens (strictly) before} relation between outputs 
 of the various yield statements:
-\todo{Arrange this in a nice table}
-\begin{itemize}
-    \item $\mathsf{before}(p_3, p_3) = \bfalse$;
-    \item $\mathsf{before}(p_1(j), p_3) = \btrue$;
-    \item $\mathsf{before}(p_2(j), p_3) = \btrue$;
-    \item $\mathsf{before}(p_1(j), p_2(j')) =
-        j \geq j'$;
-    \item $\mathsf{before}(p_1(j), p_1(j')) = j > j'$;
-    \item $\mathsf{before}(p_2(j), p_2(j')) = j > j'$.
-\end{itemize}
+\begin{center}
+    $\mathsf{before}(p_1(j), p_2(j)) = \btrue$ \hspace{1em}
+    $\mathsf{before}(p_2(j), p_3) = \btrue$ \hspace{1em}
+    $\mathsf{before}(p_1(j), p_3) = \btrue$ 
+    \\[1em]
+    $\mathsf{before}(p_1(j), p_1(j')) = j > j'$ \hspace{2em}
+    $\mathsf{before}(p_2(j), p_2(j')) = j > j'$
+    \\[1em]
+    $\mathsf{before}(p_1(j), p_2(j')) = j \geq j'$
+\end{center}
 In the case of $j = j'$, the 
 output of $p_1(j)$ happens before the output of $p_2(j')$,
 because $p_1$ is the first yield statement in the loop.
@@ -175,9 +175,6 @@ $\hlif{e}{s_1}{s_2}$ are replaced by sequences $\hlseq{s_1}{s_2}$, every loop
 direction is swapped, and every sequence of statements is reversed. Its
 intended semantics is to reach all possible yield statements of $s$ in the
 reversed order. In our case:
-\begin{equation*}
-    s_\mathsf{rev} \ := \ \hlforRev{(j',y')}{ u }{\hlyield{y'}}
-\end{equation*}
 \begin{wrapfigure}{r}{0.5\textwidth}
     \centering
 \begin{tikzpicture}[overlay, remember picture]
@@ -213,7 +210,9 @@ reversed order. In our case:
 \caption{Backward for loop expansion.}
 \label{fig:revloopexp}
 \end{wrapfigure}
-
+\begin{equation*}
+    s_\mathsf{rev} \ := \ \hlforRev{(j',y')}{ u }{\hlyield{y'}}
+\end{equation*}
 Some yield statements are reachable in
 $s_\mathsf{rev}$, but not when iterating over $s$ in reverse order.
 To ensure that we only output correct elements,

@@ -1,0 +1,47 @@
+% latex timings
+% 
+%      "Right": {
+%        "bsmtFormula": {
+%          "bsBoolDepth": 0,
+%          "bsCtn": "",
+%          "bsDepth": 6,
+%          "bsSize": 89
+%        },
+%        "bsmtName": "test-bench/prefixes.pr",
+%        "bsmtPost": "assets/Formulas/endsWithA.fo",
+%        "bsmtPre": "assets/Formulas/endsWithA.fo",
+%        "bsmtResponses": {
+%          "AltErgoSingle": {
+%            "contents": "32.51886 ms",
+%            "tag": "SmtQQWithTime"
+%          },
+%          "Mona": { "contents": "22.72391 ms", "tag": "Smt\OKWithTime" },
+%          "SMTLibAltErgo": {
+%            "contents": "20.94126 ms",
+%            "tag": "Smt\OKWithTime"
+%          },
+%          "SMTLibCVC5": { "contents": "69.29064 ms", "tag": "Smt\OKWithTime" },
+%          "SMTLibYices": { "contents": "6.820917 ms", "tag": "SmtQQWithTime" },
+%          "SMTLibZ3": { "tag": "SmtUK" }
+%        }
+%      }
+%
+% name | pre | post | depth | size | mona | alt-ergo | yices | cvc5 | z3
+% ---- | --- | ---- | ----- | ---- | ---- | -------- | ----- | ---- | --
+\setlength{\tabcolsep}{2mm}
+\begin{tabular}{l|l|l|r|r|r|r|r}
+    \toprule
+\textbf{Name} & \textbf{Pre.} & \textbf{Post.} & \textbf{q.r.} & \textbf{size} & \textbf{MONA} &  \textbf{CVC5} & \textbf{Z3} \\
+\midrule
+\texttt{compress\_as.pr} & $\mathcal{L}_{ab}$ & $\mathcal{L}_{ab}$ & 16 & 763 & \OK & 
+\UK & \UK \\
+\texttt{reverse\_add\_hash.pr} & $\mathcal{L}_{ab}$ & $\mathcal{L}_{ba}$ & 9 & 380 & \UK & 
+\OK & \UK \\
+\texttt{get\_last\_word.pr} & $\mathcal{D}^*a$ & $\mathcal{L}_{aa}$ & 27 & 28274 & \UK & 
+\UK & \KO \\
+\texttt{subwords\_ab.pr} & $\mathcal{L}_{ab}$ & $\mathcal{L}_{ab}$ & 26 & 3276 & \textcolor{C3}{\UK} & 
+\UK & \UK \\
+\texttt{map\_reverse.pr} & $\mathcal{D}^*a$ & $a \mathcal{D}^*$& 13 & 801 & \UK & 
+\UK & \UK \\
+    \bottomrule
+\end{tabular}

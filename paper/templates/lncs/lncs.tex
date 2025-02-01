@@ -98,17 +98,23 @@ $if(short-title)$
 \titlerunning{$short-title$}
 $endif$
 
+$if(anonymous)$
+\author{
+    Anonymized for review
+}
+\authorrunning{Anonymized for review}
+\institute{Anonymized for review}
+$else$
 \author{
     $for(author)$
     $author.name$\inst{1}$if(author.orcid)$\orcidID{$author.orcid$}$endif$$sep$ \and
     $endfor$
 }
+\authorrunning{$for(author)$$author.initials$$sep$ and $endfor$}
+\institute{University of Warsaw}
+$endif$
 
 \date{\today}
-
-\authorrunning{$for(author)$$author.initials$$sep$ and $endfor$}
-
-\institute{University of Warsaw}
 
 %
 \maketitle              % typeset the header of the contribution
@@ -126,8 +132,8 @@ $for(keywords)$$it$$sep$ and  $endfor$
 $body$
 
 % Include acknowledgements
-$if(draft)$
-$endif$
+$if(anonymous)$
+$else$
 $if(acknowledgements)$
 \section*{Acknowledgements}
 $acknowledgements$

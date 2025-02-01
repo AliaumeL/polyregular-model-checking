@@ -1,6 +1,28 @@
 \section{Proofs}
 
-\begin{proofof}{lem:fo-emptiness}
+\begin{lemma}
+    \label{lem:umc-equality-nested-words}
+    Allowing unrestricted equality checks between two \kl{nested words}
+    results in the undecidability of the model checking problem.
+\end{lemma}
+\begin{proof}
+    For every instance of the Post Correspondence Problem (PCP), we can 
+    construct a function \texttt{f(x : list[list[Char]]) : Bool}
+    in the \kl{high-level language} with unrestricted equality checks, such 
+    that $f(x) = \btrue$ if and only if $x$ encodes a solution to the PCP instance.
+    For example the PCP instance $\{ (ab, a), (b, aa), (ba, b) \}$ can be encoded 
+    as the following function:
+    \begin{verbatim}
+        \input{programs/pcp_instance.py}
+    \end{verbatim}
+\end{proof}
+
+\begin{lemma}
+    \label{lem:fo-emptiness}
+    \proofref{lem:fo-emptiness}
+    The \kl{emptiness} problem for the \kl{first-order logic on words} is decidable for the infinite alphabet $\mathcal{D}$.
+\end{lemma}
+\begin{proof}
     Take a formula $\varphi$ and observe that is contains only a finite number of constants from $\mathcal{D}$ -- call this set $A$.
     It is not hard to see that the truth value of $\varphi$ is \kl{supported} by $A$: for every function $f : \mathcal{D} \to \mathcal{D}$
     that does not touch 
@@ -12,8 +34,108 @@
     and maps all other letters to $\mathtt{blank}$, we can use it to map $\mathcal{D}^*$ to $(A \cup \{\mathtt{blank}\})^*$ in a way 
     that preserves the truth value of $\varphi$.
     This finishes the proof of the lemma, as we have reduced the general problem to a finite alphabet $A \cup \{\mathtt{blank}\}$.
-\end{proofof}
+\end{proof}
 
+\clearpage
+\section{Subwords Containing the Substring $ab$}
+
+\begin{figure}
+    \centering
+\begin{Shaded}
+\begin{Highlighting}[numbers=left]
+\KeywordTok{def}\NormalTok{ getBetween( l : }\DataTypeTok{[Char]} \KeywordTok{with}\NormalTok{ (i,j) ) : }\DataTypeTok{[Char]}\NormalTok{ := }
+\KeywordTok{    for}\NormalTok{ (k,c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(l) }\KeywordTok{do}
+        \KeywordTok{if}\NormalTok{ i \textless{}= k }\KeywordTok{and}\NormalTok{ k \textless{}= j }\KeywordTok{then}
+            \KeywordTok{yield}\NormalTok{ c}
+        \KeywordTok{endif}
+    \KeywordTok{done}
+
+\KeywordTok{def}\NormalTok{ containsAB(w : }\DataTypeTok{[Char]}\NormalTok{) : }\DataTypeTok{Bool}\NormalTok{ := }
+    \KeywordTok{let} \KeywordTok{mut}\NormalTok{ seen\_a := }\KeywordTok{False} \KeywordTok{in} 
+\KeywordTok{    for}\NormalTok{ (i, c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(w) }\KeywordTok{do}
+    \KeywordTok{if}\NormalTok{ c === }\StringTok{\textquotesingle{}a\textquotesingle{} }\KeywordTok{then}
+\NormalTok{            seen\_a := }\KeywordTok{True}
+    \KeywordTok{else} \KeywordTok{if}\NormalTok{ c === }\StringTok{\textquotesingle{}b\textquotesingle{} }\KeywordTok{and}\NormalTok{ seen\_a }\KeywordTok{then}
+            \KeywordTok{return} \KeywordTok{True}
+        \KeywordTok{endif} \KeywordTok{endif}
+    \KeywordTok{done}
+    \KeywordTok{return} \KeywordTok{False}
+
+\KeywordTok{def}\NormalTok{ subwordsWithAB(w : }\DataTypeTok{[Char]}\NormalTok{) : }\DataTypeTok{[[Char]]}\NormalTok{ := }
+\KeywordTok{    for}\NormalTok{ (i,c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(w) }\KeywordTok{do}
+\KeywordTok{        for}\NormalTok{ (j,d) }\KeywordTok{in} \KeywordTok{reversed}\NormalTok{(}\KeywordTok{enumerate}\NormalTok{(w)) }\KeywordTok{do}
+            \KeywordTok{let}\NormalTok{ s := getBetween(w }\KeywordTok{with}\NormalTok{ (i,j)) }\KeywordTok{in}
+            \KeywordTok{if}\NormalTok{ containsAB(s) }\KeywordTok{then}
+                \KeywordTok{yield}\NormalTok{ s}
+            \KeywordTok{endif}
+        \KeywordTok{done}
+    \KeywordTok{done}
+
+\KeywordTok{def}\NormalTok{ main (w : }\DataTypeTok{[Char]}\NormalTok{) : }\DataTypeTok{[Char]}\NormalTok{ := }
+    \KeywordTok{let}\NormalTok{ subwrds := subwordsWithAB(w) }\KeywordTok{in}
+\KeywordTok{    for}\NormalTok{ (j,s) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(subwrds) }\KeywordTok{do}
+\KeywordTok{        for}\NormalTok{ (i,c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(s) }\KeywordTok{do}
+            \KeywordTok{yield}\NormalTok{ c}
+        \KeywordTok{done}
+        \KeywordTok{yield}\StringTok{ \textquotesingle{}\#\textquotesingle{}}
+    \KeywordTok{done}
+\end{Highlighting}
+\end{Shaded}
+\caption{The \kl{for-program} computing all subwords of a word containing the substring $ab$,
+corresponding to the Python code in \cref{fig:python-example-nested}.}
+\label{fig:high-level-example-nested}
+\end{figure}
+
+\begin{figure}
+    \centering
+\begin{Shaded}
+\begin{Highlighting}[numbers=left]
+\KeywordTok{for}\NormalTok{ i }\KeywordTok{in} \KeywordTok{input} \KeywordTok{do}
+    \KeywordTok{for}\NormalTok{ j }\KeywordTok{in} \KeywordTok{reversed}\NormalTok{(}\KeywordTok{input}\NormalTok{) }\KeywordTok{do}
+        \KeywordTok{let}\NormalTok{ b2, b3, b4 := }\KeywordTok{false} \KeywordTok{in}
+        \KeywordTok{for}\NormalTok{ k }\KeywordTok{in} \KeywordTok{input} \KeywordTok{do}
+            \KeywordTok{if}\NormalTok{ (i <= k) and (k <= j) }\KeywordTok{then}
+                \KeywordTok{if}\NormalTok{ label(k) == \textquotesingle{}a\textquotesingle{} }\KeywordTok{then}
+\NormalTok{                    b4 := }\KeywordTok{true}
+                \KeywordTok{else}
+                    \KeywordTok{if}\NormalTok{ (label(k) == \textquotesingle{}b\textquotesingle{}) and (b4) }\KeywordTok{then}
+                        \KeywordTok{if}\NormalTok{ b3 }\KeywordTok{then}
+                            \KeywordTok{skip}
+                        \KeywordTok{else}
+\NormalTok{                            b3 := }\KeywordTok{true}
+\NormalTok{                            b2 := }\KeywordTok{true}
+                        \KeywordTok{endif}
+                    \KeywordTok{else}
+                        \KeywordTok{skip}
+                    \KeywordTok{endif}
+                \KeywordTok{endif}
+            \KeywordTok{else}
+                \KeywordTok{skip}
+            \KeywordTok{endif}
+        \KeywordTok{done}
+        \KeywordTok{if}\NormalTok{ b2 }\KeywordTok{then}
+            \KeywordTok{for}\NormalTok{ l }\KeywordTok{in} \KeywordTok{input} \KeywordTok{do}
+                \KeywordTok{if}\NormalTok{ (i <= l) and (l <= j) }\KeywordTok{then}
+                    \KeywordTok{print}\NormalTok{ label(l)}
+                \KeywordTok{else}
+                    \KeywordTok{skip}
+                \KeywordTok{endif}
+            \KeywordTok{done}
+            \KeywordTok{print}\NormalTok{ \textquotesingle{}\#\textquotesingle{}}
+        \KeywordTok{else}
+            \KeywordTok{skip}
+        \KeywordTok{endif}
+     \KeywordTok{done}
+\KeywordTok{done}
+\end{Highlighting}
+\end{Shaded}
+\caption{The \kl{simple for-program} computing all subwords of a word containing the substring $ab$,
+corresponding to the Python code in \cref{fig:python-example-nested}, and obtained
+by compiling \cref{fig:high-level-example-nested}.}
+\label{fig:low-level-example-nested}
+\end{figure}
+
+\clearpage
 \section{Encoding Equality of Subwords}
 
 \begin{figure}
@@ -77,138 +199,23 @@ using the shadowing of a variable to switch between two lists.}
 \label{fig:eq-def-shadowing}
 \end{figure}
 
-\section{Subwords Containing the Substring $ab$}
-
-\begin{figure}
-    \centering
-\begin{Shaded}
-\begin{Highlighting}[numbers=left]
-\KeywordTok{def}\NormalTok{ getBetween( l : }\DataTypeTok{[Char]} \KeywordTok{with}\NormalTok{ (i,j) ) : }\DataTypeTok{[Char]}\NormalTok{ := }
-\KeywordTok{    for}\NormalTok{ (k,c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(l) }\KeywordTok{do}
-        \KeywordTok{if}\NormalTok{ i \textless{}= k }\KeywordTok{and}\NormalTok{ k \textless{}= j }\KeywordTok{then}
-            \KeywordTok{yield}\NormalTok{ c}
-        \KeywordTok{endif}
-    \KeywordTok{done}
-
-\KeywordTok{def}\NormalTok{ containsAB(w : }\DataTypeTok{[Char]}\NormalTok{) : }\DataTypeTok{Bool}\NormalTok{ := }
-    \KeywordTok{let} \KeywordTok{mut}\NormalTok{ seen\_a := }\KeywordTok{False} \KeywordTok{in} 
-\KeywordTok{    for}\NormalTok{ (i, c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(w) }\KeywordTok{do}
-    \KeywordTok{if}\NormalTok{ c === }\StringTok{\textquotesingle{}a\textquotesingle{} }\KeywordTok{then}
-\NormalTok{            seen\_a := }\KeywordTok{True}
-    \KeywordTok{else} \KeywordTok{if}\NormalTok{ c === }\StringTok{\textquotesingle{}b\textquotesingle{} }\KeywordTok{and}\NormalTok{ seen\_a }\KeywordTok{then}
-            \KeywordTok{return} \KeywordTok{True}
-        \KeywordTok{endif} \KeywordTok{endif}
-    \KeywordTok{done}
-    \KeywordTok{return} \KeywordTok{False}
-
-\KeywordTok{def}\NormalTok{ subwordsWithAB(w : }\DataTypeTok{[Char]}\NormalTok{) : }\DataTypeTok{[[Char]]}\NormalTok{ := }
-\KeywordTok{    for}\NormalTok{ (i,c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(w) }\KeywordTok{do}
-\KeywordTok{        for}\NormalTok{ (j,d) }\KeywordTok{in} \KeywordTok{reversed}\NormalTok{(}\KeywordTok{enumerate}\NormalTok{(w)) }\KeywordTok{do}
-            \KeywordTok{let}\NormalTok{ s := getBetween(w }\KeywordTok{with}\NormalTok{ (i,j)) }\KeywordTok{in}
-            \KeywordTok{if}\NormalTok{ containsAB(s) }\KeywordTok{then}
-                \KeywordTok{yield}\NormalTok{ s}
-            \KeywordTok{endif}
-        \KeywordTok{done}
-    \KeywordTok{done}
-
-\KeywordTok{def}\NormalTok{ main (w : }\DataTypeTok{[Char]}\NormalTok{) : }\DataTypeTok{[Char]}\NormalTok{ := }
-    \KeywordTok{let}\NormalTok{ subwrds := subwordsWithAB(w) }\KeywordTok{in}
-\KeywordTok{    for}\NormalTok{ (j,s) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(subwrds) }\KeywordTok{do}
-\KeywordTok{        for}\NormalTok{ (i,c) }\KeywordTok{in} \KeywordTok{enumerate}\NormalTok{(s) }\KeywordTok{do}
-            \KeywordTok{yield}\NormalTok{ c}
-        \KeywordTok{done}
-        \KeywordTok{yield}\StringTok{ \textquotesingle{}\#\textquotesingle{}}
-    \KeywordTok{done}
-\end{Highlighting}
-\end{Shaded}
-\caption{The \kl{high-level program} computing all subwords of a word containing the substring $ab$,
-corresponding to the Python code in \cref{fig:python-example-nested}.}
-\label{fig:high-level-example-nested}
-\end{figure}
-
-\begin{figure}
-    \centering
-\begin{Shaded}
-\begin{Highlighting}[numbers=left]
-\KeywordTok{for}\NormalTok{ i }\KeywordTok{in} \KeywordTok{input} \KeywordTok{do}
-    \KeywordTok{for}\NormalTok{ j }\KeywordTok{in} \KeywordTok{reversed}\NormalTok{(}\KeywordTok{input}\NormalTok{) }\KeywordTok{do}
-        \KeywordTok{let}\NormalTok{ b2, b3, b4 := }\KeywordTok{false} \KeywordTok{in}
-        \KeywordTok{for}\NormalTok{ k }\KeywordTok{in} \KeywordTok{input} \KeywordTok{do}
-            \KeywordTok{if}\NormalTok{ (i <= k) and (k <= j) }\KeywordTok{then}
-                \KeywordTok{if}\NormalTok{ label(k) == \textquotesingle{}a\textquotesingle{} }\KeywordTok{then}
-\NormalTok{                    b4 := }\KeywordTok{true}
-                \KeywordTok{else}
-                    \KeywordTok{if}\NormalTok{ (label(k) == \textquotesingle{}b\textquotesingle{}) and (b4) }\KeywordTok{then}
-                        \KeywordTok{if}\NormalTok{ b3 }\KeywordTok{then}
-                            \KeywordTok{skip}
-                        \KeywordTok{else}
-\NormalTok{                            b3 := }\KeywordTok{true}
-\NormalTok{                            b2 := }\KeywordTok{true}
-                        \KeywordTok{endif}
-                    \KeywordTok{else}
-                        \KeywordTok{skip}
-                    \KeywordTok{endif}
-                \KeywordTok{endif}
-            \KeywordTok{else}
-                \KeywordTok{skip}
-            \KeywordTok{endif}
-        \KeywordTok{done}
-        \KeywordTok{if}\NormalTok{ b2 }\KeywordTok{then}
-            \KeywordTok{for}\NormalTok{ l }\KeywordTok{in} \KeywordTok{input} \KeywordTok{do}
-                \KeywordTok{if}\NormalTok{ (i <= l) and (l <= j) }\KeywordTok{then}
-                    \KeywordTok{print}\NormalTok{ label(l)}
-                \KeywordTok{else}
-                    \KeywordTok{skip}
-                \KeywordTok{endif}
-            \KeywordTok{done}
-            \KeywordTok{print}\NormalTok{ \textquotesingle{}\#\textquotesingle{}}
-        \KeywordTok{else}
-            \KeywordTok{skip}
-        \KeywordTok{endif}
-     \KeywordTok{done}
-\KeywordTok{done}
-\end{Highlighting}
-\end{Shaded}
-\caption{The \kl{simple for-program} computing all subwords of a word containing the substring $ab$,
-corresponding to the Python code in \cref{fig:python-example-nested}, and obtained
-by compiling \cref{fig:high-level-example-nested}.}
-\label{fig:low-level-example-nested}
-\end{figure}
 
 
-
+\clearpage
 \section{Syntax and Semantics of High Level Programs}
-
-\subsection{Typing}
-
-
-\begin{figure}
-\begin{align*}
-    \mathsf{arg} ::=&~ (\TOut[n],\ell) & \ell \in \Nat \\
-    \mathsf{fun} ::=&~ 
-           \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TBool \\
-    \mid&~ \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TOut[n] 
-\end{align*}
-\caption{Typing of \kl{for-programs}.}
-\label{fig:typing-for-programs}
-\end{figure}
-
-\subsection{Syntax} 
-
-
 
 \begin{figure}[h]
     \centering
     \begin{align*}
         \intro*\bBinOp := &~ \land ~|~ \lor ~|~ \Rightarrow ~|~ \Leftrightarrow \\
         \intro*\pCmpOp := &~ = ~|~ \neq ~|~ < ~|~ \leq ~|~ > ~|~ \geq \\
-        \intro*\bexpr :=&~ \intro*\btrue ~|~ \intro*\bfalse ~|~ \bnot{\bexpr} \\
+        \intro*\bexpr :=&~ \intro*\btrue ~|~ \intro*\bfalse ~|~ \intro*\bnot{\bexpr} \\
                |&~ \bbin{\bexpr}{\bBinOp}{\bexpr}   \\
                |&~ \bcomp{i}{\pCmpOp}{j} & i,j \in \PVars \\
-               |&~ \bapp{f}{\bexpr} & f \in \FunVars \\
-               |&~ \bliteq{\cexpr}{\oexpr}
+               |&~ f(\bexpr) & f \in \FunVars \\
+               |&~ \intro*\bliteq{\cexpr}{\oexpr}
     \end{align*}
-    \caption{Boolean expressions.}
+    \caption{The syntax of \kl{boolean expressions}.}
     \label{fig:bool-expr}
 \end{figure}
 
@@ -219,7 +226,7 @@ by compiling \cref{fig:high-level-example-nested}.}
         \intro*\cexpr :=&~ \mathsf{char} \; c & c \in \Sigma \\
                |&~ \mathsf{list}(\cexpr_1, \ldots, \cexpr_n)
     \end{align*}
-    \caption{Constant expressions.}
+    \caption{The syntax of \kl{constant expressions}.}
     \label{fig:const-expr}
 \end{figure}
 
@@ -228,10 +235,10 @@ by compiling \cref{fig:high-level-example-nested}.}
     \begin{align*}
         \intro*\oexpr :=&~ x & x \in \OVars \\
                |&~ \cexpr \\
-               |&~ \olist{\oexpr_1, \dots,  \oexpr_n}  \\
+               |&~ \intro*\olist{\oexpr_1, \dots,  \oexpr_n}  \\
                |&~ f(\aexpr_1, \dots, \aexpr_n) & f \in \FunVars \\
     \end{align*}
-    \caption{Output expressions.}
+    \caption{The syntax of \kl{list expressions}.}
     \label{fig:out-expr}
 \end{figure}
 
@@ -250,88 +257,105 @@ by compiling \cref{fig:high-level-example-nested}.}
                |&~ \intro*\hlforRev{(i,x)}{\oexpr}{\hlstmt} & (i,x) \in \PVars \times \OVars \\
                |&~ \intro*\hlseq{\hlstmt}{\hlstmt}
     \end{align*}
-    \caption{Control statements.}
+    \caption{The syntax of \kl{high-level control statements}.}
     \label{fig:high-level-stmt}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \begin{align*}
-        \aexpr :=&~ (\oexpr, p_1, \dots, p_n) & \forall 1 \leq i \leq n, p_i \in \PVars \\
-        \hlfun :=&~ \hlfundef{f}{\aexpr_1, \dots, \aexpr_n}{\hlstmt} & f \in \FunVars \\
-        \hlprogram :=&~ ([\hlfun_1, \dots, \hlfun_n], f) & f \in \FunVars \\
+        \intro*\aexpr :=&~ (\oexpr, p_1, \dots, p_n) & \forall 1 \leq i \leq n, p_i \in \PVars \\
+        \intro*\hlfun :=&~ \hlfundef{f}{\aexpr_1, \dots, \aexpr_n}{\hlstmt} & f \in \FunVars \\
+        \intro*\hlprogram :=&~ ([\hlfun_1, \dots, \hlfun_n], f) & f \in \FunVars \\
     \end{align*}
-    \caption{High Level For Programs.}
+    \caption{The syntax of \kl{high-level for-programs}.}
     \label{fig:high-level-program}
 \end{figure}
 
-
-\subsection{Semantics}
-
-\begin{figure}[h]
-    \centering
-    \begin{align*}
-        \semB{ \cdot }{\rho}               \colon&~ \bexpr \to \Bools \\
-        \semB{\btrue}{\rho}               =&~ \top \\
-        \semB{\bfalse}{\rho}              =&~ \bot \\
-        \semB{b}{\rho}                    =&~ \rho(b) & b \in \BVars \\
-        \semB{\bnot{b}}{\rho}             =&~ \neg \semB{b}{\rho} \\
-        \semB{\bbin{b_1}{op}{b_2}}{\rho}  =&~ \semB{b_1}{\rho} \mathbin{op} \semB{b_2}{\rho} \\
-        \semB{\bcomp{i}{op}{j}}{\rho}     =&~ \rho(i) \mathbin{op} \rho(j) \\
-        \semB{\bapp{f}{b}}{\rho}          =&~ \semF{f}{\rho}(\semB{b}{\rho}) \\
-        \semB{\bliteq{c}{o}}{\rho}        =&~ \semC{c}{\rho} = \semO{o}{\rho}
-    \end{align*}
-    \begin{align*}
-        \semC{ \cdot }                  \colon&~ \cexpr \to \OutputType \\
-        \semC{\cchar{c}}                =&~ c \\
-        \semC{\clist{c_1, \ldots, c_n}} =&~ [c_1, \ldots, c_n]
-    \end{align*}
-    \begin{align*}
-        \semO{ \cdot }{\rho}       \colon&~ \oexpr \to \OutputType \\
-        \semO{x}{\rho}                  =&~ \rho(x) & x \in \OVars \\
-        \semO{c}{\rho}             =&~ \semC{c} & c \in \cexpr \\
-        \semO{\olist{o_1, \ldots, o_n}}{\rho} =&~ [\semO{o_1}{\rho}, \ldots, \semO{o_n}{\rho}] \\
-        \semO{f(\aexpr_1, \dots, \aexpr_n)}{\rho} =&~ \semF{f}{\rho}(\semO{\aexpr_1}{\rho}, \dots, \semO{\aexpr_n}{\rho})
-    \end{align*}
-    \caption{Semantics of \kl{boolean expressions}, \kl{constant expressions}
-        and \kl{list expressions}, in a given an \kl{evaluation environment} $\rho$
-    mapping variables to $\Bools$, $\NestedWords$, $\Nat$, or a function, depending 
-    on their type.}
-    \label{fig:semantics-expr}
-\end{figure}
+%
+%\subsection{Semantics}
+%
+%\begin{figure}[h]
+%    \centering
+%    \begin{align*}
+%        \semB{ \cdot }{\rho}               \colon&~ \bexpr \to \Bools \\
+%        \semB{\btrue}{\rho}               =&~ \top \\
+%        \semB{\bfalse}{\rho}              =&~ \bot \\
+%        \semB{b}{\rho}                    =&~ \rho(b) & b \in \BVars \\
+%        \semB{\bnot{b}}{\rho}             =&~ \neg \semB{b}{\rho} \\
+%        \semB{\bbin{b_1}{op}{b_2}}{\rho}  =&~ \semB{b_1}{\rho} \mathbin{op} \semB{b_2}{\rho} \\
+%        \semB{\bcomp{i}{op}{j}}{\rho}     =&~ \rho(i) \mathbin{op} \rho(j) \\
+%        \semB{\bapp{f}{b}}{\rho}          =&~ \semF{f}{\rho}(\semB{b}{\rho}) \\
+%        \semB{\bliteq{c}{o}}{\rho}        =&~ \semC{c}{\rho} = \semO{o}{\rho}
+%    \end{align*}
+%    \begin{align*}
+%        \semC{ \cdot }                  \colon&~ \cexpr \to \NestedWords \\
+%        \semC{\cchar{c}}                =&~ c \\
+%        \semC{\clist{c_1, \ldots, c_n}} =&~ [c_1, \ldots, c_n]
+%    \end{align*}
+%    \begin{align*}
+%        \semO{ \cdot }{\rho}       \colon&~ \oexpr \to \NestedWords \\
+%        \semO{x}{\rho}                  =&~ \rho(x) & x \in \OVars \\
+%        \semO{c}{\rho}             =&~ \semC{c} & c \in \cexpr \\
+%        \semO{\olist{o_1, \ldots, o_n}}{\rho} =&~ [\semO{o_1}{\rho}, \ldots, \semO{o_n}{\rho}] \\
+%        \semO{f(a_1, \dots, a_n)}{\rho} =&~ \semF{f}{\rho}(\semA{a_1}{\rho}, \dots, \semA{a_n}{\rho})
+%    \end{align*}
+%    \begin{align*}
+%        \semA{ \cdot }{\rho}       \colon&~ \aexpr \to \cup_{n \in \Nat} \NestedWords \times \Nat^n \\
+%        \semA{ (o, p_1, \dots, p_n) }{\rho} =&~ (\semO{o}{\rho}, (\rho(p_1), \dots, \rho(p_n)))
+%    \end{align*}
+%    \caption{Semantics of \kl{boolean expressions}, \kl{constant expressions}
+%        and \kl{list expressions}, in a given an \kl{evaluation environment} $\rho$
+%    mapping variables to $\Bools$, $\NestedWords$, $\Nat$, or a function, depending 
+%    on their type.}
+%    \label{fig:semantics-expr}
+%\end{figure}
+%
+%\begin{figure}
+%    \centering
+%    \begin{align*}
+%        \semS{\cdot}{\cdot} \colon&~ \hlstmt \to \Env \to \Env \times (\Bools \uplus \NestedWords) \\
+%        \semS{\hlif{b}{s_1}{s_2}}{\rho} =&~ \begin{cases}
+%            \semS{s_1}{\rho} & \text{if } \semB{b}{\rho} = \top \\
+%            \semS{s_2}{\rho} & \text{otherwise}
+%        \end{cases} \\
+%            \semS{\hlyield{o}}{\rho} =&~ (\rho', [ \, u \, ]) & \text{where } (\rho', u) = \semO{o}{\rho} \\
+%            \semS{\hlreturn{o}}{\rho} =&~ \semO{o}{\rho} & \text{if } o \in \oexpr \\
+%            \semS{\hlreturn{b}}{\rho} =&~ \semB{b}{\rho} & \text{if } b \in \bexpr \\
+%            \semS{\hlletoutput{x}{o}{s}}{\rho} =&~ \semS{s}{\rho'[x \mapsto u]} & \text{where } (\rho',u) = \semO{o}{\rho} \\
+%            \semS{\hlletboolean{b}{s}}{\rho} =&~ \semS{s}{\rho[b \mapsto \bot]} \\
+%            \semS{\hlsettrue{b}}{\rho} =&~ (\rho[b \mapsto \top], \varepsilon) \\
+%            \semS{\hlfor{(i,x)}{o}{s}}{\rho} =&~ \semS{s}{\rho'[i \mapsto 0, x \mapsto u_1]} ; \ldots ; \semS{s}{\rho'[i \mapsto n, x \mapsto u_n]} \\
+%                                              &     &\text{where } (\rho', [u_1, \dots, u_n]) = \semA{o}{\rho} \\
+%            \\
+%            \semS{\hlforRev{(i,x)}{o}{s}}{\rho} =&~ \semC{s}{\rho[i \mapsto p, x \mapsto \semO{o}{\rho}]} \\
+%            \semS{\hlseq{s_1}{s_2}}{\rho} =&~ \semS{s_2}{\semS{s_1}{\rho}}
+%    \end{align*}
+%    \caption{The semantics of \kl{control statements}.
+%    We write $\Env$ for the set of all possible evaluation environments
+%    and $\varepsilon$ for the empty word.}
+%    \label{fig:semantics-control}
+%\end{figure}
+%
+%\begin{figure}
+%    \centering
+%    \begin{align*}
+%        \semF{\hlfundef{f}{a_1, \dots, a_n}{s}}{\rho} =&~ \lambda x_1, \dots, x_n. \semS{s}{\rho[x_1 \mapsto \semO{a_1}{\rho}, \dots, x_n \mapsto \semO{a_n}{\rho}]}
+%    \end{align*}
+%    \caption{The semantics of functions.}
+%    \label{fig:semantics-functions}
+%\end{figure}
 
 \begin{figure}
-    \centering
-    \begin{align*}
-        \semC{\cdot}{\rho} \colon&~ \hlstmt \to \rho \to \rho \\
-    \end{align*}
-    \caption{Semantics of control statements.}
-    \label{fig:semantics-control}
+\begin{align*}
+    \mathsf{arg} ::=&~ (\TOut[n],\ell) & \ell \in \Nat \\
+    \mathsf{fun} ::=&~ 
+           \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TBool \\
+    \mid&~ \mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TOut[n] 
+\end{align*}
+\caption{Possible types of \kl{for-programs} and their functions.}
+\label{fig:typing-for-programs}
 \end{figure}
-
-\begin{figure}
-    \centering
-    \begin{align*}
-        \semF{\cdot}{\rho} \colon&~ \hlfun \to \rho \to \rho \\
-        \semF{\hlfundef{f}{\aexpr_1, \dots, \aexpr_n}{\hlstmt}}{\rho} =&~ \lambda x_1, \dots, x_n. \semC{\hlstmt}{\rho[x_1 \mapsto \semO{\aexpr_1}{\rho}, \dots, x_n \mapsto \semO{\aexpr_n}{\rho}]}
-    \end{align*}
-    \caption{Semantics of functions.}
-    \label{fig:semantics-functions}
-\end{figure}
-
-While the semantics are standard, let us briefly go
-through how \kl{high-level programs} are executed by providing a denotational
-semantics. To that end, let us map types to their set of values:
-$\intro*\semT{\TBool} = \Bools$, $\reintro*\semT{\TPos[o]} = \Nat$ for all $o
-\in \oexpr$, and $\reintro*\semT{\TOut[n]} = \NestedWords[n]$. Then, for
-arguments to functions, we let $\reintro*\semT{(\TOut[n],\ell)} =
-\NestedWords[n] \times \Nat^\ell$ for all $\ell \in \Nat$,
-$\semT{\mathsf{arg}_1 \times \cdots \times \mathsf{arg}_k \to \TBool}$ will be
-defined as functions from $\semT{\mathsf{arg}_1} \times \cdots \times
-\semT{\mathsf{arg}_k}$ to $\Bools$, and similarly for functions with output
-type $\TOut[n]$ for some $n \in \Nat$.
-
-\subsection{Typing Rules}
 
 % Basic typing judgments
 \begin{figure}[h]
@@ -358,25 +382,18 @@ type $\TOut[n]$ for some $n \in \Nat$.
     \AxiomC{$\Gamma \vdash e_1 : \TBool$}
     \AxiomC{$\Gamma \vdash e_2 : \TBool$}
     \RightLabel{(T-BBin)}
-    \BinaryInfC{$\Gamma \vdash \bbin{e_1}{\odot}{e_2} : \TBool$}
+    \BinaryInfC{$\Gamma \vdash \bbin{e_1}{op}{e_2} : \TBool$}
     \end{prooftree}
 
     % Position comparisons
     \begin{prooftree}
-    \AxiomC{$\Gamma(i) = \TPos[o_i]$}
-    \AxiomC{$\Gamma(j) = \TPos[o_j]$}
+    \AxiomC{$\Gamma \vdash i :  \TPos[o_i]$}
+    \AxiomC{$\Gamma \vdash j : \TPos[o_j]$}
     \AxiomC{$o_i = o_j$}
     \RightLabel{(T-PComp)}
-    \TrinaryInfC{$\Gamma \vdash \bcomp{i}{\odot}{j} : \TBool$}
+    \TrinaryInfC{$\Gamma \vdash \bcomp{i}{op}{j} : \TBool$}
     \end{prooftree}
 
-    % Function application in boolean expressions
-    \begin{prooftree}
-    \AxiomC{$\Delta(f) = (\tau_1,\ldots,\tau_n) \to \TBool$}
-    \AxiomC{$\Gamma \vdash e : \tau_1$}
-    \RightLabel{(T-BApp)}
-    \BinaryInfC{$\Gamma \vdash \bapp{f}{e} : \TBool$}
-    \end{prooftree}
     \caption{Typing rules for boolean expressions.}
     \label{fig:typing-bool}
 \end{figure}
@@ -384,9 +401,9 @@ type $\TOut[n]$ for some $n \in \Nat$.
 \begin{figure}[h]
     % Output expressions
     \begin{prooftree}
-    \AxiomC{$\Gamma(x) = \TOut[n]$}
+    \AxiomC{}
     \RightLabel{(T-OVar)}
-    \UnaryInfC{$\Gamma \vdash x : \TOut[n]$}
+    \UnaryInfC{$\Gamma, x : \TOut[n] \vdash x : \TOut[n]$}
     \end{prooftree}
 
     \begin{prooftree}
@@ -394,6 +411,7 @@ type $\TOut[n]$ for some $n \in \Nat$.
     \RightLabel{(T-OList)}
     \UnaryInfC{$\Gamma \vdash \olist{e_1,\ldots,e_n} : \TOut[n+1]$}
     \end{prooftree}
+
     \caption{Typing rules for \kl{list expressions} and \kl{constant expressions}.}
     \label{fig:typing-output}
 \end{figure}
@@ -475,59 +493,60 @@ type $\TOut[n]$ for some $n \in \Nat$.
 \end{figure}
 
 \begin{figure}
+\begin{prooftree}
+    % aexpressions 
+    \AxiomC{$\Gamma \vdash o : \TOut[n]$}
+    \AxiomC{$\Gamma \vdash p_i : \TPos[o]$ for all $1 \leq i \leq n$}
+    \RightLabel{(T-AExpr)}
+    \BinaryInfC{$\Gamma \vdash (o, p_1, \dots, p_n) : (\TOut[n], n)$}
+\end{prooftree}
+
 % Function definition
 \begin{prooftree}
-\AxiomC{$\Gamma \vdash \aexpr_i : \tau_i$ for all $i$}
+\AxiomC{$\Gamma \vdash a_i : \tau_i$ for all $i$}
 \AxiomC{$\Gamma \vdash s : \tau$}
 \RightLabel{(T-Fun)}
-\BinaryInfC{$\Delta \vdash \hlfundef{f}{(\aexpr_1,\ldots,\aexpr_n)}{s} : (\tau_1,\ldots,\tau_n) \to \tau$}
+\BinaryInfC{$\Gamma \vdash \hlfundef{f}{a_1, \dots, a_n}{s} : (\tau_1,\ldots,\tau_n) \to \tau$}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma \vdash f : (\tau_1,\ldots,\tau_n) \to \tau$}
+    \AxiomC{$\Gamma \vdash a_i : \tau_i$ for all $1 \leq i \leq n$}
+    \RightLabel{(T-App)}
+    \BinaryInfC{$\Gamma \vdash f(a_1,\ldots,a_n) : \tau$}
 \end{prooftree}
 
 % Program
 \begin{prooftree}
-\AxiomC{$\Delta \vdash \hlfun_i : \tau_i$ for all $i$}
-\AxiomC{$f \in \FunVars$}
+\AxiomC{$\Gamma, \seqof{f_j : \tau_j}[j < i] \vdash f_i : \tau_i$ for all $1 \leq i \leq n$}
+\AxiomC{$f = f_j$ for some $1 \leq j \leq n$}
 \RightLabel{(T-Prog)}
-\BinaryInfC{$\vdash ([\hlfun_1,\ldots,\hlfun_n], f) : \tau_f$}
+\BinaryInfC{$\Gamma \vdash ([f_1, \dots, f_n], f) : \tau_j$}
 \end{prooftree}
-\caption{Typing rules for high-level programs.}
+\caption{Typing rules of \kl{for-programs}.}
 \label{fig:typing-high-level}
 \end{figure}
 
-\section{Program Counter Examples}
 
-\begin{lemma}
-    \label{lem:umc-equality-nested-words}
-    Allowing unrestricted equality checks between two \kl{nested words}
-    results in the undecidability of the \kl{model checking problem}.
-\end{lemma}
-\begin{proof}
-        \begin{example}
-            For every instance of the Post Correspondence Problem (PCP), we can 
-            construct a function \texttt{f(x : list[list[Char]]) : Bool}
-            in the \kl{high-level language} with unrestricted equality checks, such 
-            that $f(x) = \btrue$ if and only if $x$ encodes a solution to the PCP instance.
-            For example the PCP instance $\{ (ab, a), (b, aa), (ba, b) \}$ can be encoded 
-            as the following function:
-            \begin{verbatim}
-                \input{programs/pcp_instance.py}
-            \end{verbatim}
-        \end{example}
-\end{proof}
+\begin{figure}
+    \centering
 
+\begin{prooftree}
+    \AxiomC{$\Gamma' \vdash s : \TBool$}
+    \AxiomC{$\Gamma' \subseteq \Gamma$}
+    \AxiomC{$\Gamma'$ contains no boolean variables}
+    \RightLabel{(B-Gen)}
+    \TrinaryInfC{$\Gamma \vdash \bgen{ s } \colon \TBool$}
+\end{prooftree}
 
-\section{High Level to Low Level Translation}
+\begin{prooftree}
+    \AxiomC{$\Gamma' \vdash s : \TOut[n]$}
+    \AxiomC{$\Gamma' \subseteq \Gamma$}
+    \AxiomC{$\Gamma'$ contains no boolean variables}
+    \RightLabel{(L-Gen)}
+    \TrinaryInfC{$\Gamma \vdash \ogen{ s } \colon \TOut[n]$}
+\end{prooftree}
 
-
-\begin{lemma}
-    \label{lem:fungenexpr}
-    For every \kl{high level function} $\hlfundef{f}{x_1, \dots, x_n}{s}$,
-    for every arguments $a_1, \dots, a_n \in \aexpr$,
-    for every \kl{evaluation environment} $\rho$,
-    \begin{equation*}
-        \semO{ f (a_1, \dots, a_n) }{\rho}
-        = 
-        \semO{ \ogen{ s[a_1/x_1, \dots, a_n/x_n] } }{\rho}
-        \quad .
-    \end{equation*}
-\end{lemma}
+    \caption{The syntax of \kl{generator expressions}.}
+    \label{fig:generators}
+\end{figure}
