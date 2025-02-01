@@ -24,7 +24,7 @@ stack run polycheck -- -i <input_file> -b <pre_condition_file> -a <post_conditio
 ```
 
 A list of examples input files and pre/post condition files can be found in the
-`polyreg/assets` subdirectory. The program will output the result of the model
+`polycheck/assets` subdirectory. The program will output the result of the model
 checking process, which can be, for every solver, one of the following:
 
 - `OK`: the program satisfies the specification.
@@ -71,7 +71,7 @@ You will need a working `stack` Haskell environment to compile the program.
 Furthermore, the program calls solvers installed on the system, which can be
 one of: `MONA`, `CVC5`, `Z3`, `Yices`, or `alt-ergo`. 
 
-To compile the program, run the following command in the `polyreg` directory:
+To compile the program, run the following command in the `polycheck` directory:
 
 ```bash
 stack build
