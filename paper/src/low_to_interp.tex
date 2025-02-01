@@ -2,60 +2,46 @@
 \section{Simple For Programs and Interpretations}
 \label{sec:low-level}
 
-\todo[inline]{
-    Say that we add quantifications on booleans to the logic.
-}
-
-\todo[inline]{
-    Say that quantifications are bad for the solvers
-}
-
 In this section, we prove that every \kl{simple for-program} can be compiled
 into a \kl{first-order interpretation} in our symbolic setting. Recall that
 this is already known to be theoretically possible in the non-symbolic case
 \cite{bojanczyk2018polyregular}. However, this previous proof does not provide
-complexity bounds, and requires computing a normal form of the programs
-\todo{cite normal form} which drastically increase the complexity of the
+complexity bounds, and requires computing a normal form
+\todo{R: cite normal form} which drastically increases the complexity of the
 generated formulas.
 
 To transform a \kl{simple for-program} into a \kl{first-order interpretation},
 we use as \kl{character constants} the set of all
-characters that appear in the program. Then, we will use as \kl{transduction
-tags} the set of all print statements in the program (remembering their
-location in the source code). The \kl(formula){arity} of a print statement will be the
-number of position variables that are in the scope of the print. It is
-relatively easy to compute the \kl{output function} of a print statement: if
+characters that appear in the program. For the \kl{transduction
+tags} we use the set of all print statements in the program, remembering their
+location in the source code. The \kl(formula){arity} of a print statement
+is the number of the position variables that are in the scope of the print.
+The \kl{output function} of a print statement is easy to define: if
 the print statement outputs a fixed character $c$, then the \kl{output
-function} will be the constant function $c$; if the print statement uses
-$\mathsf{label}(i)$ for some variable $i$ in the context of the print
-statement, then the \kl{output function} will be the number corresponding to
-the position variable $i$ (that is, its De Bruijn index \cite{DEBRUJ72}). To
-compute the \kl{ordering formula} between two print statements, we use the same
-technique as described in the \kl{for loop expansion} procedure: we compare the
-indices of the positions that are in the scope of the print statements, and
-break ties using their ordering in the source code. Note that the \kl{ordering
-formula} does not use any quantifiers.
+function} returns $c$; otherwise,
+if the print statement outputs $\mathsf{label}(i)$,
+then the \kl{output function} returns the De Bruijn index \cite{DEBRUJ72}
+of the position variable $i$. For the \kl{ordering formula} between two print statements,
+we use the technique for comparing addresses of the print statements, 
+described in the \kl{for loop expansion} procedure:
+In order to compare of two print statement, we look 
+at the locations of their shared position variables,
+breaking the ties using their ordering in the source code.
+Observe that such \kl{ordering formulas} do not use quantifiers.
 
-The only non-trivial part of the transformation is to compute the \kl{domain
-formula} of a print statement. This difficulty is akin to the one of the
+The hardest part is the \kl{domain formula}. This difficulty is akin to the one of the
 \kl{for loop expansion} procedure in the case of a reverse loop: given a print
 statement $p(i_1, \dots, i_k)$, where $i_1, \dots, i_k$ are the position
-variables in the scope of the print statement, we need to check whether it can
-be reached. In other words, we check that every \texttt{if} statement along the
-path from the root of the program to the print statement was correctly taken.
-This is done by computing the conjunction, over all the \texttt{if} statements,
-of the truth values of the boolean tests that were executed. The main
-difference with the \kl{for loop expansion} case is that we need to
-\emph{abstractly} compute the truth values of the boolean variables used in the
-tests.
-
-To solve this issue, we will introduce the notion of \kl{program formulas},
-which are \kl{first-order formulas} describing a transformation of boolean
-variable's truth values. We will associate to every program statement a
-corresponding \kl{program formula} (the main difficulty), which in turns allows
-us to easily derive the \kl{domain formula}.
-
-
+variables in the scope of the print, we need to check whether it can
+be reached. This amounts to taking the conjunction of the \texttt{if}-conditions, 
+or their negations depending on the \texttt{if}-branch, along the path
+from the root of the program to the print statement.
+The only difficulty in defining this conjunction is
+computing the values the boolean variables using 
+first-order logic. We solve this problem, by defining
+\kl{program formulas}, which are \kl{first-order formulas} 
+that describe how a program statement transforms
+the truth values of its boolean variables.
 
 \subsection{Program Formulas}
 \label{sec:program-formulas}
@@ -69,7 +55,6 @@ input variables $\ibvar{b_1}, \dots, \ibvar{b_n}$, the output variables
 $\obvar{b_1}, \dots, \obvar{m}$, and the positions $\ipvar{1}, \dots,
 \ipvar{k}$. We will only consider \kl{program formulas} that define
 \emph{functions} for every fixed input word $w$.
-
 
 Our goal is to compute inductively a \kl{program formula} for every statement
 of a \kl{simple for-program}. As an example, the statement \texttt{b := True}
