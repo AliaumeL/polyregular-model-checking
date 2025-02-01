@@ -6,9 +6,8 @@ In this section, we prove that every \kl{simple for-program} can be compiled
 into a \kl{first-order interpretation} in our symbolic setting. Recall that
 this is already known to be theoretically possible in the non-symbolic case
 \cite{bojanczyk2018polyregular}. However, this previous proof does not provide
-complexity bounds, and requires computing a normal form
-\todo{R: cite normal form} which drastically increases the complexity of the
-generated formulas.
+complexity bounds, and requires computing a normal form, which typically
+increases the complexity of the generated formulas.
 
 To transform a \kl{simple for-program} into a \kl{first-order interpretation},
 we use as \kl{character constants} the set of all
@@ -46,15 +45,13 @@ the truth values of its boolean variables.
 \subsection{Program Formulas}
 \label{sec:program-formulas}
 
-\AP A \intro{program formula} is a \kl{first-order formula} where every
-\kl{free variable} is either: an \intro{input boolean variable}  written
-$\ibvar{b}$,  an \intro{output boolean variable} written $\obvar{b}$, or an
-\intro{input position variable} written $\ipvar{i}$. Given a fixed word $w \in
+\AP A \intro{program formula} is a \kl{first-order formula} where every free
+variable is either: an \intro{input boolean variable}  written $\ibvar{b}$,  an
+\intro{output boolean variable} written $\obvar{b}$, or an \intro{input
+position variable} written $\ipvar{i}$. Given a fixed word $w \in
 \mathcal{D}^*$, a \kl{program formula} $\varphi$ defines a relation between the
-input variables $\ibvar{b_1}, \dots, \ibvar{b_n}$, the output variables
-$\obvar{b_1}, \dots, \obvar{m}$, and the positions $\ipvar{1}, \dots,
-\ipvar{k}$. We will only consider \kl{program formulas} that define
-\emph{functions} for every fixed input word $w$.
+input and output variables. We will only consider \kl{program formulas} that
+define \emph{functions} for every fixed input word $w$.
 
 Our goal is to compute inductively a \kl{program formula} for every statement
 of a \kl{simple for-program}. As an example, the statement \texttt{b := True}
@@ -148,7 +145,7 @@ composition:
 Where we replaced the \kl{input position variable}
 $\ipvar{i}$ by every possible value in the range $0$ to $|w|$. The main
 difficulty is to compute this composition efficiently (in terms of formula size and 
-\kl{quantifier depth}), and indepenently of the
+\kl{quantifier rank}), and independently of the
 length of the word $w$.
 
 To that end, remark that \kl{program formula} $\Phi$ has a finitely many output

@@ -67,9 +67,9 @@ the size of their support $A$, and not on the number of the Unicode characters.
  ---  originally introduced in \cite[p.
 19]{bojanczyk2018polyregular} ---
 can be seen as
-simplified\footnote{Actually, the \kl{for programs} were designed as an
-extended version \kl{first-order simple for-programs}.} version of the \kl{for
-programs}. The main difference is that the \kl{simple
+simplified\footnote{Actually, the \kl{for-programs} were designed as an
+extended version \kl{first-order simple for-programs}.} 
+version of the \kl{for-programs}. The main difference is that the \kl{simple
 for-programs} only define transductions of type $\TOut[1] \to \TOut[1]$. Here
 is an example in a Python syntax:
 
@@ -112,12 +112,7 @@ meaning, and $x =_L \mathtt{a}$ is checks if the $x$-th letter of $w$ is equal t
 An important property of this logic, it that it has decidable \intro{emptiness}, i.e. given a formula
 $\varphi$, one can decide if there is a word $w$ such that $\varphi$ holds for $w$. For finite alphabets,
 this property is well-know \cite{buchi1960weak}, and for the infinite alphabet $\mathcal{D}$ it is 
-the consequence of the finite-alphabet case:
-\begin{lemma}
-    \label{lem:fo-emptiness}
-    \proofref{lem:fo-emptiness}
-    The \kl{emptiness} problem for the \kl{first-order logic on words} is decidable for the infinite alphabet $\mathcal{D}$.
-\end{lemma}
+the consequence of the finite-alphabet case (\cref{lem:fo-emptiness}).
 
 Having discussed the \kl{first-order logic on words}, we are now ready to
 define the \kl{first-order string-to-string interpretations}.
@@ -187,17 +182,17 @@ The tags are sorted by their positions, with ties resolved in favour of \texttt{
 \subsection{Hoare Triple Verification}
 \label{sec:pullback}
 
-
+\AP
 We say that the Hoare triple $\{ \varphi \}\; F\; \{ \psi \}$ is valid if
 for every word $w$ that satisfies $\varphi$, the output $F(w)$ satisfies
 $\psi$. An important property \kl{first-order string-to-string interpretations}
-is that they admit a direct reduction of the first-order Hoare triple
+is that they admit a direct reduction of the \intro{first-order Hoare triple}
 verification problem to the \kl{emptiness problem} for the \kl{first-order
 logic on words} \cite[Theorem~1.7]{bojanczyk2018polyregular}. However,
-the construction resulting from this proof is not practical to implement.
-Instead, we provide a direct construction of a first-order formula $\chi(\phi, F, \psi)$
+the resulting construction is not efficient.
+We provide a direct construction of a first-order formula $\chi(\phi, F, \psi)$
 that is \kl{unsatisfiable} if and only if the triple $\{ \phi \}\; F\; \{ \psi \}$ is valid.
-Moreover, the size and the quantifier depth of $\chi$ are bounded by the following low-degree polynomials:
+Moreover, the size and the \kl{quantifier rank} of $\chi$ are bounded by the following low-degree polynomials:
 \begin{align*}
     \qrank(\chi) \leq \max\left(\qrank(\phi),\ \qrank(\psi) \cdot \left(\textsf{ar}(F) + 1\right)  + \qrank(F)\right) \quad |\chi| = \mathcal{O} (|\phi| + |F| \cdot |\psi|)
 \end{align*}

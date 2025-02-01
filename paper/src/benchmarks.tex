@@ -5,16 +5,15 @@ We implemented all the transformations expressed in this paper in a
 \texttt{Haskell} program. In particular, we transformed \kl{high-level
 for-programs} into \kl{first-order interpretations} which where then used to
 verify \kl{first-order Hoare triples} using an SMT solver or the \kl{MONA}
-program. In this section, we will discuss the practical aspects of this
-implementation.
+program.
 
-\paragraph{Methodology.} We selected a number of programs in the \kl{high-level
+\paragraph{Methodology.} \AP We selected a number of programs in the \kl{high-level
 for-program} language and for each of them we computed its corresponding
 \kl{simple for-program} and its corresponding \kl{first-order interpretation}.
 To measure the complexity of these transformations, we associated to a
 \kl{high-level for-program} the following parameters: its \emph{size} (number
-of control flow statements), its \emph{loop depth} (the maximum number of
-nested loops), and its \emph{boolean depth} (the maximum number of boolean
+of control flow statements), its \intro{loop depth} (the maximum number of
+nested loops), and its \intro{boolean depth} (the maximum number of boolean
 variables visible at any point in the program). We compute the same parameters
 for the corresponding \kl{simple for-program}. In the case of \kl{first-order
 interpretations}, we only compute its \emph{size} (number of nodes in the
@@ -32,12 +31,13 @@ various solvers, and in particular, justifies that for some specific queries,
 the \kl{MONA} program (which is complete for \kl{first-order logic on words})
 does not provide an answer (either by timeout, or by memory exhaustion).
 
-\begin{table}
+\begin{table}[t]
     \caption{Benchmark results for the transformations. 
-        Here \kl[for program]{FP} is a \kl{high-level program},
+        Here \kl[for-program]{FP} is a \kl{high-level program},
         \kl[simple for-program]{S.FP} is a \kl{simple for-program},
         and \kl[first-order interpretation]{$\FO$-I} is a \kl{first-order interpretation}.
-        The columns \textbf{size}, \textbf{l.d.}, and \textbf{b.d.} stand for the size, loop depth, and boolean depth respectively. While the columns \textbf{size} and \textbf{q.r.} stand for the size and \kl{quantifier rank} of the 
+        The columns \textbf{size}, \textbf{l.d.}, and \textbf{b.d.} stand for the size, \kl{loop depth}, and
+        \kl{boolean depth} respectively. While the columns \textbf{size} and \textbf{q.r.} stand for the size and \kl{quantifier rank} of the 
         \kl{first-order interpretation} respectively.
     }
     \label{tab:benchmarks}
@@ -75,7 +75,7 @@ transforming \kl{high-level for-programs} into \kl{simple for-programs}: this
 can be seen in the \texttt{get\_first\_word.pr} and
 \texttt{get\_last\_word.pr}, leading to vastly different \kl{quantifier ranks}
 for the resulting \kl{first-order interpretations}, although these programs are
-very similar in their \kl{high-level representation}.
+very similar in structure and behaviour.
 
 
 \paragraph{Observations on the Solver Performance.} While we did not use

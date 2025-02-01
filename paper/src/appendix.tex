@@ -1,6 +1,11 @@
 \section{Proofs}
 
-\begin{proofof}{lem:fo-emptiness}
+\begin{lemma}
+    \label{lem:fo-emptiness}
+    \proofref{lem:fo-emptiness}
+    The \kl{emptiness} problem for the \kl{first-order logic on words} is decidable for the infinite alphabet $\mathcal{D}$.
+\end{lemma}
+\begin{proof}
     Take a formula $\varphi$ and observe that is contains only a finite number of constants from $\mathcal{D}$ -- call this set $A$.
     It is not hard to see that the truth value of $\varphi$ is \kl{supported} by $A$: for every function $f : \mathcal{D} \to \mathcal{D}$
     that does not touch 
@@ -12,7 +17,7 @@
     and maps all other letters to $\mathtt{blank}$, we can use it to map $\mathcal{D}^*$ to $(A \cup \{\mathtt{blank}\})^*$ in a way 
     that preserves the truth value of $\varphi$.
     This finishes the proof of the lemma, as we have reduced the general problem to a finite alphabet $A \cup \{\mathtt{blank}\}$.
-\end{proofof}
+\end{proof}
 
 \section{Encoding Equality of Subwords}
 
@@ -514,20 +519,3 @@ type $\TOut[n]$ for some $n \in \Nat$.
             \end{verbatim}
         \end{example}
 \end{proof}
-
-
-\section{High Level to Low Level Translation}
-
-
-\begin{lemma}
-    \label{lem:fungenexpr}
-    For every \kl{high level function} $\hlfundef{f}{x_1, \dots, x_n}{s}$,
-    for every arguments $a_1, \dots, a_n \in \aexpr$,
-    for every \kl{evaluation environment} $\rho$,
-    \begin{equation*}
-        \semO{ f (a_1, \dots, a_n) }{\rho}
-        = 
-        \semO{ \ogen{ s[a_1/x_1, \dots, a_n/x_n] } }{\rho}
-        \quad .
-    \end{equation*}
-\end{lemma}
