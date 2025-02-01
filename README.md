@@ -1,6 +1,3 @@
-[![Release](https://github.com/AliaumeL/polyregular-model-checking/actions/workflows/release.yml/badge.svg)](https://github.com/AliaumeL/polyregular-model-checking/actions/workflows/release.yml)
-[![haskell and latex CI](https://github.com/AliaumeL/polyregular-model-checking/actions/workflows/haskell.yml/badge.svg)](https://github.com/AliaumeL/polyregular-model-checking/actions/workflows/haskell.yml)
-
 # Polyregular Functions and Model Checking
 
 > Model checking (star-free) polyregular functions written in a Python-like
@@ -42,8 +39,6 @@ polycheck --web
 The installation of the program can be done using the following methods
 listed by order of preference:
 
-- Using the docker image `aliaume/polycheck-small:latest` available on Docker
-  Hub.
 - Using a `nix-shell` environment, by just running `nix-shell` in the root
   directory of the repository.
 - Using the `nix` package manager, by running `nix-build polycheck.nix -A
@@ -57,22 +52,6 @@ listed by order of preference:
 Note that the installation process requires the installation of external
 solvers, which are included in the docker image and the nix derivation, but
 cannot be build by the `stack` tool.
-
-The easiest way is to use `docker run -it -p 3000:3000
-aliaume/polycheck-small:latest polycheck --web` to run the program in
-a docker container which turns on the web interface.
-
-## Building instructions
-
-### For the paper
-
-You will need a working LaTeX distribution, `pandoc`, `git` and the `make` tool
-to compile the paper. To produce the PDF in its `lncs` format, run the
-following command in the `paper` directory.
-
-```bash
-make polycheck.lncs.pdf
-```
 
 ### For the model checker
 
@@ -90,18 +69,4 @@ To run the tests, you can use the following command:
 
 ```bash
 stack test
-```
-
-
-## Cite this repository
-
-```bibtex
-@software{LS2025,
-    author  = {Lopez, Aliaume and Stefański, Rafał},
-    title   = {Polyregular Functions and Model Checking},
-    year    = {2025},
-    url     = {https://github.com/AliaumeL/polyregular-model-checking},
-    version = {0.0.1},
-    date    = {2024-09-03},
-}
 ```

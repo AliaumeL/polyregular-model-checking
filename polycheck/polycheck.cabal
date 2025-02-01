@@ -6,22 +6,15 @@ cabal-version: 1.12
 
 name:           polycheck
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/AliaumeL/polyregular-model-checking>
-homepage:       https://github.com/AliaumeL/polyregular-model-checking#readme
-bug-reports:    https://github.com/AliaumeL/polyregular-model-checking/issues
-author:         Aliaume Lopez and Rafał Stefański
-maintainer:     ad.lopez@uw.edu.pl
-copyright:      2025 Aliaume Lopez and Rafał Stefański
+description:    Please see the README
+author:         XXX
+maintainer:     XXX
 license:        GPL-3.0
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
     CHANGELOG.md
-
-source-repository head
-  type: git
-  location: https://github.com/AliaumeL/polyregular-model-checking
 
 library
   exposed-modules:

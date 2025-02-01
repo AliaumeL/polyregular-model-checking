@@ -1,10 +1,7 @@
 name: polycheck
 version: 0.1.0.0
-github: "AliaumeL/polyregular-model-checking"
 license: GPL-3.0
-author: "Aliaume Lopez and Rafał Stefański"
-maintainer: "ad.lopez@uw.edu.pl"
-copyright: "2025 Aliaume Lopez and Rafał Stefański"
+author: "XXX"
 
 extra-source-files:
   - README.md
@@ -17,8 +14,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description: Please see the README on GitHub at <https://github.com/AliaumeL/polyregular-model-checking>
-
+description: Please see the README
 dependencies:
   - base >= 4.7 && < 5
   - containers
