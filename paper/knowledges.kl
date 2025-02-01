@@ -2,9 +2,21 @@
  | high-level language
  | high-level program
  | high-level programs  
- | For program
+ | For-program
+ | (high-level) for-programs
+ | high-level for-programs
+ | for-programs
+
+\knowledge{notion}
+ | emptiness
+ | emptiness problem
+ | unsatisfiable
 
 
+
+
+\knowledge{notion}
+ | evaluation context
 % high level syntactic notions
 \knowledge{notion}
  | list expression
@@ -43,8 +55,14 @@
  | First-order formula
  | first-order formula
  | first-order formulas
+ | first-order formula on words
  | first-order logic 
  | first-order logic on words
+
+\knowledge{notion}
+ | emptiness
+ | emptiness problem
+ | unsatisfiable
  
 % interpretations
 \knowledge{notion}
@@ -81,6 +99,12 @@
  | supported by
  | supported
 
+\knowledge{notion}
+ | touch
+
+\knowledge{notion}
+ | pullback operator
+ | pullback operation
 
 % Program formulas
 
@@ -97,3 +121,14 @@
 \knowledge{notion}
  | first-order polyregular functions
  | first-order polyregular function
+\knowledge{notion}
+ | polyregular functions
+
+%solvers
+
+\knowledge{notion}
+ | MONA
+\knowledge{notion}
+ | Z3
+\knowledge{notion}
+ | CVC5
