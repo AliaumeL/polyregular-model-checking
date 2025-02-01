@@ -16,7 +16,7 @@ abstract: |
   the satisfiability of a first-order formula over finite words,
   which is known to be decidable. The reduction is based on the theory
   of polyregular functions, a recently developed generalization of
-  regular langugages to polynomial output string-to-string
+  regular languages to polynomial output string-to-string
   functions.
   We implemented this reduction in a verification tool called PolyCheck, 
   that can use
