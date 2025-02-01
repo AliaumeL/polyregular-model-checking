@@ -1,4 +1,4 @@
-\section{Proofs}
+\section{Appendix}
 
 \begin{lemma}
     \label{lem:umc-equality-nested-words}
@@ -12,9 +12,33 @@
     that $f(x) = \btrue$ if and only if $x$ encodes a solution to the PCP instance.
     For example the PCP instance $\{ (ab, a), (b, aa), (ba, b) \}$ can be encoded 
     as the following function:
-    \begin{verbatim}
-        \input{programs/pcp_instance.py}
-    \end{verbatim}
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{def}\NormalTok{ top(x : }\BuiltInTok{list}\NormalTok{[}\BuiltInTok{list}\NormalTok{[}\BuiltInTok{chr}\NormalTok{]]) }\OperatorTok{{-}\textgreater{}} \BuiltInTok{list}\NormalTok{[}\BuiltInTok{chr}\NormalTok{]:}
+    \ControlFlowTok{for}\NormalTok{ elem }\KeywordTok{in}\NormalTok{ x: }
+        \ControlFlowTok{if}\NormalTok{ elem }\OperatorTok{==} \StringTok{"one"}\NormalTok{:}
+            \ControlFlowTok{yield} \StringTok{"a"}
+            \ControlFlowTok{yield} \StringTok{"b"}
+        \ControlFlowTok{elif}\NormalTok{ elem }\OperatorTok{==} \StringTok{"two"}\NormalTok{:}
+            \ControlFlowTok{yield} \StringTok{"a"}
+        \ControlFlowTok{elif}\NormalTok{ elem }\OperatorTok{==} \StringTok{"three"}\NormalTok{:}
+            \ControlFlowTok{yield} \StringTok{"b"}
+            \ControlFlowTok{yield} \StringTok{"a"}
+
+\KeywordTok{def}\NormalTok{ bottom(x : }\BuiltInTok{list}\NormalTok{[}\BuiltInTok{list}\NormalTok{[}\BuiltInTok{chr}\NormalTok{]]) }\OperatorTok{{-}\textgreater{}} \BuiltInTok{list}\NormalTok{[}\BuiltInTok{chr}\NormalTok{]:}
+    \ControlFlowTok{for}\NormalTok{ elem }\KeywordTok{in}\NormalTok{ x: }
+        \ControlFlowTok{if}\NormalTok{ elem }\OperatorTok{==} \StringTok{"one"}\NormalTok{: }
+            \ControlFlowTok{yield} \StringTok{"a"}
+        \ControlFlowTok{elif}\NormalTok{ elem }\OperatorTok{==} \StringTok{"two"}\NormalTok{:}
+            \ControlFlowTok{yield} \StringTok{"a"}
+            \ControlFlowTok{yield} \StringTok{"a"}
+        \ControlFlowTok{elif}\NormalTok{ elem }\OperatorTok{==} \StringTok{"three"}\NormalTok{:}
+            \ControlFlowTok{yield} \StringTok{"b"}
+
+\KeywordTok{def}\NormalTok{ pcp(x : }\BuiltInTok{list}\NormalTok{[}\BuiltInTok{list}\NormalTok{[}\BuiltInTok{str}\NormalTok{]]) }\OperatorTok{{-}\textgreater{}} \BuiltInTok{bool}\NormalTok{ :}
+    \ControlFlowTok{return} \BuiltInTok{list}\NormalTok{(top(x)) }\OperatorTok{==} \BuiltInTok{list}\NormalTok{(bottom(x))}
+\end{Highlighting}
+\end{Shaded}
 \end{proof}
 
 \begin{lemma}
@@ -36,10 +60,7 @@
     This finishes the proof of the lemma, as we have reduced the general problem to a finite alphabet $A \cup \{\mathtt{blank}\}$.
 \end{proof}
 
-\clearpage
-\section{Subwords Containing the Substring $ab$}
-
-\begin{figure}
+\begin{figure}[h]
     \centering
 \begin{Shaded}
 \begin{Highlighting}[numbers=left]
@@ -86,7 +107,7 @@ corresponding to the Python code in \cref{fig:python-example-nested}.}
 \label{fig:high-level-example-nested}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h]
     \centering
 \begin{Shaded}
 \begin{Highlighting}[numbers=left]
@@ -135,10 +156,7 @@ by compiling \cref{fig:high-level-example-nested}.}
 \label{fig:low-level-example-nested}
 \end{figure}
 
-\clearpage
-\section{Encoding Equality of Subwords}
-
-\begin{figure}
+\begin{figure}[h]
     \centering
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -155,7 +173,7 @@ using a comparison between indices of two different lists.}
 \label{fig:eq-def-different-indices}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h]
     \centering
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -180,7 +198,7 @@ using a function taking a boolean as input.}
 \label{fig:eq-def-boolean}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h]
     \centering
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -201,8 +219,6 @@ using the shadowing of a variable to switch between two lists.}
 
 
 
-\clearpage
-\section{Syntax and Semantics of High Level Programs}
 
 \begin{figure}[h]
     \centering
@@ -311,7 +327,7 @@ using the shadowing of a variable to switch between two lists.}
 %    \label{fig:semantics-expr}
 %\end{figure}
 %
-%\begin{figure}
+%\begin{figure}[h]
 %    \centering
 %    \begin{align*}
 %        \semS{\cdot}{\cdot} \colon&~ \hlstmt \to \Env \to \Env \times (\Bools \uplus \NestedWords) \\
@@ -337,7 +353,7 @@ using the shadowing of a variable to switch between two lists.}
 %    \label{fig:semantics-control}
 %\end{figure}
 %
-%\begin{figure}
+%\begin{figure}[h]
 %    \centering
 %    \begin{align*}
 %        \semF{\hlfundef{f}{a_1, \dots, a_n}{s}}{\rho} =&~ \lambda x_1, \dots, x_n. \semS{s}{\rho[x_1 \mapsto \semO{a_1}{\rho}, \dots, x_n \mapsto \semO{a_n}{\rho}]}
@@ -346,7 +362,7 @@ using the shadowing of a variable to switch between two lists.}
 %    \label{fig:semantics-functions}
 %\end{figure}
 
-\begin{figure}
+\begin{figure}[h]
 \begin{align*}
     \mathsf{arg} ::=&~ (\TOut[n],\ell) & \ell \in \Nat \\
     \mathsf{fun} ::=&~ 
@@ -416,7 +432,7 @@ using the shadowing of a variable to switch between two lists.}
     \label{fig:typing-output}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h]
 % Statements
 \begin{prooftree}
 \AxiomC{$\Gamma \vdash e : \TBool$}
@@ -448,14 +464,16 @@ using the shadowing of a variable to switch between two lists.}
 \begin{prooftree}
 \AxiomC{$\Gamma \vdash e : \TOut[n]$}
 \AxiomC{$\Gamma, x:\TOut[n] \vdash s : \tau$}
+\AxiomC{$x \not\in \Gamma$}
 \RightLabel{(T-LetOut)}
-\BinaryInfC{$\Gamma \vdash \hlletoutput{x}{e}{s} : \tau$}
+\TrinaryInfC{$\Gamma \vdash \hlletoutput{x}{e}{s} : \tau$}
 \end{prooftree}
 
 \begin{prooftree}
 \AxiomC{$\Gamma, x:\TBool \vdash s : \tau$}
+\AxiomC{$x \not\in \Gamma$}
 \RightLabel{(T-LetBool)}
-\UnaryInfC{$\Gamma \vdash \hlletboolean{x}{s} : \tau$}
+\BinaryInfC{$\Gamma \vdash \hlletboolean{x}{s} : \tau$}
 \end{prooftree}
 
 % For loops
@@ -492,7 +510,7 @@ using the shadowing of a variable to switch between two lists.}
 \label{fig:typing-control}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h]
 \begin{prooftree}
     % aexpressions 
     \AxiomC{$\Gamma \vdash o : \TOut[n]$}
@@ -528,7 +546,7 @@ using the shadowing of a variable to switch between two lists.}
 \end{figure}
 
 
-\begin{figure}
+\begin{figure}[h]
     \centering
 
 \begin{prooftree}
