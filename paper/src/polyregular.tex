@@ -91,13 +91,16 @@ beginning of a for loop (\circleref{3}{sfp:boolDeclFor}).
 
 \subsection{First-Order String-To-String Transductions}
 \label{subsec:fo-string-to-string}
-\AP The \kl{first-order string-to-string interpretations} is another model 
-that defines functions $\mathcal{D}^* \to \mathcal{D}^*$. It is based on the \intro{first-order logic on words},
+\AP \kl{First-order string-to-string interpretations} forms an other model 
+that defines functions $\mathcal{D}^* \to \mathcal{D}^*$. 
+It is based on the \intro{first-order logic on words} ($\intro*\FO$),
 the syntax of which we 
 recall in \cref{fig:fo-syntax}.
 To evaluate such a formula $\varphi$ on a word $w \in \mathcal{D}^*$ we perform the quantifications
 over the positions in $w$. The predicates $x = y$ and $x < y$ have the natural 
 meaning, and $x =_L \mathtt{a}$ is checks if the $x$-th letter of $w$ is equal to $\mathtt{a}$.
+Let us recall that the \intro{quantifier rank} of a formula
+is the maximal number of nested quantifications in it.
 \begin{figure}
     \centering
     \begin{align*}
@@ -108,11 +111,11 @@ meaning, and $x =_L \mathtt{a}$ is checks if the $x$-th letter of $w$ is equal t
     \label{fig:fo-syntax}
 \end{figure}
 
-\AP
-An important property of this logic, it that it has decidable \intro{emptiness}, i.e. given a formula
-$\varphi$, one can decide if there is a word $w$ such that $\varphi$ holds for $w$. For finite alphabets,
-this property is well-know \cite{buchi1960weak}, and for the infinite alphabet $\mathcal{D}$ it is 
-the consequence of the finite-alphabet case (\cref{lem:fo-emptiness}).
+\AP An important property of $\FO$, is that it has decidable \intro{emptiness},
+i.e. given a formula $\varphi$, one can decide if there is a word $w$ such that
+$\varphi$ holds for $w$. For finite alphabets, this property is well-know
+\cite{buchi1960weak}, and for the infinite alphabet $\mathcal{D}$ it is the
+consequence of the finite-alphabet case (\cref{lem:fo-emptiness}).
 
 Having discussed the \kl{first-order logic on words}, we are now ready to
 define the \kl{first-order string-to-string interpretations}.

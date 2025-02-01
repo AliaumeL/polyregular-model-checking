@@ -43,8 +43,6 @@
  | Simple for-program
  | simple for-program
  | simple for-programs
-
-\knowledge{notion}
  | first-order simple for-program
  | first-order simple for-programs
  | First-order simple for-programs

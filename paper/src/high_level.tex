@@ -82,8 +82,8 @@ also will enforce the following conditions, which are satisfied in our example:
 
         To ensure this compatibility, we designed the following type system,
         containing Booleans, \kl{nested words} of a given depth
-        (characters are of depth $0$), and integers associated to a list
-        expression (the set of which is denoted by $\oexpr$, and will
+        (characters are of depth $0$), and integers associated to a \kl{list
+        expression} (the set of which is denoted by $\oexpr$, and will
         be defined in \cref{fig:out-expr}):
         \begin{align*}
             \tau ::=~ \TBool
@@ -165,17 +165,14 @@ $\intro*\PVars$ ($i,j, \dots$), list variables $\intro*\OVars$ ($x,y,u,v,w,
 
 
 
-\paragraph{Semantics.} 
-\AP The evaluation of boolean expressions ($\bexpr$), constant expressions
-($\cexpr$), and \kl{list expressions} ($\oexpr$) pose no difficulty and are
-described in \cref{fig:semantics-expr}. We therefore have a denotational
-semantics where the evaluation of such expressions in an \intro{evaluation
-environment} $\rho$ are functions $\semB{\cdot}{\rho} : \bexpr \to \Bools$,
-$\semC{\cdot} : \cexpr \to \NestedWords$, and $\semO{\cdot}{\rho} : \oexpr
-\to \NestedWords$ respectively.
+\paragraph{Semantics.} \AP Given an \intro{evaluation context} that assigns
+values (functions, positions, booleans, nested words) to variables, the
+semantics of \kl{boolean expressions} into booleans $\Bools$, \kl{constant
+expressions} into \kl{nested words}, and \kl{list expressions} into \kl{nested
+words} pose no difficulty and are described in \cref{fig:semantics-expr}. 
 
-Let us highlight a crucial design choice we made regarding the semantics of
-for-loops.
+For the \kl{control statements}, there is a crucial design choice regarding
+the semantics of backward iteration.
 While the semantics of forward iteration is unambiguous, the backward iteration 
 $\hlforRev{(i,x)}{l}{s}$
 could be understood in two different ways,
