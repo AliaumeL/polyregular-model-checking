@@ -119,6 +119,12 @@ $if(acknowledgements)$
 \acknowledgements{$acknowledgements$}
 $endif$
 
+$if(anonymous)$
+\newcommand{\repositoryUrl}{\url{https://anonymous.4open.science/r/polyregular-model-checking-73A0}}
+$else$
+\newcommand{\repositoryUrl}{\url{https://github.com/AliaumeL/polyregular-model-checking}}
+$endif$
+
 %Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \EventEditors{John Q. Open and Joan R. Access}
 \EventNoEds{2}
