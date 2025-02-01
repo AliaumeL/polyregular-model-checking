@@ -175,19 +175,6 @@ $\hlif{e}{s_1}{s_2}$ are replaced by sequences $\hlseq{s_1}{s_2}$, every loop
 direction is swapped, and every sequence of statements is reversed. Its
 intended semantics is to reach all possible yield statements of $s$ in the
 reversed order. In our case:
-\begin{equation*}
-    s_\mathsf{rev} \ := \ \hlforRev{(j',y')}{ u }{\hlyield{y'}}
-\end{equation*}
-
-Some yield statements are reachable in
-$s_\mathsf{rev}$, but not when iterating over $s$ in reverse order.
-To ensure that we only output correct elements,
-we replace every $\hlyield{\cdot}$ statement in $s_{\mathsf{rev}}$ by a
-copy of $s$, leading to the programs $s' = s_{\mathsf{rev}}[ \hlyield{\cdot} \mapsto s ]$.
-In our case:
-\begin{align*}
-    s' \ :=\ \hlforRev{(j',y')}{ u }{ s }
-\end{align*}
 \begin{wrapfigure}{r}{0.5\textwidth}
     \centering
 \begin{tikzpicture}[overlay, remember picture]
@@ -223,6 +210,18 @@ In our case:
 \caption{Backward for loop expansion.}
 \label{fig:revloopexp}
 \end{wrapfigure}
+\begin{equation*}
+    s_\mathsf{rev} \ := \ \hlforRev{(j',y')}{ u }{\hlyield{y'}}
+\end{equation*}
+Some yield statements are reachable in
+$s_\mathsf{rev}$, but not when iterating over $s$ in reverse order.
+To ensure that we only output correct elements,
+we replace every $\hlyield{\cdot}$ statement in $s_{\mathsf{rev}}$ by a
+copy of $s$, leading to the programs $s' = s_{\mathsf{rev}}[ \hlyield{\cdot} \mapsto s ]$.
+In our case:
+\begin{align*}
+    s' \ :=\ \hlforRev{(j',y')}{ u }{ s }
+\end{align*}
 It is now possible to replace every yield statement in this new program
 by a conditional check ensuring that the output would actually be 
 produced by the original program $s$.

@@ -126,7 +126,7 @@ using the shadowing of a variable to switch between two lists.}
     \KeywordTok{done}
 \end{Highlighting}
 \end{Shaded}
-\caption{The \kl{high-level program} computing all subwords of a word containing the substring $ab$,
+\caption{The \kl{for-program} computing all subwords of a word containing the substring $ab$,
 corresponding to the Python code in \cref{fig:python-example-nested}.}
 \label{fig:high-level-example-nested}
 \end{figure}
@@ -325,7 +325,7 @@ by compiling \cref{fig:high-level-example-nested}.}
 \end{figure}
 
 While the semantics are standard, let us briefly go
-through how \kl{high-level programs} are executed by providing a denotational
+through how \kl{for-programs} are executed by providing a denotational
 semantics. To that end, let us map types to their set of values:
 $\intro*\semT{\TBool} = \Bools$, $\reintro*\semT{\TPos[o]} = \Nat$ for all $o
 \in \oexpr$, and $\reintro*\semT{\TOut[n]} = \NestedWords[n]$. Then, for
@@ -495,7 +495,7 @@ type $\TOut[n]$ for some $n \in \Nat$.
 \RightLabel{(T-Prog)}
 \BinaryInfC{$\vdash ([\hlfun_1,\ldots,\hlfun_n], f) : \tau_f$}
 \end{prooftree}
-\caption{Typing rules for high-level programs.}
+\caption{Typing rules of \kl{for-programs}.}
 \label{fig:typing-high-level}
 \end{figure}
 

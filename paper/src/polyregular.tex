@@ -26,13 +26,8 @@ transformed into a \kl{first-order string-to-string interpretation} in the
 symbolic setting. We believe that the other inclusion should also hold,
 but do not prove it, as it is out of this paper's scope.
 
-\subsection{Symbolic transductions}
 
-\begin{wrapfigure}{r}{0.5\textwidth}
-    \input{figs/swap_as_bs.tex}
-    \caption{The \texttt{swapAsToBs} program.}
-    \label{fig:swapAsToBs}
-\end{wrapfigure}
+\subsection{Symbolic transductions}
 
 \AP
 Consider the program in \cref{fig:swapAsToBs}, which swaps all \texttt{a}s to
@@ -49,6 +44,11 @@ $\forall_{a\in A}, f^{-1}(a) = \{a\}$), it holds that:
 \end{equation*}
 Where $f^*$ is the extension of $f$ to $\mathcal{D}^*$, defined by applying $f$
 to every letter.
+\begin{wrapfigure}{r}{0.5\textwidth}
+    \input{figs/swap_as_bs.tex}
+    \caption{The \texttt{swapAsToBs} program.}
+    \label{fig:swapAsToBs}
+\end{wrapfigure}
 
 Functions defined by
 \kl{for-programs} (of type $\TOut[1] \to \TOut[1]$)
