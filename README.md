@@ -17,6 +17,12 @@ The program can be run using the following methods:
 polycheck -i <input_file> -b <pre_condition_file> -a <post_condition_file>
 ```
 
+Or, when using stack: 
+
+```bash
+stack run polycheck -- -i <input_file> -b <pre_condition_file> -a <post_condition_file>
+```
+
 A list of examples input files and pre/post condition files can be found in the
 `polyreg/assets` subdirectory. The program will output the result of the model
 checking process, which can be, for every solver, one of the following:
@@ -32,6 +38,12 @@ the port `3000` and will provide a web interface to run the model checker.
 
 ```bash
 polycheck --web
+```
+
+Or when using stack: 
+
+```bash
+stack run polycheck -- --web
 ```
 
 ## Installing

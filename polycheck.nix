@@ -70,7 +70,7 @@ let
     # build the docker image for the polycheck project
     # it contains the polycheck executable,
     polycheck-img-small = pkgs.dockerTools.buildImage {
-        name = "aliaume/polycheck-small";
+        name = "xxx/polycheck-small";
         tag  = "latest";
         copyToRoot = pkgs.buildEnv { 
             name = "image-root-small";
