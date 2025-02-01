@@ -2,77 +2,63 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
+We have show that the theory of \kl{polyregular functions} can be used to
+verify close to real-world programs, and have implemented a prototype tool that
+can discharge simple verification goals to existing solvers. We believe that
+there is potential for further investigations in this direction.
 
-\subsection{Further work}
-\begin{enumerate}
-    \item \textbf{Optimization.}
-    \begin{enumerate}
-        \item \emph{Simple-for programs.} The benchmarks indicate that the most promising optimization direction is minimizing the boolean depth.
-        This can be approached in two ways: post-compilation optimization and improving the initial code generation. 
-        We have already implemented basic post-compilation optimizations,
-        such as constant propagation and dead code elimination,
-        but there is significant potential for further improvements.
+\paragraph{Optimizations.} The benchmarks indicate that one of the most
+promising source of optimizations is managing the \kl{boolean depth} of the
+generated \kl{simple for-programs} during compilation. This can be achieved by
+post-compilation optimizations (constant propagation, dead code elimination),
+or by improving the code generation mechanism itself, which are low-hanging
+fruits for future work. One source of the boolean variables seems to be the
+\kl{elimination of Literal Equality} step (\ref{item:lit_elim}), which could be
+mitigated by adding explicit successor and predecessor predicates to the
+language of \kl{simple for-programs}.
+
+At the level of \kl{first-order interpretations}, we have identified several
+directions for improving their efficiency. One optimization is computing the
+sequential composition of programs in a way that minimizes the number of
+quantified boolean variables. Similarly, there seems to be potential for
+performing direct substitutions instead of quantifying over the variables in a
+lot of cases. Finally, our current approach for handling loops introduces
+alternation of quantifiers, which could be reduced by exploiting the
+monotonicity of the state transformations.
     
-        So far, we have not implemented any optimizations in the translation process itself, but we believe that this could be a fruitful direction.
-        Based on the benchmarks, we believe that \kl{elimination of Literal Equality} is a particularly costly step of the translation
-        that introduces a large number of boolean variables. We should investigate whether this can be mitigated. Since, the boolean variables introduced
-        in this step are used to simulate counters, it might be useful to introduce explicit counters and position successor operations (i.e. $x + 1$)
-        in the language of simple-for programs.
-    
-        \item \emph{First-order interpretation.} At this level, optimization should focus on reducing quantifier depth.
-        As with simple-for programs, this can be approached either by applying static optimizations
-        to the generated formulas or by improving the initial translation process. 
-        So far, we have not implemented static formula optimizations, relying instead on solvers' capabilities.
-        However, it might be still beneficial to explore this direction.
-    
-        On the translation side, we have implemented one significant optimization: Instead of structuring sequential compositions in a left-associative sequence,
-        we structure them in a balanced binary-tree fashion. For example, instead of \(\psi_1 (\psi_2, (\psi_3, \psi_4))\),
-        we construct \(((\psi_1, \psi_2), (\psi_3, \psi_4))\), reducing  the overhead quantifier depth from \(n\) to \(\log n\).
-        Additional potential optimizations include eliminating quantification while composing simple programs.
-        For example, instead of computing the composition \( [[x := \text{true}]]; \psi \) using quantification,
-        we could computing directly with the following substitution \(\psi\) with \(\psi[\text{In } x := \text{true}]\).
-        We should also explore simplifying some formulas by using arithmetic operations such as successor, predecessor or addition.
-    
-        The final potential optimization that we would like to discuss considers the treatment of loops. It is based on the observation that 
-        if a loop tracks $n$ variables and has already undergone $n$ updates, we do not need to need to verify \kl{completes} of the loop, 
-        as no more state changes are possible. Based on this observation, we might be able to significantly reduce the number of universal 
-        quantification in the generated formulas.
-    \end{enumerate}
+\paragraph{Solver Integration.} The benchmarks show that the different solvers,
+even on an identical input, behave quite differently. However, there is a lot
+of potential for optimizing the input and parameters of the solvers for our
+particular use-case. An interesting research direction would be to reduce the
+verification problem to emptiness of LTL formulas (rather than first-order
+formulas on words) and use LTL solvers such as SPOT \cite{SPOT}.
 
-    \item \textbf{Understanding the solvers.} The performance of the solvers is highly dependent on the structure of the formulas.
-    We would like to investigate how the solvers work internally and how we can structure the formulas to make them more efficient.
-    For example, reducing the number of universal quantifier, described at the previous item might improve the performance of MONA.
-    An interesting research direction would be to reduce the verification problem to emptiness of LTL formulas (rather than first-order formulas on
-    words) and use LTL solvers.
+\paragraph{Modular Verification.} The benchmarks show that one of the main
+bottlenecks of our approach is the expansion of loops (whether in the
+translation to \kl{simple for-programs} or in the translation to
+\kl{first-order interpretations}). For this reason, the ability to verify
+statements of the form \texttt{for (i, e) in enumerate(f(x)) do s done}, based
+on a specification of $f$ given as a Hoare triple, would be a significant
+improvement. However, it remains unclear how to integrate such modular
+verification in our current approach.
 
-    \item \textbf{Modular verification.} Expanding the for loops is a quite expensive step of the translation process. For this reason,
-     it would be very helpful to verify statements of the form \texttt{for (i, e) in enumerate(f(x)) do s done}, based on the 
-     specification of $f$ given as a Hoare triple, rather than by expanding the for loop. However, as for now our approach is not 
-     modular, it is unclear whether this is possible. 
+\paragraph{Language Design.} As mentioned in \cref{sec:high-level},
+\kl{for-programs} extended with unrestricted booleans also enjoy a decidable
+verification of Hoare triples. However, the verification algorithm uses of
+monadic second-order logic (MSO) over words instead of first-order logic. While
+this prohibits the use of traditional SMT solvers, this logic can be handled by
+the \kl{MONA} solver, and it might be interesting to implement and benchmark
+the unrestricted version of the language. 
 
-    \item \textbf{MSO and unrestricted booleans.} As mentioned in
-        \cref{sec:high_level}, the version of \kl{high-level language} with
-        unrestricted booleans is also decidable, but it requires the use of
-        monadic second-order logic (MSO) for word instead of first-order logic.
-        This logic can be handled by the MONA solver, and it might be
-        interesting to implement and benchmark the unrestricted version of the
-        language.
+Another interesting extension of the language would be to allow the use of
+complex types, such as pairs and records. This would make the language closer
+to real use cases such as configuration management and data processing. It
+would require extending the specification language to structured data types,
+bypassing the current limitation that we can only verify string-to-string
+transformations.
 
-    \item \textbf{Richer type system.} For now, the the type system of the
-        high-level language is very simple, with list being the only
-        constructor for nested words. The language could be extended with more
-        complex types, such as pairs and records. This would make our language
-        more usable, making it feasible, to use it to implement transformations
-        on more complex data structures (such as JSON). This would require
-        extending the specification language to structured data types,
-        bypassing the current limitation that we can only verify
-        transformations that ultimately operate on words.
-    
-    \item \textbf{Integrating with existing tools.} For
-        example, we could implement a translation from a subset of Python to
-        our high-level language, allowing users to verify parts of their Python
-        programs. Another interesting project, would be to
-        integrate our tool with the Why3 platform, allowing the users
-        to discharge the certification of suitable goals to our tool.
 
-\end{enumerate}
+\paragraph{Tooling Integration.} It would be a natural next step to integrate
+our tool with existing tools for program verification, such as \kl{Why3}
+\cite{Why3}, or with test suits for Python programs by generating triples from
+decorated Python code.
