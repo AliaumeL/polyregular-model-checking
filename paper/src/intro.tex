@@ -48,37 +48,38 @@ provide an efficient reduction of the verification of Hoare triples to the
 satisfiability of a \kl{first-order formula on words} in \cref{sec:pullback}.
 In order to verify \kl{for-programs}, we compile them into \kl{simple
 for-programs} in \cref{sec:htl}, and then compile \kl{simple for-programs} into
-\kl{$\FO$-interpretations} in \cref{sec:low-level}. These steps 
-are summarized in the following diagram:
-\begin{center}
-    \begin{tikzpicture}[
-        syntaxNode/.style={
-                    rectangle, draw, 
-                    text width=5em, 
-                    text centered, 
-                    rounded corners, 
-                    minimum height=4em}
-    ]
-        %
-        % Write a tikz picture with nodes explaining the different 
-        % steps of the rewriting system 
-        % 
-        % (a) high-level language
-        % (b) simple for-programs
-        % (c) first-order string-to-string interpretations
-        % (c1) precondition
-        % (c2) postcondition
-        % (d) first-order formula
-        \node[syntaxNode] (a) {\kl{For-program}};
-        \node[syntaxNode, right=of a] (b)  {\kl{Simple for-program}};
-        \node[syntaxNode, right=of b] (c)  {\kl{$\FO$ interpretation}};
-        \node[syntaxNode, right=of c] (d) {\kl{First-order formula}};
-
-        \draw[->] (a) -- node[above,rotate=90,xshift=2.3em,yshift=-0.3em] {\cref{sec:htl}} (b);
-        \draw[->] (b) -- node[above,rotate=90,xshift=2.3em,yshift=-0.3em] {\cref{sec:low-level}} (c);
-        \draw[->] (c) -- node[above,rotate=90,xshift=2.7em,yshift=-0.3em] {\cref{sec:pullback}} (d);
-    \end{tikzpicture}
-\end{center}
+\kl{$\FO$-interpretations} in \cref{sec:low-level}. 
+%These steps 
+%are summarized in the following diagram:
+%\begin{center}
+%    \begin{tikzpicture}[
+%        syntaxNode/.style={
+%                    rectangle, draw, 
+%                    text width=5em, 
+%                    text centered, 
+%                    rounded corners, 
+%                    minimum height=4em}
+%    ]
+%        %
+%        % Write a tikz picture with nodes explaining the different 
+%        % steps of the rewriting system 
+%        % 
+%        % (a) high-level language
+%        % (b) simple for-programs
+%        % (c) first-order string-to-string interpretations
+%        % (c1) precondition
+%        % (c2) postcondition
+%        % (d) first-order formula
+%        \node[syntaxNode] (a) {\kl{For-program}};
+%        \node[syntaxNode, right=of a] (b)  {\kl{Simple for-program}};
+%        \node[syntaxNode, right=of b] (c)  {\kl{$\FO$ interpretation}};
+%        \node[syntaxNode, right=of c] (d) {\kl{First-order formula}};
+%
+%        \draw[->] (a) -- node[above,rotate=90,xshift=2.3em,yshift=-0.3em] {\cref{sec:htl}} (b);
+%        \draw[->] (b) -- node[above,rotate=90,xshift=2.3em,yshift=-0.3em] {\cref{sec:low-level}} (c);
+%        \draw[->] (c) -- node[above,rotate=90,xshift=2.7em,yshift=-0.3em] {\cref{sec:pullback}} (d);
+%    \end{tikzpicture}
+%\end{center}
 Then, in \cref{sec:benchmarks}, we present
 benchmarks of our implementation on various examples, discussing
 the complexity of the transformations and the main bottlenecks of our approach.
