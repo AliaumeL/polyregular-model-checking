@@ -170,9 +170,13 @@ encodeMona (EncodeParams alphabet tags) formula = unlines $ [preamble, alphabetV
 parseMonaOutput :: String -> ExportResult
 parseMonaOutput output = if "Formula is valid" `isInfixOf` output then Sat else if "A satisfying example" `isInfixOf` output then Sat else if "Formula is unsatisfiable" `elem` lines output then Unsat else Unknown
 
+timeLimit :: Int 
+timeLimit = 30
+
+
 runMona :: String -> IO ExportResult
 runMona input = withTempFileContent input $ \ifile -> do
-        outputCmd <- timeout 10000000 $ safeRunProcess "mona" ["-o2", "-q", ifile]
+        outputCmd <- timeout (10^6 * timeLimit)  $ safeRunProcess "mona" ["-o2", "-q", ifile]
         case outputCmd of
             Just (Left err)     -> do
                 putStrLn $ "File: " ++ ifile
