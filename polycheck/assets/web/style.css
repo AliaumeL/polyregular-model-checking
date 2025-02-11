@@ -325,10 +325,37 @@ div#output div#output-content {
   text-transform: uppercase;
 }
 
+div#output div#ouptut-run-result {
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "input"
+        "output";
+}
+div#output div#output-run-result input {
+    display: block;
+    margin-top: 10px;
+    grid-area: input;
+    padding: 10px;
+    border: 1px solid #333;
+    border-radius: 5px;
+}
+div#output div#output-run-result p {
+    word-break: break-all;
+    text-wrap: wrap;
+    display: block;
+    overflow: hidden;
+    grid-area: output;
+}
+
 div#output-warn {
     border: 1px solid #333;
     border-radius: 10px;
     padding: 10px;
+    grid-area: output;
 }
 
 article#about {

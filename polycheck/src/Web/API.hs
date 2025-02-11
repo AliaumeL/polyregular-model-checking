@@ -31,6 +31,7 @@ import ForPrograms.Simple.Optimization(simplifyForProgram)
 import ForPrograms.HighLevel (Program)
 import ForPrograms.HighLevel.Typing.Inference   (inferAndCheckProgram)
 import ForPrograms.HighLevel.Typing(ValueType(..))
+import ForPrograms.HighLevel.Interpreter (runProgramString)
 import Parser.ParseHighLevel (parseHighLevel,PartiallyTypedProgram)
 import Parser.ParseFirstOrder (parseWithoutTags)
 import ForPrograms.Simple (prettyPrintForProgram)
@@ -48,6 +49,17 @@ import Debug.Trace
 
 catchAny :: IO a -> (SomeException -> IO a) -> IO a
 catchAny = Control.Exception.catch
+
+data RunRequest = RunRequest {
+    runRequestProgram :: String,
+    runRequestInput   :: String
+} deriving (Show, Eq, Generic, FromJSON, ToJSON)
+
+data RunResponse = RunResponse {
+    runResponseProgram :: String,
+    runResponseInput   :: String,
+    runResponseOutput  :: String
+} deriving (Show, Eq, Generic, FromJSON, ToJSON)
 
 data VerifyRequest = VerifyRequest {
     program  :: String,
@@ -206,6 +218,20 @@ webApp = scotty 3000 $ do
     name    <- captureParam "name"
     content <- liftAndCatchIO $ readFile $ "assets/Formulas/" ++ name
     json $ AssetContent name content
+  Web.Scotty.post "/api/code/run/" $ do
+    req <- jsonData :: ActionM RunRequest
+    let p = runRequestProgram req
+    let i = runRequestInput req
+    let progParsed = (do 
+            partiallyTyped  <- parseHighLevel p
+            inferAndCheckProgram' partiallyTyped)
+    case progParsed of
+        Left err -> json $ RunResponse p i err
+        Right p'  -> do
+            let res = runProgramString (fmap (const ()) p') i
+            case res of 
+                Left err  -> json $ RunResponse p i (show err)
+                Right res -> json $ RunResponse p i res
   Web.Scotty.post "/api/solver/:name/verify" $ do
     req <- jsonData :: ActionM VerifyRequest
     nam <- captureParam "name"

@@ -12,7 +12,8 @@ window.onload = () => {
     const output        = document.getElementById('output-view');
     const outputWarn    = document.getElementById('output-warn');
     const submitButton  = document.getElementById('submit');
-
+    const runInputText  = document.getElementById('run-input');
+    const runOutputSpan = document.getElementById('run-output');
 
     const codeAssetList = {};
     const formAssetList = {};
@@ -65,10 +66,12 @@ window.onload = () => {
                 outputWarn.classList.remove('error');
                 outputWarn.classList.add('success');
                 submitButton.disabled = false;
+                runInputText.disabled = false;
             } else {
                 outputWarn.classList.remove('success');
                 outputWarn.classList.add('error');
                 submitButton.disabled = true;
+                runInputText.disabled = true;
             }
 
         })
@@ -139,6 +142,34 @@ window.onload = () => {
     postAsset.addEventListener('change', () => {
         postInput.value = formAssetList[postAsset.value].content;
         parseInputs();
+    });
+
+    /* on edit */
+    runInputText.addEventListener('input', () => {
+        /* post the { runRequestProgram: input , runRequestInput : content of the field } */
+        runOutputSpan.textContent = '💭 Running...';
+        return fetch('/api/code/run', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                runRequestProgram: codeInput.value, 
+                runRequestInput: runInputText.value
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.runResponseProgram === codeInput.value && data.runResponseInput === runInputText.value) {
+                runOutputSpan.classList.remove('error');
+                runOutputSpan.textContent = data.runResponseOutput;
+            }
+        })
+        .catch(err => {
+            runOutputSpan.classList.add('error');
+            runOutputSpan.textContent = `Error: ${err.message}`;
+            console.error(err);
+        });
     });
 
     codeInput.addEventListener('input', parseInputs);
