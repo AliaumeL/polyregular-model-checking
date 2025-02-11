@@ -28,7 +28,8 @@
         "language": "polycheck",
         "scopeName": "source.polycheck",
         "path": "./syntaxes/polycheck-grammar.js",
-        "embeddedLanguages": {}
+        "embeddedLanguages": {},
+        "highlights": "./queries/highlights.scm"
       }
     ]
   },

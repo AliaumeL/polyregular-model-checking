@@ -67,5 +67,9 @@ module.exports = grammar({
     type2: $ => 'Bool',
 
     bin_op: $ => choice('=', '!=', '<=', '<', '>=', '>', '===', '!==', seq('=', $.type, '=')),
+
+    keyword: $ => choice(
+      'def', 'for', 'in', 'enumerate', 'do', 'done', 'if', 'then', 'endif', 'else', 'yield', 'return', 'let', 'mut', 'False', 'True', 'not', 'and', 'or', 'with'
+    )
   }
 });

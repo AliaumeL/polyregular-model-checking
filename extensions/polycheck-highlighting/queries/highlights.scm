@@ -1,0 +1,11 @@
+; queries/highlights.scm
+((program) @program)
+((func) @function)
+((stmt) @statement)
+((expr) @expression)
+((identifier) @variable)
+((char) @string)
+((string) @string)
+((type) @type)
+((bin_op) @operator)
+((keyword) @keyword)
