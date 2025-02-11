@@ -1,0 +1,39 @@
+{
+  "name": "polycheck-highlighting",
+  "displayName": "polycheck-highlighting",
+  "description": "Syntax highlighting for the polycheck language.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.97.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "polycheck",
+        "aliases": [
+          "polycheck",
+          "polycheck"
+        ],
+        "extensions": [
+          ".pr"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "polycheck",
+        "scopeName": "source.polycheck",
+        "path": "./syntaxes/polycheck-grammar.js",
+        "embeddedLanguages": {}
+      }
+    ]
+  },
+  "dependencies": {
+    "tree-sitter": "^0.22.4",
+    "tree-sitter-cli": "^0.25.1"
+  }
+}
