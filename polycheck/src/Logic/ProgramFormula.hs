@@ -596,35 +596,14 @@ iterOverVar dir p prog = iterOverVarNew dir p Nothing prog
 -- the same as "iterOverVar" except we stop *before* the variable pmax
 -- given in argument. Note that depending on the direction, this means
 -- "before" or "after" in the order of the word ^^.
-iterOverVarBeforeLazy :: Direction -> String -> String -> ProgramFormula tag  -> ProgramFormula tag
-iterOverVarBeforeLazy _   _ _   (ProgramFormula φ iφ oφ) | M.size oφ == 0 = mempty
-iterOverVarBeforeLazy dir p pmax prog = ifThenElse nonEmptyRange (iterOverVarNew dir p (Just $ In pmax) prog) mempty
+iterOverVarBefore :: Direction -> String -> String -> ProgramFormula tag  -> ProgramFormula tag
+iterOverVarBefore _   _ _   (ProgramFormula φ iφ oφ) | M.size oφ == 0 = mempty
+iterOverVarBefore dir p pmax prog = ifThenElse nonEmptyRange (iterOverVarNew dir p (Just $ In pmax) prog) mempty
     where
         nonEmptyRange = case dir of 
                             LeftToRight -> quantifyList [("k", Pos, Exists)] $ FTestPos Lt (Local 0 "k") (In pmax)
                             RightToLeft -> quantifyList [("k", Pos, Exists)] $ FTestPos Gt (Local 0 "k") (In pmax)
 
--- Test if
--- LeftToRight: exists y before pmax
--- RightToLeft: exists y after pmax
--- if the condition holds, call iterOverVarBeforeLazy,
--- otherwise, the program formula is "every input is mapped to the same output"
-iterOverVarBefore :: Direction -> String -> String -> ProgramFormula tag  -> ProgramFormula tag
-iterOverVarBefore dir p pmax (ProgramFormula φ iφ oφ) = ProgramFormula ξ iξ oξ
-    where
-        cond = if dir == LeftToRight then FTestPos Lt (Local 0 "y") (In pmax)
-                                     else FTestPos Gt (Local 0 "y") (In pmax)
-        qcond = quantifyList [("y", Pos, Exists)] cond
-
-        (ProgramFormula θ iθ oθ) = iterOverVarBeforeLazy dir p pmax (ProgramFormula φ iφ oφ)
-
-        identityFormula = andList $ do
-            (x, s) <- M.toList oφ
-            return $ FBin Equiv (FVar $ Out x) (FVar $ In x)
-
-        ξ = FBin Conj (FBin Impl qcond θ) (FBin Impl (FNot qcond) identityFormula)
-        iξ = iθ
-        oξ = oθ
 
 -- computeUntil path prog
 -- is what happens to the variable once we follow path "path" inside the program "prog"
