@@ -24,6 +24,20 @@ data ProgramFormula tag  = ProgramFormula {
     outputVars :: Map String Sort
 } deriving (Eq) 
 
+data ProgramMapping tag = ProgramMapping {
+    mapping :: Map String (Formula tag),
+    mInputVars  :: Map String Sort,
+    mOutputVars :: Map String Sort
+} deriving (Eq, Show)
+
+data ProgramMF tag = PFormula (ProgramFormula tag) | PMapping (ProgramMapping tag)
+
+programMappingToFormula :: ProgramMapping tag  -> ProgramFormula tag
+programMappingToFormula (ProgramMapping m i o) = ProgramFormula f i o
+    where
+        f = andList $ [ FBin Equiv (FVar $ Out x) fx | (x, fx) <- M.toList m ]
+
+
 printProgramFormulaGeneric :: ProgramFormula tag  -> String
 printProgramFormulaGeneric (ProgramFormula φ iφ oφ) = unlines $ 
     ["INPUT: " ++ show iφ, "OUTPUT: " ++ show oφ, "FORMULA: " ++ showFormulaGeneric φ]
@@ -96,10 +110,6 @@ evalProgramFormula (ProgramFormulaValuation allTags w pos bools tgs) (ProgramFor
                 In x      -> return ("in_" ++ x, TagVal t)
                 Out x     -> return ("out_" ++ x, TagVal t)
                 _         -> error "evalProgramFormula: local tag variable"
-
-
-
-
 
 ignoreOutputVarUnsafe :: String -> ProgramFormula tag  -> ProgramFormula tag 
 ignoreOutputVarUnsafe x (ProgramFormula φ iφ oφ) = ProgramFormula φ' iφ' oφ'
@@ -177,7 +187,114 @@ instance Semigroup (ProgramFormula tag ) where
 
 instance Monoid (ProgramFormula tag ) where
     mempty = ProgramFormula (FConst True) M.empty M.empty
+    mconcat [] = mempty 
+    mconcat [xs] = xs 
+    mconcat xs = let (firstHalf, secondHalf) = splitAt (length xs `div` 2) xs
+                 in mconcat firstHalf <> mconcat secondHalf
 
+substituteInInVars :: (Map String (Formula tag)) -> Formula tag  -> Formula tag
+substituteInInVars f (FVar (In x)) | M.member x f = f M.! x
+substituteInInVars f (FNot φ) = FNot $ substituteInInVars f φ
+substituteInInVars f (FBin op φ ψ) = FBin op (substituteInInVars f φ) (substituteInInVars f ψ)
+substituteInInVars f (FQuant q x s φ) = FQuant q x s $ substituteInInVars f φ
+substituteInInVars _ φ = φ
+
+substituteOutVars :: (Map String (Formula tag)) -> Formula tag  -> Formula tag
+substituteOutVars f (FVar (Out x)) | M.member x f = f M.! x
+substituteOutVars f (FNot φ) = FNot $ substituteOutVars f φ
+substituteOutVars f (FBin op φ ψ) = FBin op (substituteOutVars f φ) (substituteOutVars f ψ)
+substituteOutVars f (FQuant q x s φ) = FQuant q x s $ substituteOutVars f φ
+substituteOutVars _ φ = φ
+
+instance Semigroup (ProgramMapping tag) where
+    (ProgramMapping m1 i1 o1 ) <> (ProgramMapping m2 i2 o2 ) = ProgramMapping m i o
+        where
+            commonVars :: Map String Sort
+            commonVars = M.intersection o1 i2
+
+            erasedVars :: Map String Sort
+            erasedVars = (o2 `M.intersection` o1) `M.difference` i2
+
+            consumedButNotReproduced :: Map String Sort
+            consumedButNotReproduced = (o1 `M.intersection` i2) `M.difference` o2       
+
+            i :: Map String Sort
+            i = i1 `M.union` (i2 `M.difference` commonVars)
+
+            o :: Map String Sort
+            o = o2 `M.union` (o1 `M.difference` commonVars) `M.union` consumedButNotReproduced
+
+            keptAsInM1 :: Map String Sort
+            keptAsInM1 = o1 `M.difference` o2
+
+            --m1trimmed :: Map String (Formula tag)
+            m1trimmed = M.restrictKeys m1 (M.keysSet keptAsInM1)
+
+            --m2updated :: Map String (Formula tag)
+            m2updated = M.fromList $ do 
+                (x, fx) <- M.toList m2
+                return (x, substituteInInVars m1 fx)
+            
+            --m :: Map String (Formula tag)
+            m = m1trimmed `M.union` m2updated
+
+instance Monoid (ProgramMapping tag) where 
+    mempty = ProgramMapping M.empty M.empty M.empty
+
+instance Semigroup (ProgramMF tag) where 
+    PFormula φ <> PFormula ψ = PFormula $ φ <> ψ
+    PMapping m1 <> PMapping m2 = PMapping $ m1 <> m2
+    PMapping (ProgramMapping m im om ) <> PFormula (ProgramFormula phi iphi ophi) = PFormula $ ProgramFormula formula inputVars outputVars 
+        where
+            carriedVars = om `M.difference` ophi 
+            commonVars = M.intersection om iphi
+            inputVars = im `M.union` (iphi `M.difference` commonVars)
+            outputVars = om `M.union` carriedVars
+            formula' = substituteInInVars m phi
+            -- it is m restricted to carried vars, and transformed to a formula
+            equatingCarriedVars = andList [ FBin Equiv (FVar $ Out x) (m M.! x) | x <- M.keys carriedVars]
+            formula = andList [formula', equatingCarriedVars]
+    PFormula f <> PMapping m = PFormula $ programMappingToFormula m <> f
+
+isFormula :: ProgramMF tag -> Bool
+isFormula (PFormula _) = True
+isFormula _            = False
+
+fromFormula :: ProgramMF tag -> ProgramFormula tag
+fromFormula (PFormula f) = f
+
+isMapping :: ProgramMF tag -> Bool
+isMapping (PMapping _) = True
+isMapping _            = False
+
+fromMapping :: ProgramMF tag -> ProgramMapping tag
+fromMapping (PMapping m) = m
+
+partitionProgramMF :: [ProgramMF tag] -> [([ProgramMapping tag], [ProgramFormula tag])]
+partitionProgramMF [] = []
+partitionProgramMF xs = (fromMapping <$> mappings, fromFormula <$> formulas) : partitionProgramMF rest 
+    where 
+        (mappings, afterMappings) = span isMapping xs
+        (formulas, rest) = span isFormula afterMappings
+
+combineFormulasAndMappings :: [ProgramMapping tag] -> [ProgramFormula tag] -> ProgramMF tag
+combineFormulasAndMappings [] [] = PMapping $ mempty
+combineFormulasAndMappings mappings [] = PMapping $ mconcat mappings
+combineFormulasAndMappings [] formulas = PFormula $ mconcat formulas
+combineFormulasAndMappings mappings formulas = (PMapping $ mconcat mappings) <> (PFormula $ mconcat formulas)
+
+instance Monoid (ProgramMF tag) where
+    mempty = PFormula mempty
+    mconcat [] = mempty
+    mconcat xs = treeMultiple combined
+        where
+            partitioned = partitionProgramMF xs
+            combined = map (uncurry combineFormulasAndMappings) partitioned
+            treeMultiple [] = mempty
+            treeMultiple [x] = x
+            treeMultiple xs = (treeMultiple left) <> (treeMultiple right)
+                where
+                    (left, right) = splitAt (length xs `div` 2) xs
 
 withNewBoolVar :: String -> ProgramFormula tag  -> ProgramFormula tag 
 withNewBoolVar x p = ignoreOutputVar x $ withFalseInput x $ typeCheckOrFail p p
@@ -194,7 +311,12 @@ setTrueBoolean x = ProgramFormula φ iφ oφ
         iφ = M.empty
         oφ = M.singleton x Boolean
 
-
+setTrueBooleanMapping :: String -> ProgramMapping tag
+setTrueBooleanMapping x = ProgramMapping m iφ oφ
+    where
+        iφ = M.empty
+        oφ = M.singleton x Boolean
+        m   = M.singleton x (FConst True)
 
 boolExprToFormula :: SFP.BoolExpr -> Formula tag 
 boolExprToFormula (SFP.BVar (BName v)) = FVar $ In v
@@ -242,6 +364,43 @@ ifThenElse θ (ProgramFormula φ iφ oφ) (ProgramFormula ψ iψ oψ) = ProgramF
 
         oξ = totalOutputVars
 
+ifThenElseMapping :: Formula tag -> ProgramMapping tag  -> ProgramMapping tag  -> ProgramMapping tag
+ifThenElseMapping θ (ProgramMapping mφ iφ oφ ) (ProgramMapping mψ iψ oψ ) = ProgramMapping mξ iξ totalOutputVars 
+    where
+        totalOutputVars :: Map String Sort
+        totalOutputVars = oφ `M.union` oψ 
+
+        (iθ, _) = freeVars θ
+
+        iξ :: Map String Sort
+        iξ = iφ `M.union` iψ `M.union`  iθ `M.union` missingOutputφ `M.union` missingOutputψ
+
+        missingOutputφ :: Map String Sort
+        missingOutputφ = totalOutputVars `M.difference` oφ
+
+        missingOutputψ :: Map String Sort
+        missingOutputψ = totalOutputVars `M.difference` oψ
+
+        --identityMissingOutputφ :: Map String (Formula tag)
+        identityMissingOutputφ = M.union mφ $  M.fromList $ do 
+            (x, s) <- M.toList missingOutputφ
+            case s of 
+                Boolean -> return (x, (FVar $ In x))
+                _       -> error $ "ifThenElseMapping: output variable " ++ x ++ " is not a boolean"
+
+        --identityMissingOutputψ :: Map String (Formula tag)
+        identityMissingOutputψ = M.union mψ $ M.fromList $ do 
+            (x, s) <- M.toList missingOutputψ
+            case s of 
+                Boolean -> return (x, (FVar $ In x))
+                _       -> error $ "ifThenElseMapping: output variable " ++ x ++ " is not a boolean"
+        
+        -- mξ :: Map String (Formula tag)
+        mξ = M.fromList [ (x, FBin Disj (trueBranch x) (falseBranch x)) | x <- M.keys totalOutputVars ]
+            where 
+                trueBranch x = andList [θ, identityMissingOutputφ M.! x]
+                falseBranch x = andList [FNot θ, identityMissingOutputψ M.! x]
+        
 
 iterOverVarNew :: Direction -> String -> Maybe Var -> ProgramFormula tag  -> ProgramFormula tag
 iterOverVarNew _   _ _   (ProgramFormula φ iφ oφ) | M.size oφ == 0 = mempty
@@ -515,18 +674,39 @@ sfpToProgramFormula (SFP.ForProgram bs stmt) = withFalseInputs boolVars $ sfpStm
     where 
         boolVars = [ x | BName x <- bs ]
 
+-- sfpStmtToProgramFormula :: SFP.ForStmt -> ProgramFormula ()
+-- sfpStmtToProgramFormula (SFP.SetTrue (BName x)) = setTrueBoolean x
+-- sfpStmtToProgramFormula (SFP.If b s1 s2) = ifThenElse (boolExprToFormula b) (sfpStmtToProgramFormula s1) (sfpStmtToProgramFormula s2)
+-- sfpStmtToProgramFormula (SFP.PrintPos _) = mempty
+-- sfpStmtToProgramFormula (SFP.PrintLbl _) = mempty
+-- sfpStmtToProgramFormula (SFP.Seq ss) = mconcat $ map sfpStmtToProgramFormula ss
+-- sfpStmtToProgramFormula (SFP.For (PName p) dir bs stmt) = iterOverVar dir p subProgram
+--     where
+--         boolVars = [ x | BName x <- bs ]
+--         subProgram = withNewBoolVars boolVars $ sfpStmtToProgramFormula stmt
+
 sfpStmtToProgramFormula :: SFP.ForStmt -> ProgramFormula ()
-sfpStmtToProgramFormula (SFP.SetTrue (BName x)) = setTrueBoolean x
-sfpStmtToProgramFormula (SFP.If b s1 s2) = ifThenElse (boolExprToFormula b) (sfpStmtToProgramFormula s1) (sfpStmtToProgramFormula s2)
-sfpStmtToProgramFormula (SFP.PrintPos _) = mempty
-sfpStmtToProgramFormula (SFP.PrintLbl _) = mempty
-sfpStmtToProgramFormula (SFP.Seq ss) = mconcat $ map sfpStmtToProgramFormula ss
-sfpStmtToProgramFormula (SFP.For (PName p) dir bs stmt) = iterOverVar dir p subProgram
+sfpStmtToProgramFormula stmt = programMFToProgramFormula $ sfpStmtToProgramMF stmt
+
+programMFToProgramFormula :: ProgramMF () -> ProgramFormula ()
+programMFToProgramFormula (PMapping m) = programMappingToFormula m
+programMFToProgramFormula (PFormula ms) = ms 
+
+sfpStmtToProgramMF :: SFP.ForStmt -> ProgramMF ()
+sfpStmtToProgramMF (SFP.SetTrue (BName x)) = PMapping $ setTrueBooleanMapping x
+sfpStmtToProgramMF (SFP.If b s1 s2) =
+    case (sfpStmtToProgramMF s1, sfpStmtToProgramMF s2) of
+        (PMapping m1, PMapping m2) -> PMapping $ ifThenElseMapping (boolExprToFormula b) m1 m2
+        (m1, m2) -> PFormula $ ifThenElse (boolExprToFormula b) (programMFToProgramFormula m1) (programMFToProgramFormula m2)
+sfpStmtToProgramMF (SFP.PrintPos _) = PMapping mempty
+sfpStmtToProgramMF (SFP.PrintLbl _) = PMapping mempty
+sfpStmtToProgramMF (SFP.Seq ss) = mconcat $ map sfpStmtToProgramMF ss
+sfpStmtToProgramMF (SFP.For (PName p) dir bs stmt) = PFormula $ iterOverVar dir p subProgram
     where
         boolVars = [ x | BName x <- bs ]
-        subProgram = withNewBoolVars boolVars $ sfpStmtToProgramFormula stmt
+        subProgram = withNewBoolVars boolVars $ programMFToProgramFormula $ sfpStmtToProgramMF stmt
 
-
+    
 -- check if there is "a" in the input
 verySimpleForProgram :: SFP.ForProgram
 verySimpleForProgram = SFP.ForProgram [BName "seen_a"] $ 

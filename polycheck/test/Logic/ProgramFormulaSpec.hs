@@ -264,6 +264,9 @@ injectTagsProgramFormula x = x { formula = injectTags (formula x) }
 simplifyProgramFormula :: (Eq a) => ProgramFormula a -> ProgramFormula a
 simplifyProgramFormula x = x { formula = simplifyFormula (formula x) }
 
+quantifierDepthProgramFormula :: ProgramFormula a -> Int
+quantifierDepthProgramFormula = quantifierDepth . formula
+
 subseq :: Eq a => [a] -> [a] -> Bool
 subseq [] _ = True
 subseq _ [] = False
