@@ -1,0 +1,41 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "scopeName": "source.polycheck",
+  "patterns": [
+    {
+      "name": "comment.line.number-sign",
+      "match": "#.*$"
+    },
+    {
+      "name": "keyword.control.high_level_for_program",
+      "match": "\\b(def|for|in|enumerate|do|done|if|then|endif|else|yield|return|let|mut|False|True|not|and|or|with)\\b"
+    },
+    {
+      "name": "storage.type.high_level_for_program",
+      "match": "\\b(Char|Bool)\\b"
+    },
+    {
+      "name": "variable.parameter.function.high_level_for_program",
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b"
+    },
+    {
+      "name": "constant.numeric.high_level_for_program",
+      "match": "\\b(False|True)\\b"
+    },
+    {
+      "name": "string.quoted.single.high_level_for_program",
+      "begin": "'",
+      "end": "'"
+    },
+    {
+      "name": "string.quoted.double.high_level_for_program",
+      "begin": "\"",
+      "end": "\""
+    },
+    {
+      "name": "keyword.operator.high_level_for_program",
+      "match": "(=|!=|<=|<|>=|>|===|!==|:=)"
+    }
+  ],
+  "repository": {},
+}
