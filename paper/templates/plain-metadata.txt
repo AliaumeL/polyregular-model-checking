@@ -1,0 +1,9 @@
+$title$
+
+$for(author)$
+$author$
+$endfor$
+
+$abstract$
+
+$for(keywords)$$keywords$$sep$, $endfor$
