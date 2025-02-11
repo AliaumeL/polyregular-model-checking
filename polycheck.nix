@@ -50,6 +50,7 @@ let
                   mona
                   pkgs.cvc5
                   pkgs.z3
+                  pkgs.alt-ergo
         ];
     };
 

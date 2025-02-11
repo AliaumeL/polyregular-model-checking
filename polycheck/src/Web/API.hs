@@ -184,6 +184,9 @@ checkParseErrors (VerifyRequest p σ τ) = ParseResponse progErr preErr postErr
 
 webApp :: IO ()
 webApp = scotty 3000 $ do
+  get "/qrcode.png" $ do
+    setHeader "Content-Type" "image/png"
+    file "assets/web/qrcode.png"
   get "/style.css" $ do 
     setHeader "Content-Type" "text/css"
     file "assets/web/style.css"

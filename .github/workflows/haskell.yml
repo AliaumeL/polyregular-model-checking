@@ -48,12 +48,14 @@ jobs:
           cd polyregular-model-checking/polycheck
           # --nix to use nix dependencies
           # --allow-different-user because github changes the user
+          export NIXPKGS_ALLOW_UNFREE=1
           stack init --nix --nix-packages "zlib" --allow-different-user
           stack build --nix --nix-packages "zlib" --allow-different-user
       - name: Run test suite
         run: |
           cd polyregular-model-checking/polycheck
           # disable test suite for the moment because it is too long
+          export NIXPKGS_ALLOW_UNFREE=1
           stack test --nix --nix-packages "zlib"  --allow-different-user
 
   benchmarks:
@@ -66,9 +68,11 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
       - name: Build benchmarking tool
         run: |
+          export NIXPKGS_ALLOW_UNFREE=1
           nix-build ./polycheck.nix -A polycheck
       - name: Run benchmarking tool
         run: |
+          export NIXPKGS_ALLOW_UNFREE=1
           cd polycheck
           ../result/bin/benchmarker -d ./assets/HighLevel/ > benchmarks.json
       - name: Upload benchmarks
