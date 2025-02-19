@@ -302,8 +302,6 @@ withNewBoolVar x p = ignoreOutputVar x $ withFalseInput x $ typeCheckOrFail p p
 withNewBoolVars :: [String] -> ProgramFormula tag  -> ProgramFormula tag 
 withNewBoolVars xs p = foldr withNewBoolVar p xs
 
-
-
 setTrueBoolean :: String -> ProgramFormula tag 
 setTrueBoolean x = ProgramFormula φ iφ oφ
     where
@@ -653,19 +651,19 @@ sfpToProgramFormula (SFP.ForProgram bs stmt) = withFalseInputs boolVars $ sfpStm
     where 
         boolVars = [ x | BName x <- bs ]
 
--- sfpStmtToProgramFormula :: SFP.ForStmt -> ProgramFormula ()
--- sfpStmtToProgramFormula (SFP.SetTrue (BName x)) = setTrueBoolean x
--- sfpStmtToProgramFormula (SFP.If b s1 s2) = ifThenElse (boolExprToFormula b) (sfpStmtToProgramFormula s1) (sfpStmtToProgramFormula s2)
--- sfpStmtToProgramFormula (SFP.PrintPos _) = mempty
--- sfpStmtToProgramFormula (SFP.PrintLbl _) = mempty
--- sfpStmtToProgramFormula (SFP.Seq ss) = mconcat $ map sfpStmtToProgramFormula ss
--- sfpStmtToProgramFormula (SFP.For (PName p) dir bs stmt) = iterOverVar dir p subProgram
---     where
---         boolVars = [ x | BName x <- bs ]
---         subProgram = withNewBoolVars boolVars $ sfpStmtToProgramFormula stmt
-
 sfpStmtToProgramFormula :: SFP.ForStmt -> ProgramFormula ()
-sfpStmtToProgramFormula stmt = programMFToProgramFormula $ sfpStmtToProgramMF stmt
+sfpStmtToProgramFormula (SFP.SetTrue (BName x)) = setTrueBoolean x
+sfpStmtToProgramFormula (SFP.If b s1 s2) = ifThenElse (boolExprToFormula b) (sfpStmtToProgramFormula s1) (sfpStmtToProgramFormula s2)
+sfpStmtToProgramFormula (SFP.PrintPos _) = mempty
+sfpStmtToProgramFormula (SFP.PrintLbl _) = mempty
+sfpStmtToProgramFormula (SFP.Seq ss) = mconcat $ map sfpStmtToProgramFormula ss
+sfpStmtToProgramFormula (SFP.For (PName p) dir bs stmt) = iterOverVar dir p subProgram
+    where
+        boolVars = [ x | BName x <- bs ]
+        subProgram = withNewBoolVars boolVars $ sfpStmtToProgramFormula stmt
+
+-- sfpStmtToProgramFormula :: SFP.ForStmt -> ProgramFormula ()
+-- sfpStmtToProgramFormula stmt = programMFToProgramFormula $ sfpStmtToProgramMF stmt
 
 programMFToProgramFormula :: ProgramMF () -> ProgramFormula ()
 programMFToProgramFormula (PMapping m) = programMappingToFormula m
