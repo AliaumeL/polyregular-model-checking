@@ -5,23 +5,26 @@ author:
     email: ad.lopez@uw.edu.pl
     affiliation: University of Warsaw, Poland
     orcid: "0000-0002-4205-327X"
+    funding: |
+      Aliaume Lopez was supported by the Polish National Science Centre (NCN) grant "Polynomial finite state computation" (2022/46/A/ST6/00072).
   - name: Rafał Stefański
     email: rafal.stefanski@mimuw.edu.pl
     initials: R. Stefański
     affiliation: University of Warsaw, Poland
     orcid: "0000-0002-8439-4056"
+    funding: |
+      Rafał Stefański has been partly supported by the European Research Council (ERC) 
+      under the European Union's Horizon 2020 innovation program (grant PROCONTRA-885666).
 abstract: |
-  We reduce the model checking problem for a subset of Python
-  to
-  the satisfiability of a first-order formula over finite words,
-  which is known to be decidable. The reduction is based on the theory
-  of polyregular functions, a recently developed generalization of
-  regular languages to polynomial output string-to-string
-  functions.
-  We implemented this reduction in a verification tool called PolyCheck, 
-  that can use
-  both automata-based solvers and 
-  classical SMT solvers as backends.
+  We introduce a high-level language with Python-like syntax 
+  for string-to-string, polyregular, first-order definable transductions.
+  This language features function calls, boolean variables, and nested
+  for-loops. We devise and implement a complete decision procedure for
+  the verification of such programs against a first-order specification.
+  The decision procedure reduces the verification problem to the decidable first-order
+  theory of finite words (extensively studied in automata theory), which we discharge 
+  using either complete tools specific to this theory (MONA),
+  or to general-purpose SMT solvers (Z3, CVC5).
 acknowledgements: |
   We would like to thank Arnav Garg and Ojas Maheshwari 
   for their participation in the early stage of this project.
