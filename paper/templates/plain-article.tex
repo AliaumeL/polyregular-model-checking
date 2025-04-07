@@ -100,7 +100,7 @@ $if(title)$
 $endif$
 \author{
 $for(author)$
-$author.name$$for(author.affiliation)$\thanks{$author.affiliation$}$endfor$
+$author.name$$for(author.affiliation)$\thanks{$author.affiliation$. $author.funding$}$endfor$
 $sep$ \and
 $endfor$
 }
@@ -136,6 +136,12 @@ $endif$
 
 % Include the content of the paper
 $body$
+
+% Include the acknowledgements
+$if(acknowledgements)$
+\section*{Acknowledgements}
+$acknowledgements$
+$endif$
 
 % Include the bibliography
 $if(bibliography)$
