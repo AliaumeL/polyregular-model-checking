@@ -2,7 +2,7 @@
 bibliography: papers.bib
 draft: false
 final: false
-anonymous: true
+anonymous: false
 libraries:
     - lib/pandoc
     - lib/aliaume

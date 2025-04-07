@@ -74,17 +74,17 @@
 \input{lib/maths}
 \input{knowledges.kl}
 
-\newcommand{\repositoryUrl}{\url{https://anonymous.4open.science/r/polyregular-model-checking-73A0}}
+\newcommand{\repositoryUrl}{\url{https://github.com/AliaumeL/polyregular-model-checking}}
 
 \begin{document}
 %
 \title{Polyregular Model Checking}
 
 \author{
-    Anonymized for review
-}
-\authorrunning{Anonymized for review}
-\institute{Anonymized for review}
+        Aliaume Lopez\inst{1}\orcidID{0000-0002-4205-327X} \and
+        Rafał Stefański\inst{1}\orcidID{0000-0002-8439-4056}}
+\authorrunning{A. Lopez and R. Stefański}
+\institute{University of Warsaw}
 
 \date{\today}
 
@@ -92,7 +92,7 @@
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-    We reduce the model checking problem for a subset of Python to the satisfiability of a first-order formula over finite words, which is known to be decidable. The reduction is based on the theory of polyregular functions, a recently developed generalization of regular languages to polynomial output string-to-string functions. We implemented this reduction in a verification tool called PolyCheck, that can use both automata-based solvers and classical SMT solvers as backends.
+    We introduce a high-level language with Python-like syntax for string-to-string, polyregular, first-order definable transductions. This language features function calls, boolean variables, and nested for-loops. We devise and implement a complete decision procedure for the verification of such programs against a first-order specification. The decision procedure reduces the verification problem to the decidable first-order theory of finite words (extensively studied in automata theory), which we discharge using either complete tools specific to this theory (MONA), or to general-purpose SMT solvers (Z3, CVC5).
 \end{abstract}
 
 % Include the content of the paper
@@ -105,6 +105,8 @@
 \input{src/conclusion.tex}
 
 % Include acknowledgements
+\section*{Acknowledgements}
+We would like to thank Arnav Garg and Ojas Maheshwari for their participation in the early stage of this project.
 
 % Include the bibliography
 \bibliographystyle{splncs04}
