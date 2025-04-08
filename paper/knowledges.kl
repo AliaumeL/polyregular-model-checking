@@ -63,6 +63,7 @@
  | first-order formula on words
  | first-order logic 
  | first-order logic on words
+ | first-order logic on finite words
 
 \knowledge{notion}
  | emptiness
@@ -140,13 +141,25 @@
  | input position variable
 
 
-% polyregular functions
+% regularity
+\knowledge{notion}
+ | regularity preserving
+ | regularity preserving functions
+ | regularity preserving property
+
+% polyregular functions / linear regular
+\knowledge{notion}
+ | linear regular functions
+ | linear regular function
+
 
 \knowledge{notion}
  | first-order polyregular functions
  | first-order polyregular function
+ | star-free polyregular functions
 \knowledge{notion}
  | polyregular functions
+ | two-way deterministic transducers with nested pebbles
 
 %solvers
 
