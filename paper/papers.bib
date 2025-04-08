@@ -283,6 +283,43 @@
   year          = {1969},
 }
 
+@article{TRAK66,
+  author     = {Trakhtenbrot, Boris A.},
+  doi        = {10.1090/trans2/059/02},
+  isbn       = {9780821817599},
+  journal    = {American Mathematical Society Translations},
+  number     = {2},
+  pages      = {23--55},
+  title      = {Finite automata and the logic of one-place predicates},
+  volume     = {59},
+  year       = {1966},
+}
+
+@article{SCHU61,
+  author     = {Schützenberger, Marcel P.},
+  doi        = {10.1016/S0019-9958(61)80020-X},
+  journal    = {Information and Control},
+  number     = {2-3},
+  pages      = {245--270},
+  title      = {On the definition of a family of automata},
+  volume     = {4},
+  year       = {1961},
+}
+
+@article{KLEE56,
+  author     = {Kleene, Stephen C.},
+  doi        = {10.1515/9781400882618-002},
+  journal    = {Automata studies},
+  pages      = {3--42},
+  publisher  = {Princeton University Press},
+  sha256     = {B01AD77C39D53088D62B09DBFBD04390AE57021B113DF645603E36B05710E621},
+  title      = {Representation of events in nerve nets and finite automata},
+  volume     = {34},
+  year       = {1956},
+}
+
+
+
 @article{SCHU65,
   abstract      = {An alternative definition is given for a family of subsets of a free monoid that has been considered by Trahtenbrot and by McNaughton.},
   author        = {Schützenberger, Marcel P.},
@@ -368,4 +405,62 @@ Claude March\'e and Andrei Paskevich},
   pdf = {adl/duret.22.cav.pdf},
   slides = {adl/duret.22.cav.slides.pdf},
   doi = {10.1007/978-3-031-13188-2_9}
+}
+
+
+@inbook{REINH02,
+  abstract   = {The aim of this chapter is to show a non-elementary lower bound for the complexity of translating logic to finite automata.},
+  address    = {Berlin, Heidelberg},
+  author     = {Reinhardt, Klaus},
+  booktitle  = {Automata Logics, and Infinite Games: A Guide to Current Research},
+  doi        = {10.1007/3-540-36387-4_13},
+  editor     = {Grädel, Erich
+                and Thomas, Wolfgang
+                and Wilke, Thomas},
+  isbn       = {978-3-540-36387-3},
+  pages      = {231--238},
+  publisher  = {Springer Berlin Heidelberg},
+  title      = {The Complexity of Translating Logic to Finite Automata},
+  url        = {https://doi.org/10.1007/3-540-36387-4_13},
+  year       = {2002},
+}
+
+@inproceedings{ALUR11,
+  abstract      = {Streaming string transducers define (partial) functions from input strings to output strings. A streaming string transducer makes a single pass through the input string and uses a finite set of variables that range over strings from the output alphabet. At every step, the transducer processes an input symbol, and updates all the variables in parallel using assignments whose right-hand-sides are concatenations of output symbols and variables with the restriction that a variable can be used at most once in a right-hand-side expression. The expressiveness of streaming string transducers coincides with the class of ``regular'' transductions that can be equivalently defined using two-way deterministic finite-state transducers and using monadic second-order logic. The problems of checking functional equivalence of two streaming transducers, and of checking whether a streaming transducer satisfies pre/post verification conditions specified by finite automata, are solvable in Pspace. These decision procedures also generalize to the model of streaming transducers over data strings---strings over symbols tagged with data values over a potentially infinite data domain that supports only the operations of equality and ordering. We identify a class of imperative and a class of functional programs, manipulating lists of data items, which can be effectively translated to such streaming data-string transducers. Our results lead to algorithms for assertion checking and for checking functional equivalence of two programs, written possibly in different programming styles, for commonly used routines such as insert, delete, and reverse.},
+  author       = {Rajeev Alur},
+  editor       = {Lev D. Beklemishev and
+                  Ruy J. G. B. de Queiroz},
+  title        = {Streaming String Transducers},
+  booktitle    = {Logic, Language, Information and Computation - 18th International
+                  Workshop, WoLLIC 2011, Philadelphia, PA, USA, May 18-20, 2011. Proceedings},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {6642},
+  pages        = {1},
+  publisher    = {Springer},
+  year         = {2011},
+  url          = {https://doi.org/10.1007/978-3-642-20920-8\_1},
+  doi          = {10.1007/978-3-642-20920-8\_1},
+}
+
+@article{RASCO59,
+  author     = {Rabin, Michael O. and Scott, Dana S.},
+  doi        = {10.1147/RD.32.0114},
+  journal    = {{IBM} J. Res. Dev.},
+  number     = {2},
+  pages      = {114--125},
+  sha256     = {5BF1F7B70F623F19AE1A0E11F8465E4766EFFA8C4B671284A4D092C45ECCDF38},
+  title      = {Finite Automata and Their Decision Problems},
+  url        = {https://doi.org/10.1147/rd.32.0114},
+  volume     = {3},
+  year       = {1959},
+}
+
+@misc{FIRELH25,
+      title={Lexicographic transductions of finite words}, 
+      author={Emmanuel Filiot and Pierre-Alain Reynier and Nathan Lhote},
+      year={2025},
+      eprint={2503.01746},
+      archivePrefix={arXiv},
+      primaryClass={cs.FL},
+      url={https://arxiv.org/abs/2503.01746}, 
 }
