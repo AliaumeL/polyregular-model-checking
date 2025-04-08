@@ -10,112 +10,109 @@ $\hoaretriple{P}{\texttt{code}}{Q}$, where $P$ and $Q$ are predicates and
 \texttt{code} is a program, meaning that whenever the input satisfies property
 $P$, the output of the program satisfies property $Q$.
 
-\paragraph{Regularity preserving programs.}
+\paragraph{Regularity preserving programs.} \AP One particularly interesting
+class of specifications in the case of string-to-string functions are
+\emph{regular languages}, which can be efficiently verified using
+automata-based techniques. We say that $f$ is \intro{regularity preserving} if
+the pre-image of a regular language through $f$ is regular, i.e. if $f^{-1}(L)$
+is regular for all regular languages $L$. For \kl{regularity preserving
+functions}, the verification of a Hoare triple $\hoaretriple{L_P}{f}{L_Q}$ can
+be reduced to the nonemptiness problem of the language $L_P \cap f^{-1}(L_Q)$,
+where $L_P$ and $L_Q$ are regular languages. This is a well-studied problem in
+the literature, and is at the core of several more involved techniques
+\cite{ALCE11,CHLRW19,JLMR23}. One key limitation of this approach is that there
+exists uncomputable \kl{regularity preserving functions}, and one has to
+restrict to a class of functions for which pre-images of regular languages are
+(relatively) efficiently computable. Usually, these classes come from
+generalisation of automata models to fuctions, also known as
+\emph{string-to-string transducers}.
+
+\paragraph{String-to-string transducer models.} There is a wide variety of
+models for string-to-string transducers \cite{MUSC19}, and one of the most
+prominent ones is called \intro{linear regular functions}, that are
+equivalently represented using two-way finite transducers (2DFTs)
+\cite{RASCO59}, streaming-string-transducers (SSTs) \cite{ALUR11}, or linear
+regular list functions \cite{BDK18}. Notably, Alur and Černý have been proven
+that SSTs have a \PSPACE-complete model checking problem when the functions are
+given as SSTs, and the specifications are themselves given as SSTs acceptors
+\cite[Theorem 13]{ALCE11}. This was used for instance by Chen, Taolue, Hague,
+Lin, Rümer and Wu to study \emph{path feasibility} in string-manipulating
+programs \cite{CHLRW19}.
+
+A related usage of regularity preservation of transducer models was used by
+Jeż, Lin, Markgraf and Rümmer, who leveraged the \emph{rational functions} (a
+strict subclass of \kl{linear regular functions}) to study programs
+manipulating strings with infinite alphabets (such as numbers). In this
+setting, the automata model has to be adapted to the presence of infinite
+alphabets with an internal structure, which prevents the use of all \kl{linear
+regular functions} as the latter are no longer \todo{Please write something
+clever here about atoms}.
+
+\AP The relatively old model of \intro{two-way deterministic transducers with
+nested pebbles} \cite{ENMA02} has recently gained a lot of traction now that
+several other characterizations have been obtained
+\cite{bojanczyk2018polyregular,bojanczyk2019string}. This class of
+\reintro{polyregular functions} generalize \kl{linear regular functions} by
+allowing polynomial behaviour, and are much closer to real life string
+manipulating programs. Note that for this extended model, being \kl{regularity
+preserving} is tightly connected to being closed under function composition
+\cite[Proposition III.3]{FIRELH25}, and this closure under composition was one of the surprising
+conclusions of \cite{bojanczyk2018polyregular}. However, this result is of
+theoretical nature (no implementation or complexity bounds are given), and
+writing programs using any of the existing equivalent definitions of
+\kl{polyregular functions} is cumbersome and error-prone.
+
+Because \kl{polyregular functions} can easily encode formulas in first-order
+logic on words with a linear blowup in size, and since the satisfiability
+problem for such formulas is known to be \TOWER-complete \cite[Theorem
+13.5]{REINH02}, one can expect that verifying \kl{polyregular functions} to be
+quite complex. Furthermore, such a verification procedure will generalize the
+results of \cite{ALCE11}, and those of \cite{CHLRW19} that are limited to
+\kl{linear regular functions}.
+
+\paragraph{MSO vs FO.} \AP Instead of regular languages, that are equivalently
+defined using finite automata, monadic second order logic (MSO), finite monoid
+recognition, or regular expressions \cite{buchi1960weak,KLEE56,TRAK66,SCHU61},
+A cornerstone result of the theory is establishing the equivalence between
+\emph{star-free languages}, \emph{first order definable languages}, and
+\emph{counter free automata} \cite{PEPI86,SCHU65,MNPA71}. The advantage of
+using a weaker computational model is twofold: first, it allows us to focus on
+a simpler class of \kl{polyregular functions} that are themselves
+\emph{star-free} (this notion has been extended to various classes of
+transducers, see \cite{CADA15,BDK18,MUSC19,bojanczyk2018polyregular}), for
+which implementations are easier to obtain. Second, it allows us to reduce the
+satisfiability of a Hoare triple to the satisfiability of a first-order formula
+on finite words. Since the latter is already a \TOWER-compete problem, having
+the ability to use general purpose SMT solvers to discharge the proof
+obligations could lead to \emph{incomplete} but \emph{faster} decision
+procedures.
+
+\paragraph{Contributions.} \AP In this paper, we introduce a high-level
+programming language that allows to write \kl{star-free polyregular functions}
+in a Python-like syntax, allowing for boolean variables, index variables, a
+limited form of list variables, function calls and nested for-loops. The design
+of such language must be done very carefully to not become too expressive,
+which is ensured by a number of syntactic restrictions and a novel type system
+for variable storing string indices. We then show that this language can be
+compiled into one of the equivalent definitions of \kl{polyregular functions}
+(namely, \kl{simple for-programs}), which does not allow for function calls nor
+list variables. We also provide an implementation of the previously knownq
+abstract result stating that \kl{polyregular functions} are \kl{regularity
+preserving} (in the case of star-free functions and languages), being careful
+about the complexity of the transformations. Finally, we reduce the
+verification of Hoare triples to the satisfiability of first-order formulas on
+words. Since we are using \kl{first-order logic} as a target language, we are
+not restricted to using automata based tools like \intro{MONA} \cite{MONA01},
+but can also employ general purpose SMT solvers like \intro{Z3} \cite{z3} and
+\intro{CVC5} \cite{cvc5}, generating proof obligations in the \texttt{SMT-LIB}
+format \cite{BARRETT17}.
+
+All of the steps described above have been implemented in a \texttt{Haskell}
+program, and tested it on a number of examples with encouraging
+results.\footnote{An anonymized version of our code is available at
+\repositoryUrl.}
+
 \begin{itemize}
-  \item we are interested in precondition and postcondition
-    that are regular languages, which is a fairly general 
-    framework.
-  \item define regularity preserving.
-  \item this is at the core of several decision procedures.
-  \item one of them is path feasibility analysis, where 
-    we are interested in compositions of regularity preserving functions.
-  \item there are uncomputable functions that are
-    regularity preserving, and one has to select a computation model.
-\end{itemize}
-
-\paragraph{String-to-string transducer models.}
-\begin{itemize}
-  \item While most automata models capture the same 
-    class of languages (regular languages), there is zoo of models for string-to-string transducers
-    in the litterature. 
-  \item Notably, in POPL'11, X and Y have devised an effective pullback procedure
-    for SSTs (linear regular functions, equivalent to 2DFTs), showing a PSPACE
-    complete complexity.
-  \item In POPL'19, they
-    rely on the effective pullback procedure of
-    linear regular functions. 
-
-  \item In CAV'23, they use infinite input alphabets (also known as atoms/nominal sets/data words),
-    and in this setting, the weaker class of rational functions is used 
-    because full 2DFTs not regularity preserving in this nominal setting.
-
-  \item Recently, the theory of \emph{polyregular functions} has gained a lot of traction.
-    It goes beyond the previous models, by allowing polynomial growth of the output.
-    One of the equivalent definitions of this model dates back to \cite{ENMA02}, and 
-    several other characterizations have been proposed since then
-    \cite{bojanczyk2018polyregular,bojanczyk2019string,bojanczyk2023growth}, 
-    showing that it is a robust class of functions.
-    It is known that they are regularity preserving [cite],
-
-  \item However, this result is of theoretical nature
-    (no implementation or complexity bounds are given), and writing programs using
-    any of the existing equivalent definitions of this 
-    model is cumbersome and error-prone. Furthermore, relying on monadic
-    second order logic implies that one cannot use the vast majority of SMT
-    solvers, which only handle first-order logic.
-
-  \item Because polyregular functions are closed under compositions,
-    one can reduce POPL'19 to a single model checking problem. Furthermore,
-    polyregular fuctions contain linear regular functions. 
-
-  \item Beware that \kl{simple for-programs} can encode any FO formula 
-    with a linear blowup, hence their model checking is as hard as
-    the emptiness problem for FO formulas, which is known to be
-    TOWER-complete (stockmeyer).
-
-  \item Let us also mention that the study of exponential growth functions is on the way.
-\end{itemize}
-
-
-
-\paragraph{MSO vs FO.} 
-\begin{itemize}
-  \item Usually, one considers monadic second order logic (MSO) to express properties of
-    regular languages.
-  \item In order to simplify the presentation, and allow for an encoding into
-    SMTLib, we will use first-order logic (FO) instead.
-  \item 
-The correspondence between subsets of string to string
-functions and first order logic dates back to the origins of automata theory
-and the seminal results of \cite{PEPI86,SCHU65,MNPA71}, establishing the
-equivalence between \emph{star-free languages}, \emph{first order definable
-languages}, and \emph{counter free automata}.
-  \item Extensions of this correspondence
-to functions has been an active area of research \cite{CADA15,MUSC19}, which we
-leverage in this work via the theory of \intro{polyregular functions}
-\cite{ENMA02,bojanczyk2018polyregular,bojanczyk2019string,bojanczyk2023growth}.
-\end{itemize}
-
-
-\paragraph{Contributions.} 
-\begin{itemize}
-  \item In this paper our contributions are threefold.
-  \item 
-First, we introduce a programming language that corresponds to a rich subset of
-\texttt{Python}, which we argue is expressive enough to be usable in practice.
-
-\item Second, we demonstrate that this language can be compiled into a certain type
-of \kl{polyregular functions}. 
-
-\item Third, we prove that for these polyregular
-functions, the verification of \kl{Hoare triples} (specified using
-\kl{first-order logic} on words) effectively reduces to a satisfiability
-problem of a first-order formula on finite words. 
-
-\item While this last step was
-known to be theoretically possible, an efficient and effective implementation
-was lacking. 
-
-\item Because we are using \kl{first-order logic} as a target language,
-we are not restricted to using automata based tools like \intro{MONA}
-\cite{MONA01}, but can also employ general purpose SMT solvers like \intro{Z3}
-\cite{z3} and \intro{CVC5} \cite{cvc5}, generating proof
-obligations in the \texttt{SMT-LIB} format \cite{BARRETT17}.
-
-\item We implemented all of these conversions in a \texttt{Haskell} program, and
-tested it on a number of examples with encouraging results.\footnote{An
-anonymized version of our code is available at \repositoryUrl.}
-
 \item That being said, we are not a tool paper, and the implementation should
   be seen as a proof of concept.
 
