@@ -17,7 +17,6 @@
 \usepackage{lineno}
 \linenumbers
 
-\usepackage{todonotes}
 
 % babel for language settings
 \usepackage[english]{babel}
@@ -48,8 +47,10 @@
 % links inside the document
 \usepackage{hyperref}
 \usepackage[capitalise,noabbrev,nameinlink]{cleveref}
-\usepackage[composition,hyperref,xcolor,cleveref]{knowledge}
+\usepackage[electronic,hyperref,xcolor,cleveref]{knowledge}
 \knowledgeconfigure{notion}
+\knowledge{notion}
+ | kl-usage
 
 % Tables 
 \usepackage{booktabs}
@@ -66,6 +67,9 @@
 
 % Colors 
 \usepackage{ensps-colorscheme}
+% set nice colors for the hyperlinks of knowledge
+\knowledgestyle{intro notion}{color=A5, emphasize}
+\knowledgestyle{notion}{color=B1}
 
 % we include whatever the user wants to include in the header
 
@@ -75,20 +79,17 @@
 \input{lib/maths}
 \input{knowledges.kl}
 
-\newcommand{\repositoryUrl}{\url{https://github.com/AliaumeL/polyregular-model-checking}}
+\newcommand{\repositoryUrl}{\url{https://anonymous.4open.science/r/polyregular-model-checking-73A0}}
 
 \begin{document}
 %
-\title{Polyregular Model Checking \\
-       cav-shepherd 77ee5d80d89d17e7b62f93a4e8efe158ac4f514d \\
-       2025-04-08 13:56:13 +0200
-}
+\title{Polyregular Model Checking}
 
 \author{
-        Aliaume Lopez\inst{1}\orcidID{0000-0002-4205-327X} \and
-        Rafał Stefański\inst{1}\orcidID{0000-0002-8439-4056}}
-\authorrunning{A. Lopez and R. Stefański}
-\institute{University of Warsaw}
+    Anonymized for review
+}
+\authorrunning{Anonymized for review}
+\institute{Anonymized for review}
 
 \date{\today}
 
@@ -98,6 +99,9 @@
 \begin{abstract}
     We introduce a high-level language with Python-like syntax for string-to-string, polyregular, first-order definable transductions. This language features function calls, boolean variables, and nested for-loops. We devise and implement a complete decision procedure for the verification of such programs against a first-order specification. The decision procedure reduces the verification problem to the decidable first-order theory of finite words (extensively studied in automata theory), which we discharge using either complete tools specific to this theory (MONA), or to general-purpose SMT solvers (Z3, CVC5).
 \end{abstract}
+
+\klogo\ This document uses \href{https://ctan.org/pkg/knowledge}{knowledge}:
+\kl[kl-usage]{notion} points to its \intro[kl-usage]{definition}. 
 
 % Include the content of the paper
 \input{src/intro.tex}
@@ -109,8 +113,6 @@
 \input{src/conclusion.tex}
 
 % Include acknowledgements
-\section*{Acknowledgements}
-We would like to thank Arnav Garg and Ojas Maheshwari for their participation in the early stage of this project.
 
 % Include the bibliography
 \bibliographystyle{splncs04}
