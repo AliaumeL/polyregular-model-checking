@@ -7,11 +7,6 @@
  | for-programs
  | for-program
 
-\knowledge{notion}
- | emptiness
- | emptiness problem
- | unsatisfiable
-
 
 \knowledge{notion}
  | first-order Hoare triple
