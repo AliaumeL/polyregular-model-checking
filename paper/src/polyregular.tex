@@ -276,6 +276,5 @@ tags in the formulas fed to solvers. For the SMT-solvers, we use the
 \texttt{smtlib v2.6} format with logic set to \texttt{UFDTLIA}
 \cite{BARRETT17}, which allows us to add finite sorts and quantify over them.
 For the MONA solver, which only supports the sort of positions, we encode the
-tags as the first $|T|$ positions of the input word.
-
-
+tags as the first $|T|$ positions of the input word. The pertinence of
+this choice of encoding will be discussed in \cref{sec:benchmarks}.
