@@ -1,5 +1,5 @@
 % LTeX: language=EN
-\section{Benchmarks}
+\section{Implementation}
 \label{sec:benchmarks}
 
 \AP We implemented all the transformations expressed in this paper in a
@@ -11,17 +11,22 @@ number of boolean variables visible at any point in the program). We compute
 the same parameters for the corresponding \kl{simple for-program}. In the case
 of \kl{first-order interpretations}, we only compute its \emph{size} (number of
 nodes in the formula) and its \kl{quantifier rank}. This allowed us to
-benchmark our transformations on a small set of programs that we present in
+estimate the complexity of our transformations on a small set of programs that we present in
 \cref{tab:benchmarks}. Then, we used several existing solvers to verify basic
-\kl{first-order Hoare triples} for these programs. Because the goal of this
-paper was to showcase the usage of the theory of \kl{polyregular functions}, we
-did not focus on optimizing the input for a particular solver: all solvers
-(except \kl{MONA}) were given an input in the \texttt{SMT-LIB} format. We
+\kl{first-order Hoare triples} for these programs. We
 illustrate in \cref{tab:timings} the behaviour of the solvers on various
 verification tasks, with a timeout of $5$ seconds for every solver.
+These test offer only initial insight into the performance of our implementation,
+so developing our implementation into an actual tool would require systematic 
+benchmarks and comparison with already existing tools.
+
+% Because the goal of this
+% paper was to showcase the usage of the theory of \kl{polyregular functions}, we
+% did not focus on optimizing the input for a particular solver: all solvers
+% (except \kl{MONA}) were given an input in the \texttt{SMT-LIB} format.
 
 \begin{table}[t]
-    \caption{Benchmark results for the transformations. 
+    \caption{Results for the transformations. 
         Here \kl[for-program]{FP} is a \kl{for-program},
         \kl[simple for-program]{S.FP} is a \kl{simple for-program},
         and \kl[first-order interpretation]{$\FO$-I} is a \kl{first-order interpretation}.
@@ -53,33 +58,40 @@ verification tasks, with a timeout of $5$ seconds for every solver.
     \input{figs/timings.tex}
 \end{table}
 
-\paragraph{Observations on the Compilation Process.} Let us highlight that in
-the simplest cases of \cref{tab:benchmarks}, our compilation procedure is able
+\paragraph{Compilation to $\FO$-formulas.}
+Looking at \cref{tab:benchmarks}, we observe that the generated simple for programs 
+have reasonable size and boolean depth. The generated \kl{first-order interpretations}
+still have reasonable quantifier ranks, but their size grows significantly.
+In the simplest cases of \cref{tab:benchmarks}, our compilation procedure is able
 to eliminate all boolean variables, thus producing a \emph{quantifier-free}
-formula. This is the case for the \texttt{identity.pr}, \texttt{reverse.pr} and
-\texttt{prefixes.pr} programs, respectively computing the identity function,
-the word reversal function, and the list of all prefixes.
+formula. This is the case for \texttt{identity.pr}, \texttt{reverse.pr} and
+\texttt{prefixes.pr}. Moreover, we observe that the \kl{boolean depth} of the
+\kl{simple for-program} is a good indicator of the \kl{quantifier rank}
+of the generated \kl{first-order interpretation}. Furthermore, the tests indicate that
+\kl{elimination of literals} is responsible for a significant increase of the formulas 
+size and quantifier rank (\texttt{literal\_test.pr} and \texttt{bibtex.pr}).  
+This is explained by the fact that the elimination of literals introduces
+(non-cyclic) counters, simulated by a number of boolean variables. Finally,
+we observe that the size of the generated formulas differs significantly
+for the programs \texttt{get\_first\_word.pr} and \texttt{get\_last\_word.pr}.
+This is somewhat surprising, as the two programs are symmetric with respect to 
+reversing the input words, and indicates some room for improvement in handling 
+the reversed iteration.
 
-We can observe that the \kl{boolean depth} of the \kl{simple for-program} is a
-good indicator of the \kl{quantifier rank} of the generated \kl{first-order
-interpretation}. Furthermore, we demonstrate the \kl{elimination of literals}
-is responsible for a significant increase in the complexity of the formulas, as
-one can see in the \texttt{assets/HighLevel/litteral\_test.pr} benchmark. This
-is explained by the fact that the elimination of literals introduces a
-\emph{sequential} structure in the program which is simulated by introducing
-boolean variables. We found it interesting that our compilation process is
-non-symmetric when transforming \kl{high-level for-programs} into \kl{simple
-for-programs}: this can be seen in the \texttt{get\_first\_word.pr} and
-\texttt{get\_last\_word.pr}, leading to vastly different \kl{quantifier ranks}
-for the resulting \kl{first-order interpretations}.
-
-\paragraph{Observations on the Solver Performance.} We can observe in
-\cref{tab:timings} that the solvers are complementary. Indeed, the \kl{MONA}
-solver is theoretically complete, but can run out of memory and be slower than
-the other solvers on some specific instances. We can also see that the goals
-generated have reasonable size and \kl{quantifier rank}. A negative result is
-the inability of all solvers to witness the fact that if a word $w$ contains
-$ab$ as a subword, then the concatenation of all its subwords containing $ab$
-as a (scattered) subword does contain $ab$ as a subword. Understanding this
-result would require further investigation and its resolution may depend on a
-more refined encoding of our proof obligations.
+\paragraph{Solver Performance.}
+We can observe in \cref{tab:timings} that the different solvers are complementary.
+This might seem surprising, as the \kl{MONA} solver is a complete decision procedure. 
+However, since it solves a problem that is tower complete,
+it is understandable that it underperforms the SMT solvers on some instances,
+even though we use them with the undecidable \texttt{UFDTLIA} theory.
+Let us justify this choice of the SMTLib theory: 
+(a) \emph{Uninterpreted Functions} (UF) are used to represent the word, which 
+is treated as a function from positions to characters,
+(b) \emph{Data Types} (DT) is used to represent finite sets of tags and characters, 
+(c) \emph{Linear Integer Arithmetic} (LIA) is used to deal with the order of the 
+positions in the word. This choice might not be optimal, but we believe that it
+is a good trade off between ease-of-use and performance for our proof-of-concept
+implementation. We can also observe that no solvers was able to deal with 
+\texttt{subwords\_ab.pr} and \texttt{map\_reverse.pr} within the $5$ seconds timeout.
+Understanding the complexities that arise in those cases, might be helpful
+for improving the performance of our implementation.
