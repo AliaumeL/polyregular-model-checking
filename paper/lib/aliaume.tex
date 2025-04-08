@@ -1,3 +1,35 @@
+% Knowledge logo
+\newcommand{\klogo}{%
+\begin{tikzpicture}[scale=0.2,line/.style={draw, line width=0.2pt, line cap=round, line join=round}]
+\coordinate (A00) at (0,0);
+\coordinate (A01) at (0,1);
+\coordinate (A10) at (1,0);
+\coordinate (B10) at (1,0.2);
+\coordinate (B01) at (0.2,1);
+
+\coordinate (C01) at (0.4,0.7);
+\coordinate (C10) at (0.7,0.4);
+\coordinate (C12) at (0.4,1.2);
+\coordinate (C21) at (1.2, 0.4);
+\coordinate (C22) at (1.2, 1.2);
+
+\coordinate (D00) at (C10);
+\coordinate (D01) at (0.8,0.5);
+\coordinate (D10) at (0.8,0.3);
+
+\coordinate (E01) at (0.3,0.7);
+\coordinate (E10) at (0.5,0.7);
+
+\draw[line] (B01) -- (A01) -- (A00) -- (A10) -- (B10);
+\draw[line] (C01) -- (C12) -- (C22) -- (C21) -- (C10);
+
+\draw[line] (D01) -- (D00) -- (D10);
+\draw[line] (E01) -- (E10);
+
+\end{tikzpicture}%
+}
+
+
 
 
 % Upgreek letters
