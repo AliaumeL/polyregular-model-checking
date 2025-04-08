@@ -78,20 +78,19 @@ This is somewhat surprising, as the two programs are symmetric with respect to
 reversing the input words, and indicates some room for improvement in handling 
 the reversed iteration.
 
-\paragraph{Solver Performance.}
-We can observe in \cref{tab:timings} that the different solvers are complementary.
-This might seem surprising, as the \kl{MONA} solver is a complete decision procedure. 
-However, since it solves a problem that is tower complete,
-it is understandable that it underperforms the SMT solvers on some instances,
-even though we use them with the undecidable \texttt{UFDTLIA} theory.
-Let us justify this choice of the SMTLib theory: 
-(a) \emph{Uninterpreted Functions} (UF) are used to represent the word, which 
-is treated as a function from positions to characters,
-(b) \emph{Data Types} (DT) is used to represent finite sets of tags and characters, 
-(c) \emph{Linear Integer Arithmetic} (LIA) is used to deal with the order of the 
-positions in the word. This choice might not be optimal, but we believe that it
-is a good trade off between ease-of-use and performance for our proof-of-concept
-implementation. We can also observe that no solvers was able to deal with 
-\texttt{subwords\_ab.pr} and \texttt{map\_reverse.pr} within the $5$ seconds timeout.
-Understanding the complexities that arise in those cases, might be helpful
-for improving the performance of our implementation.
+\paragraph{Solver Performance.} We can observe in \cref{tab:timings} that the
+different solvers are complementary. This might seem surprising, as the
+\kl{MONA} solver is a complete decision procedure. However, since it solves a
+problem that is \TOWER-complete \cite[Theorem 13.5]{REINH02}, it is
+understandable that it underperforms the SMT solvers on some instances, even
+though we use them with the undecidable \texttt{UFDTLIA} theory. Let us justify
+this choice of the SMTLib theory: (a) \emph{Uninterpreted Functions} (\texttt{UF}) are
+used to represent the word, which is treated as a function from positions to
+characters, (b) \emph{Data Types} (\texttt{DT}) is used to represent finite sets of tags
+and characters, (c) \emph{Linear Integer Arithmetic} (\texttt{LIA}) is used to deal with
+the order of the positions in the word. This choice might not be optimal, but
+we believe that it is a good trade off between ease-of-use and performance for
+our proof-of-concept implementation. We can also observe that no solvers was
+able to deal with \texttt{subwords\_ab.pr} and \texttt{map\_reverse.pr} within
+the $5$ seconds timeout. Understanding the complexities that arise in those
+cases, might be helpful for improving the performance of our implementation.
