@@ -107,24 +107,14 @@ but can also employ general purpose SMT solvers like \intro{Z3} \cite{z3} and
 \intro{CVC5} \cite{cvc5}, generating proof obligations in the \texttt{SMT-LIB}
 format \cite{BARRETT17}.
 
-All of the steps described above have been implemented in a \texttt{Haskell}
+All the steps described above have been implemented in a \texttt{Haskell}
 program, and tested it on a number of examples with encouraging
 results.\footnote{An anonymized version of our code is available at
-\repositoryUrl.}
+\repositoryUrl.} While this is not a tool paper, we believe that the proof of
+concept implementation is a good starting point to demonstrate the viability of
+our approach, and we believe that there is a potential for further
+investigations in this direction.
 
-\begin{itemize}
-\item That being said, we are not a tool paper, and the implementation should
-  be seen as a proof of concept.
-
-\item Our initial tests, while promising, are not fully-fledged benchmarks
-
-\item more benchmarks are needed to assess the viability of our approach.
-
-\item and we are aware that there is room for 
-optimizations both in the implementation and the way encoding used
-to discharge the proof obligations when using SMT solvers.
-
-\end{itemize}
 
 \paragraph{Outline.} The structure of the paper is as follows. We introduce our
 \kl{high-level language} in \cref{sec:high-level}. In \cref{sec:polyregular},
