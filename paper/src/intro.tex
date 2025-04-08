@@ -95,15 +95,15 @@ Indeed, the satisfiability problem for \kl{first-order logic on finite words},
 while decidable, is \TOWER-complete \cite[Theorem 13.5]{REINH02}. 
 
 \paragraph{Contributions.} \AP In this paper, we introduce a high-level
-programming language that allows to write \kl{star-free polyregular functions}
-in a Python-like syntax, allowing for boolean variables, index variables, a
-limited form of list variables, function calls and nested for-loops. The design
-of such language must be done very carefully to not become too expressive,
-which is ensured by a number of syntactic restrictions and a novel type system
-for variable storing string indices. We then show that this language can be
+programming language for implementing \kl{star-free polyregular functions}
+in a Python-like syntax, including features such as boolean variables, index variables,
+immutable list variables, function calls, and nested for-loops.
+The language was carefully designed not become too expressive -- 
+this is ensured by a number of syntactic restrictions and a novel type system
+for index variables. We show that this language can be
 compiled into one of the equivalent definitions of \kl{polyregular functions}
 (namely, \kl{simple for-programs}), which does not allow for function calls nor
-list variables. We also provide an implementation of the previously knownq
+list variables. We also provide an implementation of the previously known
 abstract result stating that \kl{polyregular functions} are \kl{regularity
 preserving} (in the case of star-free functions and languages), being careful
 about the complexity of the transformations. Finally, we reduce the
@@ -115,10 +115,10 @@ but can also employ general purpose SMT solvers like \intro{Z3} \cite{z3} and
 format \cite{BARRETT17}.
 
 All the steps described above have been implemented in a \texttt{Haskell}
-program, and tested it on a number of examples with encouraging
+program, and tested on a number of examples with encouraging
 results.\footnote{An anonymized version of our code is available at
-\repositoryUrl.} While this is not a tool paper, we believe that the proof of
-concept implementation is a good starting point to demonstrate the viability of
+\repositoryUrl.} While this is not a tool paper, we believe that the
+proof-of-concept implementation is a good starting point to demonstrate the viability of
 our approach, and we believe that there is a potential for further
 investigations in this direction.
 
@@ -164,7 +164,7 @@ for-programs} in \cref{sec:htl}, and then compile \kl{simple for-programs} into
 %    \end{tikzpicture}
 %\end{center}
 Then, in \cref{sec:benchmarks}, we present
-benchmarks of our implementation on various examples, discussing
+tests of our implementation on various examples, discussing
 the complexity of the transformations and the main bottlenecks of our approach.
 Finally, we conclude in \cref{sec:conclusion} by discussing potential
 optimizations and future work.
