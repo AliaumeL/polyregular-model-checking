@@ -63,6 +63,10 @@ also will enforce the following conditions, which are satisfied in our example:
         of our \cref{fig:python-example-nested}.
         Without this restriction, verification would also be undecidable
         (\cref{lem:umc-equality-nested-words}).
+        Note that more generally, classical string \emph{algorithms}
+        (edit distance, string matching, longest common subsequence, etc.) should not 
+        be expressible in our language, since one can easily derive an
+        equality check from them.
         
     \item \textbf{Integer Comparisons.} 
         \label{item:integer-comparisons}
