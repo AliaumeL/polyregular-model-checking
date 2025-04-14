@@ -37,6 +37,49 @@ the port `3000` and will provide a web interface to run the model checker.
 polycheck --web
 ```
 
+In order to run the `benchmark` mode, that runs the transformation
+on the input (high-level) code and outputs various metrics on the
+resulting simple-for programs and the generated first-order logic
+specification, you can use the following command:
+
+```bash
+benchmarker -d ./assets/HighLevel/ > benchmarks.json
+```
+
+The JSON document will contain something similar to the document described below.
+
+```json
+{
+    "benches": [
+        {
+            "bfName"   : "<filepath>",
+            "bfHigh"   : {
+                "bsBoolDepth" : 0,
+                "bsDepth"     : 0,
+                "bsSize"      : 0 
+            },
+            "bfSfp"    : {
+                "Right" : {
+                    "bsBoolDepth" : 0,
+                    "bsDepth"     : 0,
+                    "bsSize"      : 0
+                }
+            },
+            "bfInterp" : {
+                "Right" : {
+                    "bsBoolDepth" : 0,
+                    "bsDepth"     : 0,
+                    "bsSize"      : 0
+                }
+            },
+        }
+        ...
+    ]
+}
+```
+
+
+
 ## Installing
 
 The installation of the program can be done using the following methods
@@ -56,7 +99,9 @@ listed by order of preference:
 
 Note that the installation process requires the installation of external
 solvers, which are included in the docker image and the nix derivation, but
-cannot be build by the `stack` tool.
+cannot be build by the `stack` tool. Namely, the following solvers can be used:
+`MONA`, `CVC5`, `Z3`, `Yices`, and `alt-ergo`. The installation instructions
+for these solvers can be found in their respective repositories. 
 
 The easiest way is to use `docker run -it -p 3000:3000
 aliaume/polycheck-small:latest polycheck --web` to run the program in
@@ -92,6 +137,25 @@ To run the tests, you can use the following command:
 stack test
 ```
 
+Then one can run the program using the following command:
+
+```bash
+stack exec polycheck -- -i <input_file> -b <pre_condition_file> -a <post_condition_file>
+```
+
+And the `benchmarker` using the following command:
+
+```bash
+stack exec benchmarker -- -d <high_level_assets_directory>
+```
+
+To test the web interface, you can run the following command:
+
+```bash
+stack exec polycheck -- --web
+```
+
+And then connect to `http://localhost:3000` in your web browser.
 
 ## Cite this repository
 
