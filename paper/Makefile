@@ -78,7 +78,7 @@ $(PAPER).arxiv.tar.gz: $(PAPER).arxiv.tex
              $(PAPER).arxiv.tex    \
 			 plainurl.bst          \
 			 ensps-colorscheme.sty \
-             ../LICENSE
+             LICENSE
 
 $(PAPER).arxiv.pdf: $(PAPER).arxiv.tar.gz
 	# create temporary directory
