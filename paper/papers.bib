@@ -7,6 +7,87 @@
   year          = {2023},
 }
 
+@inproceedings{JLMR23,
+  abstract      = {Sequence theories are an extension of theories of strings with an infinite alphabet of letters, together with a corresponding alphabet theory (e.g. linear integer arithmetic). Sequences are natural abstractions of extendable arrays, which permit a wealth of operations including append, map, split, and concatenation. In spite of the growing amount of tool support for theories of sequences by leading SMT-solvers, little is known about the decidability of sequence theories, which is in stark contrast to the state of the theories of strings. We show that the decidable theory of strings with concatenation and regular constraints can be extended to the world of sequences over an alphabet theory that forms a Boolean algebra, while preserving decidability. In particular, decidability holds when regular constraints are interpreted as parametric automata (which extend both symbolic automata and variable automata), but fails when interpreted as register automata (even over the alphabet theory of equality). When length constraints are added, the problem is Turing-equivalent to word equations with length (and regular) constraints. Similar investigations are conducted in the presence of symbolic transducers, which naturally model sequence functions like map, split, filter, etc. We have developed a new sequence solver, SeCo, based on parametric automata, and show its efficacy on two classes of benchmarks: (i) invariant checking on array-manipulating programs and parameterized systems, and (ii) benchmarks on symbolic register automata. },
+  archiveprefix = {arXiv},
+  author        = {Jeż, Artur and Lin, Anthony W. and Markgraf, Oliver and Rümmer, Philipp},
+  booktitle     = {Computer Aided Verification: 35th International Conference, CAV 2023, Paris, France, July 17–22, 2023, Proceedings, Part II},
+  doi           = {10.1007/978-3-031-37703-7_2},
+  eprint        = {2308.00175},
+  isbn          = {9783031377037},
+  issn          = {1611-3349},
+  pages         = {18–40},
+  primaryclass  = {cs.LO},
+  publisher     = {Springer Nature Switzerland},
+  series        = {CAV'23},
+  title         = {Decision Procedures for Sequence Theories},
+  url           = {https://anthonywlin.github.io/papers/cav23.pdf},
+  year          = {2023},
+}
+
+
+@article{CHLRW19,
+  abstract      = {The design and implementation of decision procedures for checking path feasibility in string-manipulating programs is an important problem, with such applications as symbolic execution of programs with strings and automated detection of cross-site scripting (XSS) vulnerabilities in web applications. A (symbolic) path is given as a finite sequence of assignments and assertions (i.e. without loops), and checking its feasibility amounts to determining the existence of inputs that yield a successful execution. Modern programming languages (e.g. JavaScript, PHP, and Python) support many complex string operations, and strings are also often implicitly modified during a computation in some intricate fashion (e.g. by some autoescaping mechanisms). In this paper we provide two general semantic conditions which together ensure the decidability of path feasibility: (1) each assertion admits regular monadic decomposition (i.e. is an effectively recognisable relation), and (2) each assignment uses a (possibly nondeterministic) function whose inverse relation preserves regularity. We show that the semantic conditions are expressive since they are satisfied by a multitude of string operations including concatenation, one-way and two-way finite-state transducers, replaceall functions (where the replacement string could contain variables), string-reverse functions, regular-expression matching, and some (restricted) forms of letter-counting/length functions. The semantic conditions also strictly subsume existing decidable string theories (e.g. straight-line fragments, and acyclic logics), and most existing benchmarks (e.g. most of Kaluza’s, and all of SLOG’s, Stranger’s, and SLOTH’s benchmarks). Our semantic conditions also yield a conceptually simple decision procedure, as well as an extensible architecture of a string solver in that a user may easily incorporate his/her own string functions into the solver by simply providing code for the pre-image computation without worrying about other parts of the solver. Despite these, the semantic conditions are unfortunately too general to provide a fast and complete decision procedure. We provide strong theoretical evidence for this in the form of complexity results. To rectify this problem, we propose two solutions. Our main solution is to allow only partial string functions (i.e., prohibit nondeterminism) in condition (2). This restriction is satisfied in many cases in practice, and yields decision procedures that are effective in both theory and practice. Whenever nondeterministic functions are still needed (e.g. the string function split), our second solution is to provide a syntactic fragment that provides a support of nondeterministic functions, and operations like one-way transducers, replaceall (with constant replacement string), the string-reverse function, concatenation, and regular-expression matching. We show that this fragment can be reduced to an existing solver SLOTH that exploits fast model checking algorithms like IC3. We provide an efficient implementation of our decision procedure (assuming our first solution above, i.e., deterministic partial string functions) in a new string solver OSTRICH. Our implementation provides built-in support for concatenation, reverse, functional transducers (FFT), and replaceall and provides a framework for extensibility to support further string functions. We demonstrate the efficacy of our new solver against other competitive solvers.},
+  address       = {New York, NY, USA},
+  archiveprefix = {arXiv},
+  articleno     = {49},
+  author        = {Chen, Taolue and Hague, Matthew and Lin, Anthony W. and Rümer, Philipp and Wu, Zhilin},
+  doi           = {10.1145/3290362},
+  eprint        = {1811.03167},
+  issue_date    = {January 2019},
+  journal       = {Proc. ACM Program. Lang.},
+  keywords      = {Decision Procedures, ReplaceAll, Reverse, Straight-Line Programs, String Constraints, Transducers},
+  month         = jan,
+  number        = {POPL},
+  numpages      = {30},
+  primaryclass  = {cs.FL},
+  publisher     = {Association for Computing Machinery},
+  title         = {Decision procedures for path feasibility of string-manipulating programs with complex operations},
+  url           = {http://www.philipp.ruemmer.org/publications/atva2020.pdf},
+  volume        = {3},
+  year          = {2019},
+}
+
+@inproceedings{BDK18,
+  abstract      = {We define two classes of functions, called regular (respectively, first-order) list functions, which manipulate objects such as lists, lists of lists, pairs of lists, lists of pairs of lists, etc. The definition is in the style of regular expressions: the functions are constructed by starting with some basic functions (e.g. projections from pairs, or head and tail operations on lists) and putting them together using four combinators (most importantly, composition of functions). Our main results are that first-order list functions are exactly the same as first-order transductions, under a suitable encoding of the inputs; and the regular list functions are exactly the same as MSO-transductions.},
+  address       = {New York, NY, USA},
+  archiveprefix = {arXiv},
+  author        = {Bojańczyk, Mikołaj and Daviaud, Laure and Krishna, Shankara Narayanan},
+  booktitle     = {Proceedings of the 33rd Annual ACM/IEEE Symposium on Logic in Computer Science},
+  doi           = {10.1145/3209108.3209163},
+  eprint        = {1803.06168},
+  isbn          = {9781450355834},
+  location      = {Oxford, United Kingdom},
+  numpages      = {10},
+  pages         = {125–134},
+  primaryclass  = {cs.FL},
+  publisher     = {Association for Computing Machinery},
+  series        = {LICS '18},
+  title         = {Regular and First-Order List Functions},
+  url           = {https://www.mimuw.edu.pl/~bojan/upload/conflicsBojanczykDK18.pdf},
+  year          = {2018},
+}
+
+@inproceedings{ALCE11,
+  abstract      = {We introduce streaming data string transducers that map input data strings to output data strings in a single left-to-right pass in linear time. Data strings are (unbounded) sequences of data values, tagged with symbols from a finite set, over a potentially infinite data domain that supports only the operations of equality and ordering. The transducer uses a finite set of states, a finite set of variables ranging over the data domain, and a finite set of variables ranging over data strings. At every step, it can make decisions based on the next input symbol, updating its state, remembering the input data value in its data variables, and updating data-string variables by concatenating data-string variables and new symbols formed from data variables, while avoiding duplication. We establish PSPACE bounds for the problems of checking functional equivalence of two streaming transducers, and of checking whether a streaming transducer satisfies pre/post verification conditions specified by streaming acceptors over input/output data-strings.We identify a class of imperative and a class of functional programs, manipulating lists of data items, which can be effectively translated to streaming data-string transducers. The imperative programs dynamically modify a singly-linked heap by changing next-pointers of heap-nodes and by adding new nodes. The main restriction specifies how the next-pointers can be used for traversal. We also identify an expressively equivalent fragment of functional programs that traverse a list using syntactically restricted recursive calls. Our results lead to algorithms for assertion checking and for checking functional equivalence of two programs, written possibly in different programming styles, for commonly used routines such as insert, delete, and reverse.},
+  address       = {New York, NY, USA},
+  author        = {Alur, Rajeev and \v{C}ern\'{y}, Pavol},
+  booktitle     = {Proceedings of the 38th Annual ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages},
+  doi           = {10.1145/1926385.1926454},
+  isbn          = {9781450304900},
+  keywords      = {algorithmic software verification, lists, transducers},
+  location      = {Austin, Texas, USA},
+  numpages      = {12},
+  pages         = {599–610},
+  publisher     = {Association for Computing Machinery},
+  series        = {POPL '11},
+  title         = {Streaming transducers for algorithmic verification of single-pass list-processing programs},
+  url           = {https://doi.org/10.1145/1926385.1926454},
+  year          = {2011},
+}
+
+
+
 @inproceedings{cvc5,
   author        = {Zohar, Haniel Barbosa and Clark W. Barrett and Martin Brain and Gereon Kremer and Hanna Lachnitt and Makai Mann and Abdalrhman Mohamed and Mudathir Mohamed and Aina Niemetz and Andres N{\"{o}}tzli and Alex Ozdemir and Mathias Preiner and Andrew Reynolds and Ying Sheng and Cesare Tinelli and Yoni},
   bibsource     = {dblp computer science bibliography, https://dblp.org},
@@ -113,7 +194,7 @@
   publisher     = {Springer Berlin Heidelberg},
   sha256        = {C4F9002939D782CA1DA3D2D1E810A6E9B224FFE5DFFC5B7447DC674194C68AC2},
   title         = {Two Way Finite State Transducers with Nested Pebbles},
-  url           = {https://doi.org/10.1007/3-540-45687-2_21},
+  url           = {https://doi.org/10.1007/3-540-45687-2_19},
   volume        = {2420},
   year          = {2002},
 }
@@ -202,6 +283,65 @@
   year          = {1969},
 }
 
+@article{TRAK66,
+  author     = {Trakhtenbrot, Boris A.},
+  doi        = {10.1090/trans2/059/02},
+  isbn       = {9780821817599},
+  journal    = {American Mathematical Society Translations},
+  number     = {2},
+  pages      = {23--55},
+  title      = {Finite automata and the logic of one-place predicates},
+  volume     = {59},
+  year       = {1966},
+}
+
+@article{SCHU61,
+  author     = {Schützenberger, Marcel P.},
+  doi        = {10.1016/S0019-9958(61)80020-X},
+  journal    = {Information and Control},
+  number     = {2-3},
+  pages      = {245--270},
+  title      = {On the definition of a family of automata},
+  volume     = {4},
+  year       = {1961},
+}
+
+@article{KLEE56,
+  author     = {Kleene, Stephen C.},
+  doi        = {10.1515/9781400882618-002},
+  journal    = {Automata studies},
+  pages      = {3--42},
+  publisher  = {Princeton University Press},
+  sha256     = {B01AD77C39D53088D62B09DBFBD04390AE57021B113DF645603E36B05710E621},
+  title      = {Representation of events in nerve nets and finite automata},
+  volume     = {34},
+  year       = {1956},
+}
+
+@article{KAFR94,
+  author    = {Kaminski, Michael and Francez, Nissim},
+  doi       = {10.1016/0304-3975(94)90242-9},
+  journal   = {Theor. Comput. Sci.},
+  number    = {2},
+  pages     = {329--363},
+  timestamp = {Wed, 17 Feb 2021 22:00:14 +0100},
+  title     = {Finite-Memory Automata},
+  url       = {https://doi.org/10.1016/0304-3975(94)90242-9},
+  volume    = {134},
+  year      = {1994},
+}
+
+
+
+@book{BOJA19,
+  title={Slightly infinite sets},
+  author={Bojańczyk, Mikołaj},
+  journal={A draft of a book available at https://www. mimuw. edu. pl/~ bojan/paper/atom-book},
+  url={https://www.mimuw.edu.pl/~bojan/paper/atom-book},
+  year={2019}
+}
+
+
 @article{SCHU65,
   abstract      = {An alternative definition is given for a family of subsets of a free monoid that has been considered by Trahtenbrot and by McNaughton.},
   author        = {Schützenberger, Marcel P.},
@@ -287,4 +427,62 @@ Claude March\'e and Andrei Paskevich},
   pdf = {adl/duret.22.cav.pdf},
   slides = {adl/duret.22.cav.slides.pdf},
   doi = {10.1007/978-3-031-13188-2_9}
+}
+
+
+@inbook{REINH02,
+  abstract   = {The aim of this chapter is to show a non-elementary lower bound for the complexity of translating logic to finite automata.},
+  address    = {Berlin, Heidelberg},
+  author     = {Reinhardt, Klaus},
+  booktitle  = {Automata Logics, and Infinite Games: A Guide to Current Research},
+  doi        = {10.1007/3-540-36387-4_13},
+  editor     = {Grädel, Erich
+                and Thomas, Wolfgang
+                and Wilke, Thomas},
+  isbn       = {978-3-540-36387-3},
+  pages      = {231--238},
+  publisher  = {Springer Berlin Heidelberg},
+  title      = {The Complexity of Translating Logic to Finite Automata},
+  url        = {https://doi.org/10.1007/3-540-36387-4_13},
+  year       = {2002},
+}
+
+@inproceedings{ALUR11,
+  abstract      = {Streaming string transducers define (partial) functions from input strings to output strings. A streaming string transducer makes a single pass through the input string and uses a finite set of variables that range over strings from the output alphabet. At every step, the transducer processes an input symbol, and updates all the variables in parallel using assignments whose right-hand-sides are concatenations of output symbols and variables with the restriction that a variable can be used at most once in a right-hand-side expression. The expressiveness of streaming string transducers coincides with the class of ``regular'' transductions that can be equivalently defined using two-way deterministic finite-state transducers and using monadic second-order logic. The problems of checking functional equivalence of two streaming transducers, and of checking whether a streaming transducer satisfies pre/post verification conditions specified by finite automata, are solvable in Pspace. These decision procedures also generalize to the model of streaming transducers over data strings---strings over symbols tagged with data values over a potentially infinite data domain that supports only the operations of equality and ordering. We identify a class of imperative and a class of functional programs, manipulating lists of data items, which can be effectively translated to such streaming data-string transducers. Our results lead to algorithms for assertion checking and for checking functional equivalence of two programs, written possibly in different programming styles, for commonly used routines such as insert, delete, and reverse.},
+  author       = {Rajeev Alur},
+  editor       = {Lev D. Beklemishev and
+                  Ruy J. G. B. de Queiroz},
+  title        = {Streaming String Transducers},
+  booktitle    = {Logic, Language, Information and Computation - 18th International
+                  Workshop, WoLLIC 2011, Philadelphia, PA, USA, May 18-20, 2011. Proceedings},
+  series       = {Lecture Notes in Computer Science},
+  volume       = {6642},
+  pages        = {1},
+  publisher    = {Springer},
+  year         = {2011},
+  url          = {https://doi.org/10.1007/978-3-642-20920-8\_1},
+  doi          = {10.1007/978-3-642-20920-8\_1},
+}
+
+@article{RASCO59,
+  author     = {Rabin, Michael O. and Scott, Dana S.},
+  doi        = {10.1147/RD.32.0114},
+  journal    = {{IBM} J. Res. Dev.},
+  number     = {2},
+  pages      = {114--125},
+  sha256     = {5BF1F7B70F623F19AE1A0E11F8465E4766EFFA8C4B671284A4D092C45ECCDF38},
+  title      = {Finite Automata and Their Decision Problems},
+  url        = {https://doi.org/10.1147/rd.32.0114},
+  volume     = {3},
+  year       = {1959},
+}
+
+@misc{FIRELH25,
+      title={Lexicographic transductions of finite words}, 
+      author={Emmanuel Filiot and Pierre-Alain Reynier and Nathan Lhote},
+      year={2025},
+      eprint={2503.01746},
+      archivePrefix={arXiv},
+      primaryClass={cs.FL},
+      url={https://arxiv.org/abs/2503.01746}, 
 }

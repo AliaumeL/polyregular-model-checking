@@ -49,6 +49,8 @@
 \usepackage[capitalise,noabbrev,nameinlink]{cleveref}
 \usepackage[electronic,hyperref,xcolor,cleveref]{knowledge}
 \knowledgeconfigure{notion}
+\knowledge{notion}
+ | kl-usage
 
 % Tables 
 \usepackage{booktabs}
@@ -65,6 +67,9 @@
 
 % Colors 
 \usepackage{ensps-colorscheme}
+% set nice colors for the hyperlinks of knowledge
+\knowledgestyle{intro notion}{color=A5, emphasize}
+\knowledgestyle{notion}{color=B1}
 
 % we include whatever the user wants to include in the header
 
@@ -92,8 +97,11 @@
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-    We reduce the model checking problem for a subset of Python to the satisfiability of a first-order formula over finite words, which is known to be decidable. The reduction is based on the theory of polyregular functions, a recently developed generalization of regular languages to polynomial output string-to-string functions. We implemented this reduction in a verification tool called PolyCheck, that can use both automata-based solvers and classical SMT solvers as backends.
+    We introduce a high-level language with Python-like syntax for string-to-string, polyregular, first-order definable transductions. This language features function calls, boolean variables, and nested for-loops. We devise and implement a complete decision procedure for the verification of such programs against a first-order specification. The decision procedure reduces the verification problem to the decidable first-order theory of finite words (extensively studied in automata theory), which we discharge using either complete tools specific to this theory (MONA), or to general-purpose SMT solvers (Z3, CVC5).
 \end{abstract}
+
+\klogo\ This document uses \href{https://ctan.org/pkg/knowledge}{knowledge}:
+\kl[kl-usage]{notion} points to its \intro[kl-usage]{definition}. 
 
 % Include the content of the paper
 \input{src/intro.tex}

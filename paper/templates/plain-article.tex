@@ -137,6 +137,12 @@ $endif$
 % Include the content of the paper
 $body$
 
+% Include the acknowledgements
+$if(acknowledgements)$
+\section*{Acknowledgements}
+$acknowledgements$
+$endif$
+
 % Include the bibliography
 $if(bibliography)$
 \bibliographystyle{plainurl}

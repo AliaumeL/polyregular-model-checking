@@ -2,43 +2,132 @@
 \section{Introduction}
 \label{sec:intro}
 
-The goal of this paper is to define a programming language that is expressive
-enough to capture a wide range of functions, and yet simple enough to be
-amenable to formal verification. Specifically, we want to be able to verify
-Hoare triples of the form $\hoaretriple{P}{\texttt{code}}{Q}$, where $P$ and
-$Q$ are predicates and \texttt{code} is a program, meaning that whenever the
-input satisfies property $P$, the output of the program satisfies property $Q$.
+% In this paper, we introduce a programming language that is expressive
+% enough to capture a wide range of \emph{string-to-string} functions, and yet
+% simple enough to be amenable to formal verification. Specifically, we will 
+% show that one can automatically verify Hoare triples of the form
+% $\hoaretriple{P}{\texttt{code}}{Q}$, where $P$ and $Q$ are pre- and post-conditions 
+% written in the first order logic on words, meaning that whenever the input satisfies property
+% $P$, the output of the program satisfies property $Q$.
 
-To design our language, we leverage the theory of \kl{polyregular functions}
-that originated in the extension of automata theory to string-to-string
-functions of polynomial growth --- that is, $|f(w)|$ is bounded by a polynomial
-in $|w|$ --- \cite{ENMA02,bojanczyk2018polyregular}. For such functions, it is
-decidable whether a given Hoare triple holds, when $P$ and $Q$ are given
-as formulas in the monadic second order logic on words \cite[Theorem
-1.7]{bojanczyk2018polyregular}. However, this result is of theoretical nature
-(no implementation or complexity bounds are given), and writing programs using
-this model is cumbersome and error-prone. Furthermore, relying on monadic
-second order logic implies that one cannot use the vast majority of SMT
-solvers, which only handle first-order logic.
 
-\paragraph{Contributions.} In this paper our contributions are threefold.
-First, we introduce a programming language that corresponds to a rich subset of
-\texttt{Python}, which we argue is expressive enough to be usable in practice.
-Second, we demonstrate that this language can be compiled into a certain type
-of \kl{polyregular functions}. Third, we prove that for these polyregular
-functions, the verification of \kl{Hoare triples} (specified using
-\kl{first-order logic} on words) effectively reduces to a satisfiability
-problem of a first-order formula on finite words. While this last step was
-known to be theoretically possible, an efficient and effective implementation
-was lacking. Because we are using \kl{first-order logic} as a target language,
-we are not restricted to using automata based tools like \intro{MONA}
-\cite{MONA01}, but can also employ general purpose SMT solvers like \intro{Z3}
-\cite{z3} and \intro{CVC5} \cite{cvc5}, generating proof
-obligations in the \texttt{SMT-LIB} format \cite{BARRETT17}.
 
-We implemented all of these conversions in a \texttt{Haskell} program, and
-tested it on a number of examples with encouraging results.\footnote{An anonymized
-    version of our code is available at \repositoryUrl.}
+String manipulating programs of low complexity are ubiquitous in modern
+software. They are often used to transform data and do not perform complex
+computations themselves. In this paper, we are interested in verifying
+\kl{Hoare triples} for such string manipulating programs, i.e.
+specifications of the form $\hoaretriple{P}{\texttt{code}}{Q}$, where $P$ and $Q$ are pre- and
+post-conditions, meaning that whenever the input satisfies property $P$, the
+output of the program satisfies property $Q$.
+
+\paragraph{Regularity preserving programs.} \AP One particularly interesting
+class of specifications in the case of string-to-string functions are
+\emph{regular languages}, which can be efficiently verified using
+automata-based techniques. We say that a function $f$ is \intro{regularity
+preserving} if it preserves regular languages under pre-image, i.e. if
+$f^{-1}(L)$ is regular for all regular languages $L$. For \kl{regularity
+preserving functions}, the verification of a Hoare triple
+$\hoaretriple{L_P}{f}{L_Q}$ can be reduced to the nonemptiness problem of the
+language $L_P \cap f^{-1}(L_Q)$, where $L_P$ and $L_Q$ are regular languages.
+This is a well-studied problem in the literature, and is at the core of several
+more involved techniques \cite{ALCE11,CHLRW19,JLMR23}. The key challenge of
+this approach is that there exist uncomputable \kl{regularity preserving
+functions}, so such approaches will only work on classes of functions for which
+pre-images of regular languages are (relatively) efficiently computable.
+Usually, these classes come from generalisation of automata models to
+functions, also known as \emph{string-to-string transducers}.
+
+\paragraph{String-to-string transducer models.} There is a wide variety of
+models for string-to-string transducers \cite{MUSC19}, and one of the most
+prominent ones is called \intro{linear regular functions}, that are
+equivalently defined using two-way finite transducers (2DFTs)
+\cite{RASCO59}, streaming-string-transducers (SSTs) \cite{ALUR11}, or linear
+regular list functions \cite{BDK18}. Notably, Alur and Černý have proven
+that SSTs have a \PSPACE-complete model checking problem when the functions are
+given as SSTs, and the specifications are given as automata
+\cite[Theorem 13]{ALCE11}. This was used for instance by Chen, Taolue, Hague,
+Lin, Rümer, and Wu to study \emph{path feasibility} in string-manipulating
+programs \cite{CHLRW19}.
+
+A similar approach was used by Jeż, Lin, Markgraf, and Rümmer, who leveraged
+the \emph{rational functions} (a strict subclass of \kl{linear regular
+functions}) to study programs manipulating strings with infinite alphabets
+\cite{KAFR94}. Remark that in the setting of ininifte alphabets the landscape
+of automata and transdcuers is much more complex: In partcicular, the class of
+languages recognised by two-way automata is stronger that the class of
+languages recognised by one-way automata, and has undecidable emptiness
+\cite[Figure 1.1]{BOJA19}.
+
+\AP One limitation of the \kl{linear regular functions} is that they only 
+allow for linear growth of the output, excluding many useful string-manipulating 
+programs. The class of \reintro{polyregular functions} is an interesting 
+generalisation of \kl{linear regular functions} that allows for polynomial behaviour, 
+and is much closer to real life string manipulating programs. The model 
+is relatively old, first introduced in \cite{ENMA02},
+and has recently gained a lot of traction now that
+several other characterizations have been obtained
+\cite{bojanczyk2018polyregular,bojanczyk2019string}.\footnote{Note that for this extended model, being
+  \kl{regularity preserving} is tightly connected to being closed under
+function composition \cite[Proposition III.3]{FIRELH25}, and this closure under
+composition was one of the surprising conclusions of
+\cite{bojanczyk2018polyregular}.} However, the proof of the \kl{regularity
+preserving} property for polyregular functions is of theoretical nature (no
+implementation or complexity bounds are given), and writing programs using any
+of the existing equivalent definitions of \kl{polyregular functions} is
+cumbersome and error-prone. Because \kl{polyregular functions} can succinctly
+encode formulas in first-order logic on words, and
+since the satisfiability problem for such formulas is known to be
+\TOWER-complete \cite[Theorem 13.5]{REINH02}, one can expect that verifying
+\kl{polyregular functions} to be quite complex.
+
+\paragraph{MSO vs FO.} \AP Instead of using the full power of regular languages
+(defined equivalently using finite automata, monadic second order logic ($\mathsf{MSO}$), finite monoid
+recognition, or regular expressions \cite{buchi1960weak,KLEE56,TRAK66,SCHU61}),
+we will use specifications written in \kl{first-order logic} ($\FO$)
+on finite words. A cornerstone result of the theory is establishing the
+equivalence between languages described in this logic, \emph{star-free
+languages}, and \emph{counter free automata} \cite{PEPI86,SCHU65,MNPA71}. The
+advantage of using this weaker specification model is twofold: first, it allows
+us to focus on a simpler class of \kl{star-free polyregular
+functions}\footnote{ The notion of being \emph{star-free} has been extended to
+various classes of transducers, see
+\cite{CADA15,BDK18,MUSC19,bojanczyk2018polyregular}}, which are easier to work
+with in practice. Second, it allows us to reduce the satisfiability of a Hoare
+triple to the satisfiability of a \emph{first-order} formula on finite words,
+for which one can use general purpose SMT solvers, in addition to automata 
+based tools (\kl{MONA}) which also work for the $\MSO$ logic on words.
+Even though the SMT solver are \emph{incomplete}, 
+they can, in some cases, lead to faster decision procedures. Indeed, the
+satisfiability problem for \kl{first-order logic on finite words}, while
+decidable, is \TOWER-complete \cite[Theorem 13.5]{REINH02}. 
+
+\paragraph{Contributions.} \AP In this paper, we introduce a high-level
+programming language for implementing \kl{star-free polyregular functions}
+in a Python-like syntax, including features such as boolean variables, index variables,
+immutable list variables, function calls, and nested for-loops.
+The language was carefully designed not become too expressive -- 
+this is ensured by a number of syntactic restrictions and a novel type system
+for index variables. We show that this language can be
+compiled into one of the equivalent definitions of \kl{polyregular functions}
+(namely, \kl{simple for-programs}), which does not allow for function calls nor
+list variables. We also provide an implementation of the previously known
+abstract result stating that \kl{polyregular functions} are \kl{regularity
+preserving} (in the case of star-free functions and languages), being careful
+about the complexity of the transformations. Finally, we reduce the
+verification of Hoare triples to the satisfiability of first-order formulas on
+words. Since we are using \kl{first-order logic} as a target language, we are
+not restricted to using automata based tools like \intro{MONA} \cite{MONA01},
+but can also employ general purpose SMT solvers like \intro{Z3} \cite{z3} and
+\intro{CVC5} \cite{cvc5}, generating proof obligations in the \texttt{SMT-LIB}
+format \cite{BARRETT17}.
+
+All the steps described above have been implemented in a \texttt{Haskell}
+program, and tested on a number of examples with encouraging
+results.\footnote{An anonymized version of our code is available at
+\repositoryUrl.} While this is not a tool paper, we believe that the
+proof-of-concept implementation is a good starting point to demonstrate the viability of
+our approach, and we believe that there is a potential for further
+investigations in this direction.
 
 
 \paragraph{Outline.} The structure of the paper is as follows. We introduce our
@@ -82,17 +171,8 @@ for-programs} in \cref{sec:htl}, and then compile \kl{simple for-programs} into
 %    \end{tikzpicture}
 %\end{center}
 Then, in \cref{sec:benchmarks}, we present
-benchmarks of our implementation on various examples, discussing
+tests of our implementation on various examples, discussing
 the complexity of the transformations and the main bottlenecks of our approach.
-Finally, we conclude in \cref{sec:conclusion} by discussing potential
+Finally, in \cref{sec:conclusion}, we discuss potential
 optimizations and future work.
-
-\paragraph{Related work.} The correspondence between subsets of string to
-string functions and first order logic dates back to the origins of automata
-theory and the seminal results of \cite{PEPI86,SCHU65,MNPA71}, establishing the
-equivalence between \emph{star-free languages}, \emph{first order definable
-languages}, and \emph{counter free automata}. Extensions of this correspondence
-to functions has been an active area of research \cite{CADA15,MUSC19}, which
-we leverage in this work via the theory of \intro{polyregular functions}
-\cite{ENMA02,bojanczyk2018polyregular,bojanczyk2019string,bojanczyk2023growth}.
 

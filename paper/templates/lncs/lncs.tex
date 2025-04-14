@@ -56,6 +56,8 @@ $endif$
 \usepackage[capitalise,noabbrev,nameinlink]{cleveref}
 \usepackage[$if(draft)$composition$else$electronic$endif$,hyperref,xcolor,cleveref]{knowledge}
 \knowledgeconfigure{notion}
+\knowledge{notion}
+ | kl-usage
 
 % Tables 
 \usepackage{booktabs}
@@ -72,6 +74,12 @@ $endif$
 
 % Colors 
 \usepackage{ensps-colorscheme}
+$if(draft)$
+$else$
+% set nice colors for the hyperlinks of knowledge
+\knowledgestyle{intro notion}{color=A5, emphasize}
+\knowledgestyle{notion}{color=B1}
+$endif$
 
 % we include whatever the user wants to include in the header
 $for(header-includes)$
@@ -113,8 +121,9 @@ $else$
 \author{
     $for(author)$
     $author.name$\inst{1}$if(author.orcid)$\orcidID{$author.orcid$}$endif$%
-    $if(author.funding)$\thanks{$author.funding$}$endif$%
-    $sep$ \and
+    $if(author.funding)$
+    \thanks{$author.funding$}%
+    $endif$$sep$ \and
     $endfor$
 }
 \authorrunning{$for(author)$$author.initials$$sep$ and $endfor$}
@@ -133,6 +142,9 @@ $else$
     Please write an abstract in the \texttt{paper-meta.yaml} file.
 $endif$
 \end{abstract}
+
+\klogo\ This document uses \href{https://ctan.org/pkg/knowledge}{knowledge}:
+\kl[kl-usage]{notion} points to its \intro[kl-usage]{definition}. 
 
 % Include the content of the paper
 $body$
