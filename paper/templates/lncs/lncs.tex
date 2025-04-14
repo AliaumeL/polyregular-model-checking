@@ -121,9 +121,8 @@ $else$
 \author{
     $for(author)$
     $author.name$\inst{1}$if(author.orcid)$\orcidID{$author.orcid$}$endif$%
-    $if(author.funding)$
-    \thanks{$author.funding$}%
-    $endif$$sep$ \and
+    $if(author.funding)$\thanks{$author.funding$}$endif$%
+    $sep$ \and
     $endfor$
 }
 \authorrunning{$for(author)$$author.initials$$sep$ and $endfor$}
