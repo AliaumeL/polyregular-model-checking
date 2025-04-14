@@ -12,7 +12,7 @@
 
 % we setup a custom geometry because the default one is too narrow
 \usepackage{geometry}
-\geometry{margin=3.5cm}
+\geometry{margin=2.5cm}
 
 % utf-8 for old systems
 \usepackage[utf8]{inputenc}
@@ -100,7 +100,7 @@ $if(title)$
 $endif$
 \author{
 $for(author)$
-$author.name$$for(author.affiliation)$\thanks{$author.affiliation$}$endfor$
+$author.name$$for(author.affiliation)$\thanks{$author.affiliation$. $author.funding$}$endfor$
 $sep$ \and
 $endfor$
 }

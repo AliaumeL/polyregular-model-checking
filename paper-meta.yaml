@@ -5,6 +5,9 @@ author:
     email: ad.lopez@uw.edu.pl
     affiliation: University of Warsaw, Poland
     orcid: "0000-0002-4205-327X"
+    funding: |
+      Aliaume Lopez was supported by the Polish National Science Centre (NCN) grant “Polynomial
+      finite state computation” (2022/46/A/ST6/00072).
   - name: Rafał Stefański
     email: rafal.stefanski@mimuw.edu.pl
     initials: R. Stefański
