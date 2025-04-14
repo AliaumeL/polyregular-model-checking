@@ -13,8 +13,9 @@ author:
     affiliation: University of Warsaw, Poland
     orcid: "0000-0002-8439-4056"
     funding: |
-      Rafał Stefański has been partly supported by the European Research Council (ERC) 
-      under the European Union's Horizon 2020 innovation program (grant PROCONTRA-885666).
+      Rafał Stefański was partially supported by the
+      European Research Council (ERC) under the 
+      European Union’s Horizon 2020 innovation program (grant PROCONTRA-885666).
 abstract: |
   We introduce a high-level language with Python-like syntax 
   for string-to-string, polyregular, first-order definable transductions.
