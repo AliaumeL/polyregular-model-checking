@@ -24,6 +24,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Text.Encoding as TE
+import qualified Data.List as L
 
 
 import Data.Map (Map)
@@ -120,13 +121,13 @@ secs k
                | otherwise = printf "%.6f %s" t u
 
 
-
 data Options = Options
     { optInputHL   :: Maybe FilePath
     , optInputDir  :: Maybe FilePath
     , optFormDir   :: Maybe FilePath
     , optTimeout   :: Maybe Int
     , optOutput    :: Maybe FilePath
+    , optReproduceTable :: Maybe String
     } deriving (Eq,Show)
 
 options :: Parser Options
@@ -136,6 +137,8 @@ options = Options
       <*> optional (strOption (long "input-formula-directory" <> short 'f' <> metavar "DIRECTORY" <> help "The input directory for formulas"))
       <*> optional (option auto (long "timeout" <> short 't' <> metavar "TIME" <> help "Timeout in seconds"))
       <*> optional (strOption (long "output" <> short 'o' <> metavar "FILE" <> help "The output file"))
+      <*> optional (strOption (long "reproduce-table" <> short 'r' <> metavar "TABLE" <> help "Reproduce specific table from the paper (can be set to 1 or 2)"))
+
 
 
 
@@ -221,22 +224,22 @@ highToSfpWithTimeout :: Maybe Int -> Program String ValueType
                      -> IO (Either String SFP.ForProgram)
 highToSfpWithTimeout Nothing high = handleAny (\e -> return (Left (show e))) $ do
         let sfp' = higherToSimpleProgram high
-        hPutStrLn stderr $ "Simple For Program: " ++ show sfp'
+        -- hPutStrLn stderr $ "Simple For Program: " ++ show sfp'
         return $ Right sfp'
 highToSfpWithTimeout (Just t) high = handleAny (\e -> return (Left (show e))) $ eitherTimeout t $ do 
         let sfp' = higherToSimpleProgram high
-        hPutStrLn stderr $ "Simple For Program: " ++ show sfp'
+        -- hPutStrLn stderr $ "Simple For Program: " ++ show sfp'
         return sfp'
 
 sfpToIntWithTimeout :: Maybe Int -> SFP.ForProgram
                     -> IO (Either String (Interpretation String))
 sfpToIntWithTimeout Nothing sfp = handleAny (\e -> return (Left (show e))) $ do
         let int = simpleForToInterpretation sfp
-        hPutStrLn stderr $ "Interpretation: " ++ show int
+        -- hPutStrLn stderr $ "Interpretation: " ++ show int
         return $ Right int
 sfpToIntWithTimeout (Just t) sfp = handleAny (\e -> return (Left (show e))) $ eitherTimeout t $ do
         let int = simpleForToInterpretation sfp
-        hPutStrLn stderr $ "Interpretation: " ++ show int
+        -- hPutStrLn stderr $ "Interpretation: " ++ show int
         return int
 
 
@@ -283,6 +286,9 @@ data BenchmarkSMT = BenchmarkSMT {
   , bsmtResponses   :: Map String SmtResultBench
 } deriving (Eq, Show, Generic, ToJSON, FromJSON)
 
+table1Programs :: [FilePath]
+table1Programs = ["identity.pr", "reverse.pr", "subwords_ab.pr", "map_reverse.pr", "prefixes.pr", "get_last_word.pr", "get_first_word.pr", "compress_as.pr", "litteral_test.pr", "bibtex.pr"]
+
 benchmarkSMT :: Maybe Int -> FilePath -> FilePath -> FilePath -> IO (Either String BenchmarkSMT)
 benchmarkSMT Nothing prefile progfile postfile = handleAny (\e -> return (Left (show e))) $ do
     pre  <- unwrapEither "Parsing Precondition"  <$> PFO.parseFromFileWithoutTags prefile
@@ -293,7 +299,7 @@ benchmarkSMT Nothing prefile progfile postfile = handleAny (\e -> return (Left (
     let hoare   = HoareTriple pre int post
     let formula = encodeHoareTriple hoare
     let size    = BenchmarkSize (quantifierDepth formula) (formulaSize formula) "" 0
-    hPutStrLn stderr $ "Formula: " ++ show size
+    --hPutStrLn stderr $ "Formula: " ++ show size
     solvers <- installedSolvers
     responses <- forM solvers $ \solver -> do
         (d, verifyResult) <- time $ verifyHoareTriple solver hoare
@@ -307,7 +313,7 @@ benchmarkSMT (Just t) prefile progfile postfile = handleAny (\e -> return (Left 
     pre  <- unwrapEither "Parsing Precondition"  <$> PFO.parseFromFileWithoutTags prefile
     post <- unwrapEither "Parsing Postcondition" <$> PFO.parseFromFileWithoutTags postfile
     high <- parseHL <$> readFile progfile
-    hPutStrLn stderr $ "Parsed " ++ progfile ++ " " ++ prefile ++ " " ++ postfile
+    --hPutStrLn stderr $ "Parsed " ++ progfile ++ " " ++ prefile ++ " " ++ postfile
     let sfp     = higherToSimpleProgram high
     let int     = simpleForToInterpretation sfp
     let hoare   = HoareTriple pre int post
@@ -324,9 +330,78 @@ benchmarkSMT (Just t) prefile progfile postfile = handleAny (\e -> return (Left 
             Nothing           -> return (show solver, SmtTimeout)
     return $ Right $ BenchmarkSMT progfile prefile postfile size (M.fromList responses)
 
+---- Produce a table1-style table: 
+-- Column headers
+headers :: [String]
+headers = ["Input File", "HF Size", "HF Loop Depth", "HF Boolean Depth",
+           "SF Size", "SF Loop Depth", "SF Boolean Depth",
+           "FO Size", "FO Quantifier Rank"]
+
+-- Produce a row for each benchmark
+benchmarkToRow :: BenchmarkFile -> [String]
+benchmarkToRow bf =
+  let (sfSize, sfDepth, sfBoolDepth) = showSfp (bfSfp bf)
+      (foSize, foQuantDepth) = showInterp (bfInterp bf)
+      hf = bfHigh bf
+  in [ bfName bf
+     , show (bsSize hf)
+     , show (bsDepth hf)
+     , show (bsBoolDepth hf)
+     , sfSize
+     , sfDepth
+     , sfBoolDepth
+     , foSize
+     , foQuantDepth
+     ]
+
+showSfp :: Either String BenchmarkSize -> (String, String, String)
+showSfp (Right bs) = (show (bsSize bs), show (bsDepth bs), show (bsBoolDepth bs))
+showSfp (Left _)   = ("-", "-", "-")
+
+showInterp :: Either String BenchmarkSize -> (String, String)
+showInterp (Right bs) = (show (bsSize bs), show (bsDepth bs))
+showInterp (Left _)   = ("-", "-")
+
+-- Join fields into one Markdown line
+formatRow :: [String] -> String
+formatRow fields = "| " ++ L.intercalate " | " fields ++ " |"
+
+-- Markdown separator row
+markdownSeparator :: Int -> String
+markdownSeparator n = "|" ++ L.intercalate "|" (replicate n " --- ") ++ "|"
+
+-- The main function you want
+generateMarkdownTable :: [BenchmarkFile] -> String
+generateMarkdownTable benchmarks =
+  let allRows = map benchmarkToRow benchmarks
+      headerRow = formatRow headers
+      separatorRow = markdownSeparator (length headers)
+      dataRows = map formatRow allRows
+
+      headerExplanation = unlines
+        [ "HF = High-Level Form, SF = Simple Form, FO = FO transduction."
+        , ""
+        ]
+
+  in unlines (headerExplanation : headerRow : separatorRow : dataRows)
+
+
+
 main :: IO ()
 main = do 
     opts <- execParser cmdParser
+    case (optReproduceTable opts) of
+        Just "1" -> do
+            let files = map (\f -> "assets/HighLevel/" ++ f) table1Programs
+            BenchmarkMetadata benches <- benchmarkHighLevelFiles Nothing files
+            case (optOutput opts) of
+                Just file -> do
+                    putStrLn $ generateMarkdownTable benches
+                    exitSuccess
+                Nothing -> do 
+                    putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    exitSuccess
+        _ -> return ()
     let timeoutMilisec = (*1000000) <$> optTimeout opts
     case (optFormDir opts, optInputDir opts) of
         (Nothing, _) -> return ()
