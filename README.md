@@ -157,6 +157,44 @@ stack exec polycheck -- --web
 
 And then connect to `http://localhost:3000` in your web browser.
 
+## Evaluating the code
+
+### Recreating the tables from the paper
+
+In order to recreate the tables from the paper, you need to run the `benchmarker` program
+with the argument `--reproduce-table` and the number of the table you want to reproduce.
+
+- `--reproduce-table 1` will reproduce Table 1, which gives the sizes of the intermediate
+  and final representations of the tables. This takes around 15 minutes to run.
+- `--reproduce-table 1l` will reproduce the light version of which does not include Table 1,
+  skipping `bibtex.pr` and `litteral_test.pr`. This takes less than 1 second to run.
+- `--reproduce-table 2` will reproduce Table 2, which verifies 5 example Hoare triples
+  with timeout set to 5 seconds for each triple. It then reports on the results of the verification
+  using Mona, CVC5 and Z3, as well as the size and quantifier rank of the formula fed to the solvers.
+  This takes around 1 minute to run.
+- `-- reproduce-table 2l` will reproduce the light version of Table 2 which only includes 1 easy example.
+  This takes less than 1 second to run.
+
+### Smoke test
+
+The `benchmarker` program can be used to run a smoke test on the code. For this purpose we propose 
+recreating table `1l` and `2l` with the following command:
+
+```bash
+stack run -- benchmarker --reproduce-table 1l
+stack run -- benchmarker --reproduce-table 2l
+```
+
+This will run the smoke test on the code and check that everything is working as expected.
+
+### Full evaluation
+
+In order to run the full evaluation you can create a Table-1 style table with all the programs in
+the `assets/HighLevel` directory and a Table-2 style table with all possible triples using the programs from `assets/HighLevel` and `assets/Formulas`. For this you can use the following commands:
+
+- `stack run -- benchmarker -d assets/HighLevel` this takes around 10 min to run.
+- `stack run -- benchmarker -d assets/HighLevel -f assets/Formulas` this is the heavy evaluation, which takes many hours to run.
+
 ## Cite this repository
 
 ```bibtex

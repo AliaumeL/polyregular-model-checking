@@ -1,0 +1,8 @@
+exists firstC : Pos . exists nextC : Pos .
+    firstC < nextC /\
+    not (exists middleLetter : Pos .
+        firstC < middleLetter /\
+        middleLetter < nextC
+    ) /\
+    firstC = 'b' /\
+    nextC = 'a' 

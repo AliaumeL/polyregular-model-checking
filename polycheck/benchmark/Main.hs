@@ -26,9 +26,12 @@ import qualified Data.ByteString.Lazy as B
 import qualified Data.Text.Encoding as TE
 import qualified Data.List as L
 
+import Data.Either (rights)
+
 
 import Data.Map (Map)
 import qualified Data.Map as M
+import qualified Data.Set as S
 
 -- putstrln to stderr
 import System.IO (hPutStrLn, stderr)
@@ -289,6 +292,21 @@ data BenchmarkSMT = BenchmarkSMT {
 table1Programs :: [FilePath]
 table1Programs = ["identity.pr", "reverse.pr", "subwords_ab.pr", "map_reverse.pr", "prefixes.pr", "get_last_word.pr", "get_first_word.pr", "compress_as.pr", "litteral_test.pr", "bibtex.pr"]
 
+table1lPrograms :: [FilePath]
+table1lPrograms = init $ init table1Programs
+
+table2Triples :: [(FilePath, FilePath, FilePath)]
+table2Triples = [ 
+    ("containsAB.fo", "compress_as.pr", "containsAB.fo"),
+    ("containsAB.fo", "reversed_add_hash.pr", "containsBA.fo"), 
+    ("endsWithA.fo" , "get_last_word.pr", "containsAA.fo"), 
+    ("containsAB.fo", "subwords_ab.pr", "containsAB.fo"), 
+    ("endsWithA.fo" , "map_reverse.pr", "startsWithA.fo")
+    ]
+
+table2lTriples :: [(FilePath, FilePath, FilePath)]
+table2lTriples = [head table2Triples]
+
 benchmarkSMT :: Maybe Int -> FilePath -> FilePath -> FilePath -> IO (Either String BenchmarkSMT)
 benchmarkSMT Nothing prefile progfile postfile = handleAny (\e -> return (Left (show e))) $ do
     pre  <- unwrapEither "Parsing Precondition"  <$> PFO.parseFromFileWithoutTags prefile
@@ -377,13 +395,86 @@ generateMarkdownTable benchmarks =
       headerRow = formatRow headers
       separatorRow = markdownSeparator (length headers)
       dataRows = map formatRow allRows
-
       headerExplanation = unlines
         [ "HF = High-Level Form, SF = Simple Form, FO = FO transduction."
         , ""
         ]
 
   in unlines (headerExplanation : headerRow : separatorRow : dataRows)
+
+
+--- Produce a table2 style table:
+-- Solvers we care about
+solversDefault :: [String]
+solversDefault = ["Mona", "SMTLib CVC5", "SMTLib Z3"]
+
+-- Headers
+headersT2 :: [String] -> [String]
+headersT2 solvers = ["Name", "Precondition", "Postcondition", "Formula Quantifier Rank", "Formula Size"] ++ solvers
+
+-- Turn a BenchmarkSMT into a row
+benchmarkToRowT2 :: [String] -> (Either String BenchmarkSMT) -> [String]
+benchmarkToRowT2 solvers (Right bm) =
+  let formula = bsmtFormula bm
+      results = map (solverResult (bsmtResponses bm)) solvers
+  in [ bsmtName bm
+     , bsmtPre bm
+     , bsmtPost bm
+     , show (bsSize formula)
+     , show (bsDepth formula)
+     ] ++ results
+benchmarkToRowT2 solvers (Left err) =
+  let results = replicate (length solvers) "-"
+  in [ "Error"
+     , "Error"
+     , "Error"
+     , "Error"
+     , "Error"
+     ] ++ results
+
+-- Map solver result to symbol
+solverResult :: M.Map String SmtResultBench -> String -> String
+solverResult m solver =
+  case M.lookup solver m of
+    Just (SmtOkWithTime _) -> "✅"
+    Just (SmtKoWithTime _) -> "❌"
+    Just (SmtQQWithTime _) -> "❓"
+    Just SmtTimeout        -> "❓"
+    Nothing                -> "-"
+
+-- Format one row
+--formatRow :: [String] -> String
+--formatRow fields = "| " ++ intercalate " | " fields ++ " |"
+
+-- Markdown separator row
+--markdownSeparator :: Int -> String
+--markdownSeparator n = "|" ++ intercalate "|" (replicate n " --- ") ++ "|"
+
+-- The function you want
+generateBenchmarkSMTTableS :: [String] -> [Either String BenchmarkSMT] -> String
+generateBenchmarkSMTTableS solvers benchmarks =
+  let allRows = map (benchmarkToRowT2 solvers) benchmarks
+      headerRow = formatRow (headersT2 solvers)
+      separatorRow = markdownSeparator (length headers)
+      dataRows = map formatRow allRows
+
+      headerExplanation = unlines
+        [ "✅ = OK, ❌ = KO, ❓ = unclear (timeout or unknown), - = solver not installed."
+        , ""
+        ]
+  in unlines (headerExplanation : headerRow : separatorRow : dataRows)
+
+generateBenchmarkSMTTable :: [Either String BenchmarkSMT] -> String
+generateBenchmarkSMTTable benchmarks = generateBenchmarkSMTTableS solversDefault benchmarks
+
+allSolversList :: [BenchmarkSMT] -> [String]
+allSolversList = L.sort . S.toList . S.unions . map (M.keysSet . bsmtResponses)
+
+generateBenchmarkSMTTableAll :: [Either String BenchmarkSMT] -> String
+generateBenchmarkSMTTableAll benchmarks =
+  let solvers = allSolversList $ rights benchmarks in
+  generateBenchmarkSMTTableS solvers benchmarks 
+
 
 
 
@@ -396,12 +487,47 @@ main = do
             BenchmarkMetadata benches <- benchmarkHighLevelFiles Nothing files
             case (optOutput opts) of
                 Just file -> do
-                    putStrLn $ generateMarkdownTable benches
+                    TIO.writeFile file $ T.pack $ generateMarkdownTable benches
                     exitSuccess
                 Nothing -> do 
-                    putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    putStrLn $ generateMarkdownTable benches
                     exitSuccess
-        _ -> return ()
+        Just "1l" -> do
+            let files = map (\f -> "assets/HighLevel/" ++ f) table1lPrograms
+            BenchmarkMetadata benches <- benchmarkHighLevelFiles Nothing files
+            case (optOutput opts) of
+                Just file -> do
+                    TIO.writeFile file $ T.pack $ generateMarkdownTable benches
+                    exitSuccess
+                Nothing -> do 
+                    putStrLn $ generateMarkdownTable benches
+                    exitSuccess 
+        Just "2" -> do
+            let triples = map (\(f, h, p) -> ("assets/Formulas/" ++ f, "assets/HighLevel/" ++ h, "assets/Formulas/" ++ p)) table2Triples
+            -- set timeout to 5 seconds
+            let timeoutMilisec = Just 5000000
+            benches <- forM triples (\(pre, prog, post) -> benchmarkSMT timeoutMilisec pre prog post)
+            case (optOutput opts) of
+                Just file -> do
+                    TIO.writeFile file $ T.pack $ generateBenchmarkSMTTable benches
+                    exitSuccess
+                Nothing -> do 
+                    putStrLn $ generateBenchmarkSMTTable benches
+                    exitSuccess
+        Just "2l" -> do
+            let triples = map (\(f, h, p) -> ("assets/Formulas/" ++ f, "assets/HighLevel/" ++ h, "assets/Formulas/" ++ p)) table2lTriples
+            -- set timeout to 5 seconds
+            let timeoutMilisec = Just 5000000
+            benches <- forM triples (\(pre, prog, post) -> benchmarkSMT timeoutMilisec pre prog post)
+            case (optOutput opts) of
+                Just file -> do
+                    TIO.writeFile file $ T.pack $ generateBenchmarkSMTTable benches
+                    exitSuccess
+                Nothing -> do 
+                    putStrLn $ generateBenchmarkSMTTable benches
+                    exitSuccess
+        Nothing -> return ()
+ 
     let timeoutMilisec = (*1000000) <$> optTimeout opts
     case (optFormDir opts, optInputDir opts) of
         (Nothing, _) -> return ()
@@ -415,22 +541,26 @@ main = do
             benches <- forM triples (\(pre, prog, post) -> benchmarkSMT timeoutMilisec pre prog post)
             case (optOutput opts) of
                 Just file -> do
-                    TIO.writeFile file . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    TIO.writeFile file $ T.pack $ generateBenchmarkSMTTableAll benches
+                    --TIO.writeFile file . TE.decodeUtf8 . B.toStrict . encode $ benches
                     exitSuccess
                 Nothing -> do
-                    putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    putStrLn $ generateBenchmarkSMTTableAll benches
+                    --putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
                     exitSuccess
     case optInputDir opts of
         Just dir -> do
             files <- listDirectory dir
             let files' = map (dir </>) files
-            benches <- benchmarkHighLevelFiles timeoutMilisec files'
+            BenchmarkMetadata benches <- benchmarkHighLevelFiles timeoutMilisec files'
             case (optOutput opts) of
                 Just file -> do
-                    TIO.writeFile file . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    TIO.writeFile file $ T.pack $ generateMarkdownTable benches
+                    --TIO.writeFile file . TE.decodeUtf8 . B.toStrict . encode $ benches
                     exitSuccess
-                Nothing -> do 
-                    putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
+                Nothing -> do
+                    putStrLn $ generateMarkdownTable benches
+                    -- putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
                     exitSuccess
         Nothing -> return ()
     case optInputHL opts of
