@@ -78,8 +78,6 @@ The JSON document will contain something similar to the document described below
 }
 ```
 
-
-
 ## Installing
 
 The installation of the program can be done using the following methods
@@ -172,28 +170,29 @@ with the argument `--reproduce-table` and the number of the table you want to re
   with timeout set to 5 seconds for each triple. It then reports on the results of the verification
   using Mona, CVC5 and Z3, as well as the size and quantifier rank of the formula fed to the solvers.
   This takes around 1 minute to run.
-- `-- reproduce-table 2l` will reproduce the light version of Table 2 which only includes 1 easy example.
-  This takes less than 1 second to run.
+- `-- reproduce-table 2l` will reproduce the light version of Table 2 which only includes 1 easy example. This takes less than 1 second to run.
 
 ### Smoke test
 
 The `benchmarker` program can be used to run a smoke test on the code. For this purpose we propose 
-recreating table `1l` and `2l` with the following command:
+recreating table `1l` and `2l` with the following command, which will run the some tests on the code and check that everything is working as expected:
 
 ```bash
 stack run -- benchmarker --reproduce-table 1l
 stack run -- benchmarker --reproduce-table 2l
 ```
 
-This will run the smoke test on the code and check that everything is working as expected.
+Alternatively, you can use the docker version.
 
 ### Full evaluation
 
 In order to run the full evaluation you can create a Table-1 style table with all the programs in
 the `assets/HighLevel` directory and a Table-2 style table with all possible triples using the programs from `assets/HighLevel` and `assets/Formulas`. For this you can use the following commands:
 
-- `stack run -- benchmarker -d assets/HighLevel` this takes around 10 min to run.
-- `stack run -- benchmarker -d assets/HighLevel -f assets/Formulas` this is the heavy evaluation, which takes many hours to run.
+- `benchmarker -d assets/HighLevel` this takes around 10 min to run.
+- `benchmarker -d assets/HighLevel -f assets/Formulas -t 5000` this is the heavy evaluation, which takes many hours to run.
+
+As usual, you can run this locally (e.g. using stack) or in the docker.
 
 ## Cite this repository
 
