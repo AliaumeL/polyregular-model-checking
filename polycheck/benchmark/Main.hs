@@ -541,26 +541,27 @@ main = do
             benches <- forM triples (\(pre, prog, post) -> benchmarkSMT timeoutMilisec pre prog post)
             case (optOutput opts) of
                 Just file -> do
-                    TIO.writeFile file $ T.pack $ generateBenchmarkSMTTableAll benches
-                    --TIO.writeFile file . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    -- TIO.writeFile file $ T.pack $ generateBenchmarkSMTTableAll benches
+                    TIO.writeFile file . TE.decodeUtf8 . B.toStrict . encode $ benches
                     exitSuccess
                 Nothing -> do
-                    putStrLn $ generateBenchmarkSMTTableAll benches
-                    --putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    --putStrLn $ generateBenchmarkSMTTableAll benches
+                    putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
                     exitSuccess
     case optInputDir opts of
         Just dir -> do
             files <- listDirectory dir
             let files' = map (dir </>) files
+            --BenchmarkMetadata benches <- benchmarkHighLevelFiles timeoutMilisec files'
             BenchmarkMetadata benches <- benchmarkHighLevelFiles timeoutMilisec files'
             case (optOutput opts) of
                 Just file -> do
-                    TIO.writeFile file $ T.pack $ generateMarkdownTable benches
-                    --TIO.writeFile file . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    --TIO.writeFile file $ T.pack $ generateMarkdownTable benches
+                    TIO.writeFile file . TE.decodeUtf8 . B.toStrict . encode $ benches
                     exitSuccess
                 Nothing -> do
-                    putStrLn $ generateMarkdownTable benches
-                    -- putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
+                    --putStrLn $ generateMarkdownTable benches
+                    putStrLn . T.unpack . TE.decodeUtf8 . B.toStrict . encode $ benches
                     exitSuccess
         Nothing -> return ()
     case optInputHL opts of

@@ -187,7 +187,8 @@ Alternatively, you can use the docker version.
 ### Full evaluation
 
 In order to run the full evaluation you can create a Table-1 style table with all the programs in
-the `assets/HighLevel` directory and a Table-2 style table with all possible triples using the programs from `assets/HighLevel` and `assets/Formulas`. For this you can use the following commands:
+the `assets/HighLevel` directory and a Table-2 style table with all possible triples using the programs from `assets/HighLevel` and `assets/Formulas`. In this mode the program will output JSON
+description of the results, rather than a table -- see [Section For The Model Checker](#for-the-model-checker) for details.
 
 - `benchmarker -d assets/HighLevel` this takes around 10 min to run.
 - `benchmarker -d assets/HighLevel -f assets/Formulas -t 5000` this is the heavy evaluation, which takes many hours to run.
