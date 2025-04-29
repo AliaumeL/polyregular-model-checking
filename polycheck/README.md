@@ -52,3 +52,4 @@ should probably be read first:
 - `./src/ForPrograms/Simple.hs` describes the syntax of simple for programs.
 - `./src/ForPrograms/HighLevel.hs` describes the syntax of high-level for programs.
 - `./src/Logic/Formulas.hs` describes the syntax of first-order logic formulas.
+

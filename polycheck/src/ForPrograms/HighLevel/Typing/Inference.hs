@@ -17,7 +17,7 @@ import ForPrograms.HighLevel.Typing(ValueType(..),
 import Logic.QuantifierFree
 import ForPrograms.HighLevel.PrettyPrint
 
-import Debug.Trace
+--import Debug.Trace
 
 import Control.Monad
 import Control.Monad.State

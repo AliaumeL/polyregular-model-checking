@@ -45,7 +45,7 @@ import Logic.Formulas
 import Logic.FormulaExamples
 import Logic.FormulaChecker (checkFormulaTypes, TypeError(..))
 
-import Debug.Trace
+--import Debug.Trace
 
 catchAny :: IO a -> (SomeException -> IO a) -> IO a
 catchAny = Control.Exception.catch

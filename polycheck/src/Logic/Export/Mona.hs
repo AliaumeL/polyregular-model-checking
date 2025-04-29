@@ -178,9 +178,10 @@ runMona :: String -> IO ExportResult
 runMona input = withTempFileContent input $ \ifile -> do
         outputCmd <- timeout (10^6 * timeLimit)  $ safeRunProcess "mona" ["-o2", "-q", ifile]
         case outputCmd of
-            Just (Left err)     -> do
-                putStrLn $ "File: " ++ ifile
-                putStrLn input
+            Just (Left err) -> do
+                -- putStrLn $ "File: " ++ ifile
+                -- putStrLn input
+                -- putStrLn $ "Error: " ++ err
                 return $ Error err
             Just (Right output) -> return $ parseMonaOutput output
             Nothing             -> return $ Unknown
