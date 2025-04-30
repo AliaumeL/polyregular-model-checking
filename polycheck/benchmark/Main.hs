@@ -436,11 +436,11 @@ benchmarkToRowT2 solvers (Left err) =
 solverResult :: M.Map String SmtResultBench -> String -> String
 solverResult m solver =
   case M.lookup solver m of
-    Just (SmtOkWithTime _) -> "✅"
-    Just (SmtKoWithTime _) -> "❌"
-    Just (SmtQQWithTime _) -> "❓"
-    Just SmtTimeout        -> "❓"
-    Nothing                -> "-"
+    Just (SmtOkWithTime _) -> "OK"
+    Just (SmtKoWithTime _) -> "NO"
+    Just (SmtQQWithTime _) -> "??"
+    Just SmtTimeout        -> "??"
+    Nothing                -> "--"
 
 -- Format one row
 --formatRow :: [String] -> String
@@ -459,7 +459,7 @@ generateBenchmarkSMTTableS solvers benchmarks =
       dataRows = map formatRow allRows
 
       headerExplanation = unlines
-        [ "✅ = OK, ❌ = KO, ❓ = unclear (timeout or unknown), - = solver not installed."
+        [ "Possible outcomes : OK, No = KO, ?? = unclear (timeout or unknown), -- = solver not installed."
         , ""
         ]
   in unlines (headerExplanation : headerRow : separatorRow : dataRows)

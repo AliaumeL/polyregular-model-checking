@@ -21,7 +21,7 @@ polycheck -i <input_file> -b <pre_condition_file> -a <post_condition_file>
 ```
 
 A list of examples input files and pre/post condition files can be found in the
-`polyreg/assets` subdirectory. The program will output the result of the model
+`polycheck/assets` subdirectory. The program will output the result of the model
 checking process, which can be, for every solver, one of the following:
 
 - `OK`: the program satisfies the specification.
@@ -196,7 +196,7 @@ the `assets/HighLevel` directory and a Table-2 style table with all possible tri
 description of the results, rather than a table -- see [Section Running](#running) for details.
 
 - `benchmarker -d assets/HighLevel` this takes around 10 min to run.
-- `benchmarker -d assets/HighLevel -f assets/Formulas -t 5000` this is the heavy evaluation, which takes many hours to run.
+- `benchmarker -d assets/HighLevel -f assets/Formulas -t 5000` this is the heavy evaluation, which takes around 5-10 hours to run.
 
 As usual, you can run this locally (e.g. using stack) or in the docker.
 
