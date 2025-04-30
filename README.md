@@ -182,7 +182,12 @@ stack run -- benchmarker --reproduce-table 1l
 stack run -- benchmarker --reproduce-table 2l
 ```
 
-Alternatively, you can use the docker version.
+Alternatively, you can use the docker version and run
+
+```bash
+docker run -it aliaume/polycheck-small:latest benchmarker --reproduce-table 1l
+docker run -it aliaume/polycheck-small:latest benchmarker --reproduce-table 2l
+```
 
 ### Full evaluation
 
