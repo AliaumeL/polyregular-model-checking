@@ -15,7 +15,7 @@
 
 
 \usepackage{lineno}
-\linenumbers
+\nolinenumbers
 
 
 % babel for language settings
@@ -79,17 +79,21 @@
 \input{lib/maths}
 \input{knowledges.kl}
 
-\newcommand{\repositoryUrl}{\url{https://anonymous.4open.science/r/polyregular-model-checking-73A0}}
+\newcommand{\repositoryUrl}{\url{https://github.com/AliaumeL/polyregular-model-checking}}
 
 \begin{document}
 %
 \title{Polyregular Model Checking}
 
 \author{
-    Anonymized for review
-}
-\authorrunning{Anonymized for review}
-\institute{Anonymized for review}
+        Aliaume Lopez\inst{1}\orcidID{0000-0002-4205-327X}%
+    \thanks{Aliaume Lopez was supported by the Polish National Science Centre (NCN) grant ``Polynomial finite state computation'' (2022/46/A/ST6/00072).}%
+     \and
+        Rafał Stefański\inst{1}\orcidID{0000-0002-8439-4056}%
+    \thanks{Rafał Stefański was supported by the European Research Council (ERC) under the European Union's Horizon 2020 innovation program (grant PROCONTRA-885666).}%
+    }
+\authorrunning{A. Lopez and R. Stefański}
+\institute{University of Warsaw}
 
 \date{\today}
 
@@ -113,6 +117,8 @@
 \input{src/conclusion.tex}
 
 % Include acknowledgements
+\section*{Acknowledgements}
+We would like to thank Arnav Garg and Ojas Maheshwari for their participation in the early stage of this project.
 
 % Include the bibliography
 \bibliographystyle{splncs04}
