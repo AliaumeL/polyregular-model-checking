@@ -10,7 +10,10 @@ needs to be highly restricted. To illustrate those restrictions, let us present
 in \cref{fig:python-example-nested}
 a comprehensive example written in a subset of \texttt{Python}.\footnote{The
 corresponding program in the syntax accepted by our solver is given in
-\cref{fig:high-level-example-nested}.}
+\iflongversion
+\cref{fig:high-level-example-nested}.
+\else
+the full version of this paper.}
 
 \begin{figure}[h]
     \centering
@@ -61,8 +64,8 @@ also will enforce the following conditions, which are satisfied in our example:
         unless one of them is a constant expression.
         This is what happens in point \circleref{4}{code:string:comp}
         of our \cref{fig:python-example-nested}.
-        Without this restriction, verification would also be undecidable
-        (\cref{lem:umc-equality-nested-words}).
+        Without this restriction, verification would also be undecidable%
+        \iflongversion (\cref{lem:umc-equality-nested-words})\fi.
         More generally, classical string \emph{algorithms}
         (edit distance, string matching, longest common subsequence, etc.) should not 
         be expressible in our language, since one can easily derive an
@@ -87,8 +90,8 @@ also will enforce the following conditions, which are satisfied in our example:
         To ensure this compatibility, we designed the following type system,
         containing Booleans, \kl{nested words} of a given depth
         (characters are of depth $0$), and integers associated to a \kl{list
-        expression} (the set of which is denoted by $\oexpr$, and will
-        be defined in \cref{fig:out-expr}):
+        expression} (the set of which is denoted by $\oexpr$\iflongversion, and will
+        be defined in \cref{fig:out-expr}\fi):
         \begin{align*}
             \tau ::=~ \intro*\TBool
             ~\mid~ \intro*\TPos[o] 
@@ -101,17 +104,16 @@ also will enforce the following conditions, which are satisfied in our example:
         These types can be inferred from the context,
         except in the case of function arguments, in which case
         we explicitly specify to which list argument integer variables
-        are associated, as shown in \cref{fig:high-level-example-nested}.
-
+        are associated\iflongversion, as shown in \cref{fig:high-level-example-nested}\fi.
         Without this restriction, the equality predicate between two lists can
-        be redefined (as shown in \cref{fig:eq-def-different-indices}).
+        be redefined\iflongversion (as shown in \cref{fig:eq-def-different-indices})\fi.
 
 
     \item \textbf{Variable Shadowing.} 
         \label{item:variable-shadowing}
           We disallow shadowing of variable names, as it could
           be used to forge the origin of integers, leading to unrestricted comparisons
-          (as shown in \cref{fig:eq-def-shadowing}).
+          \iflongversion (as shown in \cref{fig:eq-def-shadowing})\fi.
 
     \item \textbf{Boolean Arguments.}
         \label{item:boolean-arguments}
@@ -121,7 +123,7 @@ also will enforce the following conditions, which are satisfied in our example:
         by considering the function \texttt{switch(b, l1, l2)} which
         returns either \texttt{l1} or \texttt{l2} 
         depending on the value of \texttt{b}
-        (as in \cref{fig:eq-def-boolean}).
+        \iflongversion(as in \cref{fig:eq-def-boolean})\fi.
 
     \item \textbf{Boolean Updates.} 
         \label{item:boolean-updates}
@@ -158,7 +160,11 @@ implemented a linear-time algorithm for the type checking and inference
 problems.
 
 \AP The formal syntax of our language is given in
-\cref{fig:bool-expr,fig:const-expr,fig:out-expr,fig:high-level-stmt,fig:high-level-program}.
+\iflongversion
+\cref{fig:bool-expr,fig:const-expr,fig:out-expr,fig:high-level-stmt,fig:high-level-program}
+\else
+  the full version of this paper.
+\fi
 They define the syntax of \intro{boolean expressions} ($\bexpr$),
 \intro{constant expressions} ($\cexpr$), \intro{list expressions} ($\oexpr$),
 and \intro{control statements} ($\hlstmt$). For readability, we distinguish

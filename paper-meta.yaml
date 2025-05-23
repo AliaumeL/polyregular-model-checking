@@ -34,6 +34,11 @@ classification:
     - Theory of computation~Automata extensions
     - Theory of computation~Logic and verification
     - Theory of computation~Program verification
+artifacts:
+  doi: 10.5281/zenodo.15210967
+  reusable: true
+  available: true
+  functional: true
 keywords:
   - Program verification
   - Polyregular functions

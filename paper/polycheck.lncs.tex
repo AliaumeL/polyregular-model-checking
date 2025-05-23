@@ -14,6 +14,9 @@
 \usepackage[T1]{fontenc}
 
 
+\newif\iflongversion
+\longversionfalse
+
 \usepackage{lineno}
 \nolinenumbers
 
@@ -81,6 +84,19 @@
 
 \newcommand{\repositoryUrl}{\url{https://github.com/AliaumeL/polyregular-model-checking}}
 
+
+\usepackage[firstpage]{draftwatermark} % free badge placement
+\SetWatermarkAngle{0}
+%%%%%%%%% Use only one of the four following blocks
+% use this block if you received the the "reusable" badge
+\SetWatermarkText{\raisebox{18.5cm}{
+\hspace{0.1cm}
+\href{https://doi.org/10.5281/zenodo.15210967}{\includegraphics{1-available}}
+\hspace{8cm}
+\includegraphics{3-reusable}
+}}
+
+
 \begin{document}
 %
 \title{Polyregular Model Checking}
@@ -125,8 +141,6 @@ We would like to thank Arnav Garg and Ojas Maheshwari for their participation in
 \bibliography{papers.bib}
 
 % If there are any appendices, we include them here.
-\appendix
-\input{src/appendix.tex}
 
 
 \end{document}

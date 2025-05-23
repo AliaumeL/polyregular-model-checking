@@ -8,8 +8,7 @@ libraries:
     - lib/aliaume
     - lib/maths
     - knowledges.kl
-appendix:
-    - src/appendix.tex
+appendix: # - src/appendix.tex
 ---
 
 \input{src/intro.tex}
