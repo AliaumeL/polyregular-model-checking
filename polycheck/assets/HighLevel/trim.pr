@@ -1,0 +1,10 @@
+def main(w : [Char]) : [Char] := 
+    let mut seen_non_space := False in 
+    for (i, c) in enumerate(w) do
+        if c !== ' ' then
+            seen_non_space := True
+        endif
+        if seen_non_space then 
+            yield c
+        endif
+    done

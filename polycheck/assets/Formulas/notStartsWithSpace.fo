@@ -1,0 +1,2 @@
+not (exists x : Pos. (forall y : Pos. y >= x) /\
+    x = ' ')
