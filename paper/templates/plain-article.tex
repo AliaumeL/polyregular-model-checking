@@ -24,6 +24,13 @@
 % microtype for better typography
 \usepackage{microtype}
 
+\newif\iflongversion
+$if(appendix)$
+\longversiontrue
+$else$
+\longversionfalse
+$endif$
+
 $if(draft)$
 \usepackage{todonotes}
 \usepackage{lineno}
