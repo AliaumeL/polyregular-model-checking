@@ -14,6 +14,13 @@
 \usepackage[T1]{fontenc}
 
 
+\newif\iflongversion
+$if(appendix)$
+\longversiontrue
+$else$
+\longversionfalse
+$endif$
+
 \usepackage{lineno}
 $if(final)$
 \nolinenumbers
@@ -96,6 +103,21 @@ $if(anonymous)$
 $else$
 \newcommand{\repositoryUrl}{\url{https://github.com/AliaumeL/polyregular-model-checking}}
 $endif$
+
+
+$if(artifacts)$
+\usepackage[firstpage]{draftwatermark} % free badge placement
+\SetWatermarkAngle{0}
+%%%%%%%%% Use only one of the four following blocks
+% use this block if you received the the "reusable" badge
+\SetWatermarkText{\raisebox{18.5cm}{
+\hspace{0.1cm}
+\href{https://doi.org/$artifacts.doi$}{\includegraphics{1-available}}
+\hspace{8cm}
+\includegraphics{3-reusable}
+}}
+$endif$
+
 
 \begin{document}
 %

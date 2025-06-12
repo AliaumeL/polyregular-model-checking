@@ -21,7 +21,12 @@ we hide all boolean variables from the \kl{evaluation context}.
 In particular, $\hlletboolean{b}{\hlreturn{\bgen{ \hlreturn{b} }}}$ is an \emph{invalid
 program}, because the variable $b$ is undefined in the context of the generator
 expression $\bgen{b}$. The formal typing rules of \kl{generator expressions}
-can be found in \cref{fig:generators}. 
+can be found in
+\iflongversion
+  \cref{fig:generators}. 
+\else
+  the full version of this paper.
+\fi
 
 Hiding the booleans from the context, ensures that the evaluation order of 
 the expressions is irrelevant, allowing us to freely substitute expressions

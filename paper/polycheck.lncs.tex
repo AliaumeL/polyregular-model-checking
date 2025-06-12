@@ -14,8 +14,11 @@
 \usepackage[T1]{fontenc}
 
 
+\newif\iflongversion
+\longversionfalse
+
 \usepackage{lineno}
-\linenumbers
+\nolinenumbers
 
 
 % babel for language settings
@@ -79,17 +82,34 @@
 \input{lib/maths}
 \input{knowledges.kl}
 
-\newcommand{\repositoryUrl}{\url{https://anonymous.4open.science/r/polyregular-model-checking-73A0}}
+\newcommand{\repositoryUrl}{\url{https://github.com/AliaumeL/polyregular-model-checking}}
+
+
+\usepackage[firstpage]{draftwatermark} % free badge placement
+\SetWatermarkAngle{0}
+%%%%%%%%% Use only one of the four following blocks
+% use this block if you received the the "reusable" badge
+\SetWatermarkText{\raisebox{18.5cm}{
+\hspace{0.1cm}
+\href{https://doi.org/10.5281/zenodo.15210967}{\includegraphics{1-available}}
+\hspace{8cm}
+\includegraphics{3-reusable}
+}}
+
 
 \begin{document}
 %
 \title{Polyregular Model Checking}
 
 \author{
-    Anonymized for review
-}
-\authorrunning{Anonymized for review}
-\institute{Anonymized for review}
+        Aliaume Lopez\inst{1}\orcidID{0000-0002-4205-327X}%
+    \thanks{Aliaume Lopez was supported by the Polish National Science Centre (NCN) grant ``Polynomial finite state computation'' (2022/46/A/ST6/00072).}%
+     \and
+        Rafał Stefański\inst{1}\orcidID{0000-0002-8439-4056}%
+    \thanks{Rafał Stefański was supported by the European Research Council (ERC) under the European Union's Horizon 2020 innovation program (grant PROCONTRA-885666).}%
+    }
+\authorrunning{A. Lopez and R. Stefański}
+\institute{University of Warsaw}
 
 \date{\today}
 
@@ -113,14 +133,14 @@
 \input{src/conclusion.tex}
 
 % Include acknowledgements
+\section*{Acknowledgements}
+We would like to thank Arnav Garg and Ojas Maheshwari for their participation in the early stage of this project.
 
 % Include the bibliography
 \bibliographystyle{splncs04}
 \bibliography{papers.bib}
 
 % If there are any appendices, we include them here.
-\appendix
-\input{src/appendix.tex}
 
 
 \end{document}
