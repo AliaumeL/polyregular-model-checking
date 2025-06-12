@@ -22,7 +22,7 @@ import Control.Monad (filterM)
 data PossibleSolvers = Mona | AltErgoSingle | SMTLib SMTLibSolver deriving (Eq,Show,Ord,Read)
     
 allSolvers :: [PossibleSolvers]
-allSolvers = [Mona, AltErgoSingle, SMTLib Z3, SMTLib CVC5, SMTLib Yices, SMTLib AltErgo]
+allSolvers = [Mona, SMTLib Z3, SMTLib CVC5, SMTLib Yices, SMTLib AltErgo]
 
 
 solverIsInstalled :: PossibleSolvers -> IO Bool
