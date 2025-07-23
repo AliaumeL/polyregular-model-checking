@@ -34,26 +34,23 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    container:
-      image: aliaume/polycheck:latest
     steps:
-      # https://github.com/commercialhaskell/stack/issues/2187
-      - name: Permissions bug workaround
-        run: "chown -R $(id -un):$(id -gn) ~"
-      - name: Check out code
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Haskell
+        uses: haskell-actions/setup@v2.7.9
+        with:
+          stack-version: "latest"
+          enable-stack: true
+      - name: Build 
         run: |
-          git clone https://github.com/AliaumeL/polyregular-model-checking.git
-      - name: Build
-        run: |
-          cd polyregular-model-checking/polycheck
-          # --nix to use nix dependencies
-          # --allow-different-user because github changes the user
           export NIXPKGS_ALLOW_UNFREE=1
+          cd polycheck
           stack init --nix --nix-packages "zlib" --allow-different-user
           stack build --nix --nix-packages "zlib" --allow-different-user
       - name: Run test suite
         run: |
-          cd polyregular-model-checking/polycheck
+          cd polycheck
           # disable test suite for the moment because it is too long
           export NIXPKGS_ALLOW_UNFREE=1
           stack test --nix --nix-packages "zlib"  --allow-different-user
