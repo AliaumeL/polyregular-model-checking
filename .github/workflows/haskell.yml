@@ -44,16 +44,13 @@ jobs:
           enable-stack: true
       - name: Build 
         run: |
-          export NIXPKGS_ALLOW_UNFREE=1
           cd polycheck
-          stack init --nix --nix-packages "zlib" --allow-different-user
-          stack build --nix --nix-packages "zlib" --allow-different-user
+          stack init 
+          stack build 
       - name: Run test suite
         run: |
           cd polycheck
-          # disable test suite for the moment because it is too long
-          export NIXPKGS_ALLOW_UNFREE=1
-          stack test --nix --nix-packages "zlib"  --allow-different-user
+          stack test 
 
   benchmarks:
     runs-on: ubuntu-latest
