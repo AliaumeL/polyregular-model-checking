@@ -37,12 +37,16 @@ jobs:
         include:
           - os: macos-13
             target: x86_64-apple-darwin
+            bins: "polycheck benchmarker"
           - os: macos-latest
             target: arm64-apple-darwin
+            bins: "polycheck benchmarker"
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            bins: "polycheck benchmarker"
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            bins: "polycheck.exe benchmarker.exe"
     name: Polycheck - Release - ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     permissions:
@@ -67,8 +71,9 @@ jobs:
           # create the temporary directory
           mkdir -p artifacts/${{ matrix.os }}
           # copy binary files
-          cp "$(stack path --local-bin)/polycheck" "artifacts/${{ matrix.os }}/"
-          cp "$(stack path --local-bin)/benchmarker" "artifacts/${{ matrix.os }}/"
+          for bin in ${{ matrix.bins }}; do
+            cp "$(stack path --local-bin)/${bin}" "artifacts/${{ matrix.os }}/"
+          done
           # copy assets
           cp -R assets/ artifacts/${{ matrix.os }}/assets/
           # zip the assets/ directory into a file in the tar.gz format

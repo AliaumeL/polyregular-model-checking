@@ -1,0 +1,57 @@
+def getBetween( l : [Char] with (i,j) ) : [Char] := 
+    for (k,c) in enumerate(l) do
+        if i <= k and k <= j then
+            yield c
+        endif
+    done
+
+def containsA(w : [Char]) : Bool := 
+    for (i,c) in enumerate(w) do
+        if c === 'a' then
+            return True
+        endif
+    done
+    return False
+
+def containsAB(w : [Char]) : Bool := 
+    let mut seen_a := False in 
+    for (i, c) in enumerate(w) do
+        if c === 'a' then
+            seen_a := True
+        else if c === 'b' and seen_a then
+            return True
+        endif endif
+    done
+    return False
+
+def subwordsWithAB(w : [Char]) : [[Char]] := 
+    for (i,c) in enumerate(w) do
+        for (j,d) in reversed(enumerate(w)) do
+            let s := getBetween(w with (i,j)) in
+            if containsAB(s) then
+                yield s
+            endif
+        done
+    done
+
+def func (w : [Char]) : [Char] := 
+    let subwrds := subwordsWithAB(w) in
+    for (j,s) in enumerate(subwrds) do
+        for (i,c) in enumerate(s) do
+            yield c
+        done
+        yield '#'
+    done
+
+def main (w : [Char]) : [Char] := 
+  let my_result := func(w) in
+  if containsAB(w) then
+    if containsA(my_result) then
+      return "YES"
+    else
+      return "NO"
+    endif
+  else
+    return "YES"
+  endif
+
