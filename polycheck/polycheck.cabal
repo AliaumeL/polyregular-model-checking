@@ -32,6 +32,7 @@ library
       ForPrograms.HighLevel.Transformations
       ForPrograms.HighLevel.Transformations.AddrVarElimination
       ForPrograms.HighLevel.Transformations.BooleanElimination
+      ForPrograms.HighLevel.Transformations.EvaluateConstantEqualities
       ForPrograms.HighLevel.Transformations.FinalConditions
       ForPrograms.HighLevel.Transformations.ForLoopExpansion
       ForPrograms.HighLevel.Transformations.FunctionElimination

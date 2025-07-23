@@ -19,6 +19,7 @@ import ForPrograms.HighLevel.Transformations.LetElimination (eliminateLetProgram
 import ForPrograms.HighLevel.Transformations.ForLoopExpansion (forLoopExpansion, forLoopExpansionFix)
 import ForPrograms.HighLevel.Transformations.ReturnElimination (retElimProgram)
 import ForPrograms.HighLevel.Transformations.ReductionLitEq (removeBLitEq)
+import ForPrograms.HighLevel.Transformations.EvaluateConstantEqualities (removeConstantEquality)
 
 -- Typecheck the program 
 import ForPrograms.HighLevel.Typing(ValueType(..))
@@ -32,12 +33,14 @@ data Transformation = LitEqElimination
                     | ReturnElimination
                     | ForLoopExpansion
                     | LetBoolsToTop
+                    | ConstEqEval
                     deriving (Eq,Show,Read,Ord,Enum)
 
 transformationsInOrder :: [Transformation]
-transformationsInOrder = [LitEqElimination .. LetBoolsToTop]
+transformationsInOrder = [LitEqElimination .. ConstEqEval]
 
 applyTransform :: Transformation -> Program String ValueType -> Program String ValueType
+applyTransform ConstEqEval p = removeConstantEquality p
 applyTransform BooleanElimination p = removeBooleanGen p
 applyTransform FunctionElimination p = eliminateFunctionCalls p
 applyTransform LiteralElimination p = eliminateLiterals p

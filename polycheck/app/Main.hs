@@ -11,6 +11,7 @@ import ForPrograms.Simple (runProgram, pathToTag)
 import qualified ForPrograms.Simple as SFP
 import ForPrograms.Simple.Optimization(simplifyForProgram)
 
+import qualified ForPrograms.HighLevel.PrettyPrint as HLPP
 
 import qualified Parser.ParseFirstOrder as PFO
 import qualified Parser.ParseHighLevel  as PHL
@@ -66,7 +67,9 @@ higherToSimpleProgram :: Program String ValueType -> SFP.ForProgram
 higherToSimpleProgram p = simplifyForProgram sfp
     where
         transformedProg = foldl (flip applyTransform) p transformationsInOrder
-        Right sfp = toSimpleForProgram transformedProg
+        sfp = case toSimpleForProgram transformedProg of
+                Right sfp -> sfp
+                Left err  -> error $ "Error converting to simple for program: " ++ show err ++ "\n" ++ HLPP.prettyPrintProgram transformedProg
 
 simpleForToInterpretation :: SFP.ForProgram -> Interpretation String
 simpleForToInterpretation sfp = Interpretation tags alphabet simplifiedDomain simplifiedOrder labelOrCopy arity
