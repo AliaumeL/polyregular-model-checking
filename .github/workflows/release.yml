@@ -67,7 +67,8 @@ jobs:
           # create the temporary directory
           mkdir -p artifacts/${{ matrix.os }}
           # copy binary files
-          cp "$(stack path --local-install-root)/bin/*" "artifacts/${{ matrix.os }}/"
+          cp "$(stack path --local-bins)/polycheck" "artifacts/${{ matrix.os }}/"
+          cp "$(stack path --local-bins)/benchmarker" "artifacts/${{ matrix.os }}/"
           # copy assets
           cp -R assets/ artifacts/${{ matrix.os }}/assets/
           # zip the assets/ directory into a file in the tar.gz format
