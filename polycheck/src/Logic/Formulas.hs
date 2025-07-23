@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Logic.Formulas (Sort(..), Quant(..), Var(..), Formula(..), Value(..),
+    extractLetters,
     shiftVar,
     quantifierDepth,
     formulaSize,
@@ -491,4 +492,14 @@ evalFormulaWithFreeVars :: Formula String -> [(String, Value)] -> [String] -> St
 evalFormulaWithFreeVars f freeVars tags w = runEvalM (evalFormulaM f) (EvalState (M.fromList freeVars) w [] tags)
 
 
--- TODO: Extract the values of free variables
+-- | Extract all the letter constants used in the formula
+extractLetters :: Formula tag -> Set Char
+extractLetters (FConst _) = S.empty
+extractLetters (FVar _) = S.empty
+extractLetters (FBin _ l r) = extractLetters l `S.union` extractLetters r
+extractLetters (FNot l) = extractLetters l
+extractLetters (FQuant _ _ _ l) = extractLetters l
+extractLetters (FTag _ _) = S.empty
+extractLetters (FLetter _ l) = S.singleton l
+extractLetters (FTestPos _ _ _) = S.empty
+extractLetters (FRealPos _) = S.empty

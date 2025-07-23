@@ -13,7 +13,7 @@ import Logic.Interpretation
 import Logic.PullBack
 import Logic.Export
 
-import Data.List (nub)
+import qualified Data.Set as S
 
 data HoareTriple = HoareTriple {
   pre     :: Formula (),
@@ -31,4 +31,5 @@ verifyHoareTriple solver t = encodeAndRun solver params triple
         i         = program t
         tripleRaw = encodeHoareTriple t
         triple    = simplifyFormula $ FNot tripleRaw
-        params    = EncodeParams (nub $ "abcd" ++ Logic.Interpretation.alphabet i) (Logic.Interpretation.tags i)
+        letters   = Logic.Formulas.extractLetters triple `S.union` (S.fromList $ "abcd ")
+        params    = EncodeParams (S.toList letters) (Logic.Interpretation.tags i)
